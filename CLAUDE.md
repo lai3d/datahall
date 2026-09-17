@@ -6,15 +6,25 @@
 
 ## 目录
 
-- `web/index.html`：网页版，单文件，three.js r128（cdnjs UMD），无构建步骤
-- `spec/catalog.json`：设备目录，从 index.html 的 `CATALOG` 抽出，**目标是成为唯一数据源**
-- `samples/datahall.usda`：导出样例，已用 OpenUSD 26.08 验证
+- `web/`：网页版，Vite + three.js 0.128（npm 锁版本），入口 `web/index.html` → `web/src/main.js`
+  - `src/catalog.js`：import `spec/catalog.json`，构建时打进包里
+  - `src/sim.js`：容量模型与 PUE，纯函数
+  - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
+  - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载 `.usda`
+  - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
+  - `src/ui.js`：右侧面板；`src/state.js`：共享状态；`src/layout.js`：预设与 localStorage；`src/grid.js`：网格常量
+  - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致
+- `spec/catalog.json`：设备目录，**唯一数据源**
+- `samples/datahall.usda`：导出样例，已用 OpenUSD 26.08 验证，同时是导出回归测试的 golden 文件
 - `tools/validate_usd.py`：USD 校验脚本（`pip install usd-core`）
 
 ## 运行
 
 ```bash
-python3 -m http.server 8080 -d web      # 打开 http://localhost:8080
+cd web && npm i
+npm run dev        # 开发服务器
+npm test           # vitest
+npm run build      # 产物在 web/dist，base 为相对路径，可部署到任意子路径
 pip install usd-core && python3 tools/validate_usd.py samples/datahall.usda
 ```
 
@@ -29,22 +39,13 @@ pip install usd-core && python3 tools/validate_usd.py samples/datahall.usda
   - 替换高精度模型的方式：在更强的层对 Catalog 原型写 `over`
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
-## 已知问题（接手时先处理）
-
-1. **导出按钮在独立部署时不可用。** 当前导出走 claude.ai artifact 的 `window.claude.use('downloads')`，
-   独立打开页面时没有 `window.claude`，按钮会隐藏。需要改为：有 `window.claude` 时走 downloads，
-   否则用 `Blob + URL.createObjectURL + <a download>` 直接下载 `.usda`（不必再打 zip，zip 只是为了绕过 artifact 的扩展名白名单）。
-2. `CATALOG` 仍硬编码在 index.html 里，和 `spec/catalog.json` 重复。改成页面 fetch catalog.json。
-3. `buildUsda` 在 index.html 的 `// USD-BEGIN` / `// USD-END` 之间，应抽成独立 ES module，便于 node 测试。
-
 ## 下一步（按优先级）
 
-1. 修上面三个已知问题，拆成 `web/src/`（scene、sim、usd-export、ui），保持零构建或上 Vite 二选一，先问我。
-2. 把 `dchall:` 自定义属性升级为 codeless applied API schema（`DataHallEquipmentAPI`、`LiquidCooledAPI`），
+1. 把 `dchall:` 自定义属性升级为 codeless applied API schema（`DataHallEquipmentAPI`、`LiquidCooledAPI`），
    产出 `schema.usda` + `plugInfo.json`，validate 脚本改为基于 schema 校验。
-3. 对照 NVIDIA SimReady 规范核对 kind、单位、材质绑定要求（尚未逐条核对，不要假设已合规）。
-4. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
-5. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
+2. 对照 NVIDIA SimReady 规范核对 kind、单位、材质绑定要求（尚未逐条核对，不要假设已合规）。
+3. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
+4. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
 
 ## 数据可信度
 

@@ -1,0 +1,68 @@
+:root{
+  --bg:#E6ECF0;--panel:#F5F8FA;--ink:#17212B;--muted:#56646F;--line:#C5D0D8;
+  --hall:#D3DCE2;--floor:#C4CFD7;--grid:#A9B7C1;--rack:#2B343D;
+  --gpu:#5E9400;--coolant:#177F92;--copper:#A8621F;--net:#5F50AE;--air:#5F707E;--store:#4E6A86;
+  --warn:#8A6700;--bad:#B3261E;--ok:#3F7D20;
+  --font:"Barlow Semi Condensed","PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10171E;--panel:#16202A;--ink:#E4EAEF;--muted:#91A0AC;--line:#2A3743;
+  --hall:#0D1318;--floor:#17212A;--grid:#283640;--rack:#34404B;
+  --gpu:#76B900;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
+  --warn:#E8C547;--bad:#F2766B;--ok:#8BC34A;
+}}
+:root[data-theme="dark"]{
+  --bg:#10171E;--panel:#16202A;--ink:#E4EAEF;--muted:#91A0AC;--line:#2A3743;
+  --hall:#0D1318;--floor:#17212A;--grid:#283640;--rack:#34404B;
+  --gpu:#76B900;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
+  --warn:#E8C547;--bad:#F2766B;--ok:#8BC34A;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.4;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+#stage{position:relative;flex:1;min-height:42vh;background:var(--hall)}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;left:12px;top:10px;display:flex;gap:14px;pointer-events:none;
+  background:color-mix(in srgb,var(--panel) 82%,transparent);padding:6px 10px;border-radius:6px;border:1px solid var(--line)}
+#hud b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;display:block;line-height:1.1}
+#hud span{font-size:12px;color:var(--muted)}
+#camReset{position:absolute;right:10px;top:10px}
+#panel{background:var(--panel);border-top:1px solid var(--line);max-height:56vh;overflow-y:auto;padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
+@media (min-width:900px){
+  body{flex-direction:row}
+  #panel{width:380px;max-height:none;height:100%;border-top:0;border-left:1px solid var(--line);padding:18px}
+}
+h1{font-size:22px;font-weight:700;margin:0 0 2px;letter-spacing:.2px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+h2{font-size:15px;font-weight:600;margin:16px 0 8px;color:var(--muted)}
+button{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--coolant);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.chip{display:flex;text-align:left;padding:0;overflow:hidden;min-height:48px}
+.chip i{width:6px;flex:none}
+.chip div{padding:5px 8px}
+.chip strong{display:block;font-weight:600;font-size:14px}
+.chip small{color:var(--muted);font-size:12px}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.gauge{margin:6px 0}
+.gauge .top{display:flex;justify-content:space-between;font-size:13px}
+.gauge .top em{font-style:normal;font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;width:0;transition:width .25s}
+.issues{list-style:none;padding:0;margin:8px 0 0;font-size:13px}
+.issues li{padding:4px 0 4px 10px;border-left:3px solid var(--warn);margin-bottom:4px}
+.issues li.bad{border-color:var(--bad)}
+.issues li.ok{border-color:var(--ok)}
+#power{width:100%;margin-top:10px;padding:10px;font-weight:700;font-size:16px;border-color:var(--gpu)}
+#power.on{background:var(--gpu);color:#0b1200}
+.info{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px}
+.info table{width:100%;border-collapse:collapse;margin:6px 0}
+.info td{padding:2px 0}
+.info td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.info p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.foot{font-size:12px;color:var(--muted);margin-top:14px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}

@@ -1,0 +1,94 @@
+import {CAT} from './catalog.js';
+import {GRID, keyOf} from './grid.js';
+import {state, itemList, snapshot} from './state.js';
+import * as view from './scene.js';
+import {initControls} from './controls.js';
+import {initUI, buildUI, refresh, renderInfo} from './ui.js';
+import {PRESETS, saveLayout, restoreLayout} from './layout.js';
+import {buildUsda} from './usd-export.js';
+import {createSaver} from './download.js';
+
+const $ = s => document.querySelector(s);
+
+// ---------- mutations ----------
+function place(type, x, z, quiet){
+  const key = keyOf(x, z);
+  if (state.items.has(key)) return;
+  const it = {type, x, z};
+  view.addMesh(key, it);
+  state.items.set(key, it);
+  if (!quiet){ state.powered = false; changed(); }
+}
+function removeItem(key){
+  const it = state.items.get(key); if (!it) return;
+  view.removeMesh(it);
+  state.items.delete(key);
+  if (state.selected === key) state.selected = null;
+  state.powered = false; changed();
+}
+function clearAll(){
+  state.items.forEach(it => view.removeMesh(it));
+  state.items.clear(); state.selected = null; state.powered = false;
+}
+function select(key){ state.selected = key; view.setOutline(); renderInfo(); }
+function changed(){ view.rebuildLinks(); view.setOutline(); refresh(); saveLayout(snapshot()); }
+
+function loadLayout(p){
+  clearAll(); state.utility = p.u;
+  p.list.forEach(([t, x, z]) => CAT[t] && place(t, x, z, true));
+  buildUI(); changed();
+}
+
+function tap(e){
+  const key = view.pickItem(e);
+  if (key){ select(key); return; }
+  const c = view.pickCell(e);
+  if (c && state.tool && !state.items.has(keyOf(c.x, c.z))){ place(state.tool, c.x, c.z); return; }
+  select(null);
+}
+
+// ---------- export ----------
+async function initExport(){
+  const saver = await createSaver();
+  const box = $('#usdBox'), msg = $('#usdMsg'), btn = $('#usdExport');
+  msg.textContent = saver.hint + 'Z 轴向上，单位米，可直接在 Omniverse、usdview 或 Blender 中打开。';
+  box.hidden = false;
+  btn.onclick = async () => {
+    if (!state.items.size){ msg.textContent = '机房是空的，先放设备再导出。'; return; }
+    const usda = buildUsda(itemList(), CAT, state.utility, GRID);
+    btn.disabled = true;
+    try {
+      await saver.save(usda);
+      msg.textContent = `已导出 ${state.items.size} 台设备。`;
+    } catch (e) {
+      const code = e && e.code;
+      if (code === 'declined') msg.textContent = '已取消导出。';
+      else if (code === 'rate_limited') msg.textContent = '已有一个保存确认框，处理完再试。';
+      else msg.textContent = '导出失败，当前环境可能不允许下载文件。';
+    } finally { btn.disabled = false; }
+  };
+}
+
+// ---------- boot ----------
+const el = view.initScene($('#stage'));
+initControls(el, view.camera, {
+  onTap: tap,
+  onHover: e => view.setGhost(view.pickCell(e)),
+  onLeave: view.hideGhost,
+  resetButton: $('#camReset'),
+});
+initUI({
+  removeItem,
+  setUtility(u){ state.utility = u; state.powered = false; buildUI(); changed(); },
+  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; view.setOutline(); buildUI(); renderInfo(); },
+  togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
+  loadPreset: name => loadLayout(PRESETS[name]),
+});
+initExport();
+
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+mq.addEventListener && mq.addEventListener('change', () => { view.retheme(); refresh(); });
+
+buildUI();
+loadLayout(restoreLayout() || PRESETS.gb200);
+view.startLoop();
