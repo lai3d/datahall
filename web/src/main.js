@@ -6,6 +6,7 @@ import {initControls} from './controls.js';
 import {initUI, buildUI, refresh, renderInfo} from './ui.js';
 import {PRESETS, saveLayout, restoreLayout} from './layout.js';
 import {buildUsda} from './usd-export.js';
+import {importUsda, UsdImportError} from './usd-import.js';
 import {createSaver} from './download.js';
 
 const $ = s => document.querySelector(s);
@@ -48,12 +49,44 @@ function tap(e){
 }
 
 // ---------- export ----------
+// 导入会替换当前机房；警告最多列出 MAX_WARNINGS 条
+const MAX_WARNINGS = 8;
+function showImportResult(msg, list, text, warnings = []){
+  msg.textContent = text;
+  const lines = warnings.slice(0, MAX_WARNINGS);
+  if (warnings.length > MAX_WARNINGS) lines.push(`另有 ${warnings.length - MAX_WARNINGS} 条提示未列出。`);
+  // 提示里有文件中的 prim 名，用 textContent 写入，不当成 HTML
+  list.replaceChildren(...lines.map(txt => Object.assign(document.createElement('li'), {className: 'warn', textContent: txt})));
+}
+
+function initImport(msg){
+  const input = $('#usdFile'), list = $('#usdWarnings');
+  $('#usdImport').onclick = () => input.click();
+  input.onchange = async () => {
+    const file = input.files[0];
+    input.value = '';                                   // 允许再次选择同一个文件
+    if (!file) return;
+    try {
+      const result = importUsda(await file.text(), CAT, GRID);
+      loadLayout(result);
+      showImportResult(msg, list,
+        `已从 ${file.name} 导入 ${result.list.length} 台设备，市电 ${result.u} MW。` + (result.skipped ? `跳过 ${result.skipped} 台。` : ''),
+        result.warnings);
+    } catch (e) {
+      if (!(e instanceof UsdImportError)) console.error(e);
+      showImportResult(msg, list, e instanceof UsdImportError ? `没有导入：${e.message}` : '没有导入：读取文件时出错。');
+    }
+  };
+}
+
 async function initExport(){
   const saver = await createSaver();
   const box = $('#usdBox'), msg = $('#usdMsg'), btn = $('#usdExport');
   msg.textContent = saver.hint + 'Z 轴向上，单位米，可直接在 Omniverse、usdview 或 Blender 中打开。';
   box.hidden = false;
+  initImport(msg);
   btn.onclick = async () => {
+    $('#usdWarnings').innerHTML = '';
     if (!state.items.size){ msg.textContent = '机房是空的，先放设备再导出。'; return; }
     const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
     const usda = buildUsda(itemList(), CAT, state.utility, GRID, {date});

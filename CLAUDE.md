@@ -11,11 +11,15 @@
   - `src/sim.js`：容量模型与 PUE，纯函数
   - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
   - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载 `.usda`
+  - `src/usda-parser.js`：usda 文本的精简解析器（prim、属性、元数据、值），不做组合
+  - `src/usd-import.js`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
   - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
   - `src/ui.js`：右侧面板；`src/state.js`：共享状态；`src/layout.js`：预设与 localStorage；`src/grid.js`：网格常量
   - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致，
     并解析 `schema/generatedSchema.usda` 检查导出的每个 `dchall:` 属性都由应用的 schema 定义、类型一致（不需要 pxr）
   - `scripts/update-sample.js`：`npm run sample`，导出格式有意变更后按样例原布局重新生成 `samples/datahall.usda`
+  - `tests/fixtures/`：导入测试用的文件。`pxr-resaved`、`pxr-edited` 由 `tools/make_import_fixtures.py` 生成；
+    `schema-0.1` 取自提交 `2cdd465` 的样例。导出格式变化后要重新生成，并更新 `usd-import.test.js` 里的预期
 - `spec/catalog.json`：设备目录，**唯一数据源**
 - `schema/`：codeless applied API schema 插件
   - `schema.usda`：源文件，只改这个
@@ -62,12 +66,16 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
   - 改属性的顺序：`schema/schema.usda` → `tools/gen_schema.sh` → `web/src/usd-export.js` → `npm run sample` → `validate_usd.py`
   - 替换高精度模型的方式：在更强的层对 Catalog 原型写 `over`，但**不能直接对原型加 reference**：AIF 设备资产正面朝 +X，本项目正面朝 -Y；
     要在原型下建子 Xform 引用资产、`rotateXYZ = (0, 0, -90)`、`kind = "subcomponent"`，详见 `docs/simready-audit.md`
+- **导入 .usda**：只读根层，不展开 sublayer 和外部引用，不支持二进制 usdc（提示用 usdcat 转换）。
+  - 设备类型取自 `references = </DataHall/Catalog/<id>>`，位置以 `dchall:gridColumn/gridRow` 为准（缺失时按 `Rxx_Cyy` 名字推断），
+    `translate` 只用来提示不一致；设备参数以 `catalog.json` 为准，文件里的参数只提示差异
+  - 停用（`active = false`）、未知类型、越界、重叠、外部引用的设备跳过并提示；网格尺寸和当前不一致直接拒绝
+  - 导入会替换当前机房；提示里含文件内容，界面上只能用 `textContent` 写入
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
 ## 下一步（按优先级）
 
-1. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
-2. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
+1. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
 
 ## 数据可信度
 

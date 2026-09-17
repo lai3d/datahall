@@ -45,9 +45,14 @@
   </div>
 
   <div id="usdBox" hidden>
-    <h2>导出</h2>
-    <button type="button" id="usdExport">导出 OpenUSD</button>
+    <h2>OpenUSD</h2>
+    <div class="row">
+      <button type="button" id="usdExport">导出 OpenUSD</button>
+      <button type="button" id="usdImport">导入 .usda</button>
+      <input type="file" id="usdFile" accept=".usda,.usd" hidden>
+    </div>
     <p class="sub" id="usdMsg" style="margin-top:6px"></p>
+    <ul class="issues" id="usdWarnings"></ul>
   </div>
   <p class="foot">功耗、价格为公开报道与供应链估算的粗略值，用于体验和教学，不可作为工程设计依据。Vera Rubin NVL72 功耗按 Max-Q 约 190 kW 计。</p>
 </aside>
