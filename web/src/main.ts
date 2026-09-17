@@ -339,6 +339,7 @@ async function importUsdFile(file: File){
 }
 
 let saver: Saver | null = null;
+const today = () => { const now = new Date(); return [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-'); };
 const exportHint = () => saver ? saver.hint() + tr('usdHint') : '';
 async function initExport(){
   saver = await createSaver();
@@ -349,8 +350,7 @@ async function initExport(){
 async function exportWith(filename: string, build: (meta: ExportMeta) => string, done: () => string){
   if (!saver || state.ui.exporting) return;
   if (!state.items.size){ showNotice('usd', tr('exportEmpty')); return; }
-  const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
-  const text = build({date});
+  const text = build({date: today()});
   state.ui.exporting = true;
   showNotice('usd', state.ui.usd.text);
   try {
@@ -368,6 +368,25 @@ const exportUsd = () => exportWith('datahall.usda', meta => buildUsda(itemList()
   () => tr('exportUsdDone', {n: state.items.size}));
 const exportLayout = () => exportWith('layout.json', meta => layoutToText(buildLayout(itemList(), CAT, state.utility, GRID, meta)),
   () => tr('exportLayoutDone', {n: state.items.size}));
+
+// One-click screenshot of the 3D view; the message goes to the share section, where the button is
+async function saveImage(){
+  if (!saver || state.ui.exporting) return;
+  state.ui.exporting = true;
+  notify();
+  try {
+    const png = await view.snapshotPng();
+    if (!png) throw new Error('empty canvas');
+    await saver.saveBlob(`datahall-${today()}.png`, png);
+    showNotice('share', tr('imageSaved'));
+  } catch (e) {
+    const code = (e as {code?: string} | null)?.code;
+    showNotice('share', code === 'declined' ? tr('exportCancelled') : code === 'rate_limited' ? tr('exportBusy') : tr('imageFailed'));
+  } finally {
+    state.ui.exporting = false;
+    notify();
+  }
+}
 
 // ---------- language ----------
 // English by default; the choice is stored in localStorage. ?lang=zh selects directly (not written into the share link hash)
@@ -430,6 +449,7 @@ const actions: Actions = {
   importUsdFile: file => { void importUsdFile(file); },
   exportUsd: () => { void exportUsd(); },
   exportLayout: () => { void exportLayout(); },
+  saveImage: () => { void saveImage(); },
   exportHint,
 };
 mountUI(actions, stage, $('#panel'));

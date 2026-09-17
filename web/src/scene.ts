@@ -233,6 +233,13 @@ export function pickCell(e: PointerEvent): Pos | null{
 // Render one frame now: during browser automation the window is in the background and requestAnimationFrame may be paused
 export function renderOnce(): void{ camera.updateMatrixWorld(); renderer.render(scene, camera); }
 
+// PNG of the 3D view at its current size. toBlob copies the canvas in the same task as the render, so the
+// renderer does not need preserveDrawingBuffer
+export function snapshotPng(): Promise<Blob | null>{
+  renderOnce();
+  return new Promise(resolve => renderer.domElement.toBlob(resolve, 'image/png'));
+}
+
 export function startLoop(): void{
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function frame(now: number){

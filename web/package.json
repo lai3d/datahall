@@ -10,7 +10,8 @@
     "typecheck": "tsc -p .",
     "e2e": "playwright test",
     "sample": "node scripts/update-sample.ts",
-    "capacity-cases": "node scripts/capacity-cases.ts"
+    "capacity-cases": "node scripts/capacity-cases.ts",
+    "social-images": "node scripts/social-images.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
