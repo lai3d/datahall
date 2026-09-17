@@ -6,8 +6,10 @@ import type {CSSProperties, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createPortal} from 'react-dom';
 import {CATALOG, CAT} from './catalog.ts';
-import {fmt, PUE_FACTORS} from './sim.ts';
+import {fmt, PUE_FACTORS, UTILITY_OPTIONS} from './sim.ts';
 import {compareRacks} from './compare.ts';
+import {addCounts, planRepair} from './repair.ts';
+import type {RepairOption, SupportType} from './repair.ts';
 import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
 import {scaleRefs} from './scale.ts';
@@ -43,6 +45,7 @@ export interface Actions {
   setViewPhase(n: number | null): void;
   setHeadroomType(type: string): void;
   setEnergy(change: Partial<EnergyInputs>): void;
+  applyRepair(index: number): void;
   openMethod(section: MethodSection): void;
   closeMethod(): void;
   setItemPhase(key: string, phase: number): void;
@@ -72,7 +75,6 @@ export function mountUI(a: Actions, stage: HTMLElement, panel: HTMLElement): voi
   createRoot(panel).render(<StrictMode><App stage={stage} /></StrictMode>);
 }
 
-const UTIL = [2, 5, 10];
 const MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 const bad: CSSProperties = {color: 'var(--bad)'};
 const muted: CSSProperties = {color: 'var(--muted)'};
@@ -93,7 +95,7 @@ function App({stage}: {stage: HTMLElement}){
       <Tutorial model={model} version={version} />
       <h2>{tr('hUtility')}</h2>
       <div className="row seg" id="utility">
-        {UTIL.map(u => <button key={u} type="button" data-u={u} aria-pressed={u === state.utility} onClick={() => actions.setUtility(u)}>{u} MW</button>)}
+        {UTILITY_OPTIONS.map(u => <button key={u} type="button" data-u={u} aria-pressed={u === state.utility} onClick={() => actions.setUtility(u)}>{u} MW</button>)}
       </div>
       <Devices />
       <Capacity model={model} />
@@ -364,11 +366,44 @@ function Capacity({model}: {model: HallModel}){
             {!model.blocking && <li className="ok">{tr('issueOk')}</li>}
           </>}
       </ul>
+      <Repair model={model} />
       {/* After power-on, a failure drill that breaks the checks still allows powering off */}
       <button id="power" type="button" className={state.powered ? 'on' : undefined} disabled={!s.it || (model.blocking && !state.powered)} onClick={() => actions.togglePower()}>
         {tr(state.powered ? 'powerOff' : 'powerOn')}
       </button>
     </>
+  );
+}
+
+// How to fix a hall that cannot power on (repair.ts): each option as one sentence with an Apply button. Hidden during the tutorial,
+// which teaches adding the units by hand. Planning runs only when the calculated devices or the feed change
+const SUPPORT_TEXT: Record<SupportType, 'repairRpp' | 'repairCdu' | 'repairCrah' | 'repairIb'> = {rpp: 'repairRpp', cdu: 'repairCdu', crah: 'repairCrah', ib: 'repairIb'};
+function repairSentence(o: RepairOption): string{
+  // Intl's Chinese list puts no space between 和 and a number; this app spaces numbers and Latin text in Chinese
+  const list = (parts: string[]) => new Intl.ListFormat(getLang() === 'zh' ? 'zh' : 'en-GB', {type: 'conjunction'}).format(parts).replace(/和(?=[0-9A-Za-z])/g, '和 ');
+  const steps: string[] = [];
+  if (o.utility !== null) steps.push(tr('repairUtility', {u: o.utility}));
+  if (o.remove.length) steps.push(tr('repairRemove', {n: o.remove.length, name: catName(CAT[o.remove[0].type])}));
+  const counts = addCounts(o);
+  if (counts.length) steps.push(tr('repairAdd', {list: list(counts.map(([t, n]) => tr(SUPPORT_TEXT[t], {n})))}));
+  return tr('repairSentence', {steps: steps.join(tr('repairThen'))});
+}
+function Repair({model}: {model: HallModel}){
+  const signature = `${state.utility}|${[...state.items.keys()].join(' ')}|${model.active.map(i => `${i.type}@${i.x},${i.z}`).join(' ')}`;
+  const options = useMemo(() => model.blocking && model.totals.it ? planRepair(model.active, CAT, state.utility, new Set(state.items.keys()), GRID) : null, [signature, model.blocking]);
+  if (!options || state.tutorial !== null) return null;
+  return (
+    <div className="repair" id="repair">
+      <strong>{tr('repairTitle')}</strong>
+      {options.length === 0 && <p>{tr('repairNone')}</p>}
+      {options.map((o, i) => (
+        <div key={i} className="repair-option" data-option={i}>
+          <p>{i > 0 && tr('repairOr')}{repairSentence(o)}{!o.passes && <> {tr('repairPartial')}</>}</p>
+          <button type="button" id={i ? 'repairApplyAlt' : 'repairApply'} onClick={() => actions.applyRepair(i)}>{tr('repairApply')}</button>
+        </div>
+      ))}
+      <p className="sub">{tr('repairWhere')}</p>
+    </div>
   );
 }
 
