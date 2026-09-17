@@ -22,6 +22,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Guided scenario (tutorial mode) | New users open the page and do not know what to do. "Place 8 racks → why it cannot power on → add a CDU → power on" is the teaching storyline | 4–6 h | Not started |
 | Social preview image and one-click screenshot | Spreading depends on links, and links need an image. One OG image; export the 3D view as PNG (`toDataURL` after `renderOnce` already works) | 1–2 h | Not started |
 | Vercel Web Analytics | Without measurement there is no way to know whether anyone uses it | 0.5 h | Done, 2026-09-17 |
+| AMD racks in the catalog | Helios (72 MI455X) and an MI355X DLC rack as catalog entries only; the model is vendor-neutral and the comparison story needs a second vendor | 1 h | Done, 2026-09-17 |
 
 ## Next (mid-quarter, 1 to 2 months)
 
@@ -37,6 +38,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 
 ## Later (after the quarter, directional)
 
+- Multi-cell footprints: AMD Helios is a 1.2 m wide Open Rack Wide but occupies one 0.6 m cell today; supporting 2-cell devices touches placement, drag, share links, USD and layout.json.
 - Embed mode `?embed`: hide the panel, keep the 3D view and one sentence, for embedding in articles.
 - A third UI language (Japanese or Korean), decided by where visitors come from.
 - USD: maintain compatibility only; no usdc or real SimReady assets unless someone on the Omniverse side wants to integrate.

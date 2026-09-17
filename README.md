@@ -1,6 +1,6 @@
 # GPU Data Hall Builder
 
-A simulator for laying out an AI data hall around NVIDIA's latest GPU racks: GB200/GB300 NVL72, Vera Rubin NVL72 and Rubin Ultra Kyber. Place racks, power panels, coolant units and network switches on a grid. See whether power distribution, cooling, network ports and utility capacity can carry the load. Then export the hall as OpenUSD.
+A simulator for laying out an AI data hall around the latest AI GPU racks: NVIDIA GB200/GB300 NVL72, Vera Rubin NVL72 and Rubin Ultra Kyber, and AMD Helios and MI355X. Place racks, power panels, coolant units and network switches on a grid. See whether power distribution, cooling, network ports and utility capacity can carry the load. Then export the hall as OpenUSD.
 
 **Live demo:** https://datahall-eight.vercel.app ([中文界面](https://datahall-eight.vercel.app/?lang=zh))
 
@@ -8,9 +8,9 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 
 ![A Vera Rubin NVL72 row powered on, with coolant and power links drawn to the CDUs and RPPs](docs/images/web.png)
 
-> Power and price figures are rough estimates from public reports and supply chain sources, not NVIDIA specifications. Use them for learning, not engineering design.
+> Power and price figures are rough estimates from public reports and supply chain sources, not NVIDIA or AMD specifications. Use them for learning, not engineering design.
 >
-> This is an independent project. It is not affiliated with, endorsed by or sponsored by NVIDIA. NVIDIA, GB200, GB300, Vera Rubin, Kyber, Omniverse and SimReady are trademarks of NVIDIA Corporation, used here only to describe the equipment being simulated.
+> This is an independent project. It is not affiliated with, endorsed by or sponsored by NVIDIA or AMD. NVIDIA, GB200, GB300, Vera Rubin, Kyber, Omniverse and SimReady are trademarks of NVIDIA Corporation; AMD, Instinct, Helios and EPYC are trademarks of Advanced Micro Devices, Inc. They are used here only to describe the equipment being simulated.
 
 ## Features
 

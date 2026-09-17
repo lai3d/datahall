@@ -22,6 +22,7 @@ English version: [roadmap.md](roadmap.md). 两个版本内容一致，改动时�
 | 引导式场景（教程模式） | 新用户打开不知道该干什么。"放 8 柜 → 为什么不能通电 → 加 CDU → 通电"是教学主线 | 4–6 h | 未开始 |
 | 社交预览图和一键截图 | 传播靠链接，链接得有图。OG 图一张；三维视图导出 PNG（`renderOnce` 后 `toDataURL` 已可用） | 1–2 h | 未开始 |
 | Vercel Web Analytics | 不测就不知道有没有人在用 | 0.5 h | 已完成，2026-09-17 |
+| 目录加 AMD 机柜 | Helios（72 颗 MI455X）和 MI355X 液冷柜，只加目录条目；模型本身不分厂商，对比故事需要第二家 | 1 h | 已完成，2026-09-17 |
 
 ## Next（季度中段，1 到 2 个月）
 
@@ -37,6 +38,7 @@ English version: [roadmap.md](roadmap.md). 两个版本内容一致，改动时�
 
 ## Later（季度末以后，方向性）
 
+- 多格占地：AMD Helios 实际是 1.2 m 宽的 Open Rack Wide，现在按一格 0.6 m 放；支持双格设备要改放置、拖动、分享链接、USD 和 layout.json。
 - 嵌入模式 `?embed`：隐藏面板，只留三维和一句说明，给文章内嵌。
 - 第三种界面语言（日文或韩文），看访问来源再定。
 - USD 只维护兼容性，不深挖 usdc 和真实 SimReady 资产，除非 Omniverse 侧有人来对接。
