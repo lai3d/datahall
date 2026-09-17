@@ -1,0 +1,912 @@
+#usda 1.0
+(
+    customLayerData = {
+        dictionary SimReady_Metadata = {
+        }
+        string asset_name = "datahall"
+        string asset_type = "data_hall_layout"
+        string "dchall:schemaVersion" = "0.2"
+        string generator = "GPU Data Hall Builder"
+        string source_file = "GPU Data Hall Builder web layout"
+        string usd_date_generated = "2026-09-17"
+    }
+    defaultPrim = "DataHall"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "DataHall" (
+    prepend apiSchemas = ["DataHallAPI"]
+    kind = "assembly"
+)
+{
+    double dchall:cellDepthM = 1.2
+    double dchall:cellWidthM = 0.6
+    int dchall:gridColumns = 16
+    int dchall:gridRows = 10
+    double dchall:utilityMw = 5
+
+    def Mesh "Floor" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+        int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+        int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+        rel material:binding = </DataHall/Looks/floor>
+        normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+            interpolation = "faceVarying"
+        )
+        point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+        color3f[] primvars:displayColor = [(0.1647, 0.2078, 0.251)]
+        uniform token subdivisionScheme = "none"
+        float3 xformOp:scale = (10.2, 12.6, 0.02)
+        double3 xformOp:translate = (0, 0, -0.01)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Scope "Looks"
+    {
+        def Material "floor"
+        {
+            token outputs:surface.connect = </DataHall/Looks/floor/PreviewSurface.outputs:surface>
+
+            def Shader "PreviewSurface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.1647, 0.2078, 0.251)
+                float inputs:metallic = 0
+                float inputs:roughness = 0.95
+                token outputs:surface
+            }
+        }
+    }
+
+    def Scope "Catalog"
+    {
+        class Xform "vr200" (
+            prepend apiSchemas = ["DataHallEquipmentAPI", "LiquidCooledAPI"]
+        )
+        {
+            double dchall:airCoolingKw = 0
+            double dchall:capexMusd = 6
+            token dchall:category = "gpu"
+            string dchall:displayName = "Vera Rubin NVL72"
+            double dchall:distributionKw = 0
+            int dchall:fabricPorts = 0
+            int dchall:gpuCount = 72
+            double dchall:heightM = 2.3
+            double dchall:liquidCoolingKw = 0
+            double dchall:liquidFraction = 0.95
+            double dchall:overheadKw = 0
+            double dchall:powerKw = 190
+            bool dchall:roadmap = 0
+
+            def Mesh "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/vr200/Looks/body>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.552, 1.128, 2.3)
+                double3 xformOp:translate = (0, 0, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Front" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/vr200/Looks/front>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.4627, 0.7255, 0)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.468, 0.02, 2)
+                double3 xformOp:translate = (0, -0.576, 1.15)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Scope "Looks"
+            {
+                def Material "body"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/vr200/Looks/body/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                        float inputs:metallic = 0.35
+                        float inputs:roughness = 0.55
+                        token outputs:surface
+                    }
+                }
+
+                def Material "front"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/vr200/Looks/front/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.4627, 0.7255, 0)
+                        float inputs:metallic = 0
+                        float inputs:roughness = 0.5
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+
+        class Xform "cdu" (
+            prepend apiSchemas = ["DataHallEquipmentAPI"]
+        )
+        {
+            double dchall:airCoolingKw = 0
+            double dchall:capexMusd = 0.35
+            token dchall:category = "fac"
+            string dchall:displayName = "CDU 冷量分配"
+            double dchall:distributionKw = 0
+            int dchall:fabricPorts = 0
+            int dchall:gpuCount = 0
+            double dchall:heightM = 2.1
+            double dchall:liquidCoolingKw = 800
+            double dchall:overheadKw = 12
+            double dchall:powerKw = 0
+            bool dchall:roadmap = 0
+
+            def Mesh "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/cdu/Looks/body>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.552, 1.128, 2.1)
+                double3 xformOp:translate = (0, 0, 1.05)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Front" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/cdu/Looks/front>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2471, 0.7137, 0.7882)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.468, 0.02, 1.8)
+                double3 xformOp:translate = (0, -0.576, 1.05)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Scope "Looks"
+            {
+                def Material "body"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/cdu/Looks/body/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                        float inputs:metallic = 0.35
+                        float inputs:roughness = 0.55
+                        token outputs:surface
+                    }
+                }
+
+                def Material "front"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/cdu/Looks/front/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2471, 0.7137, 0.7882)
+                        float inputs:metallic = 0
+                        float inputs:roughness = 0.5
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+
+        class Xform "rpp" (
+            prepend apiSchemas = ["DataHallEquipmentAPI"]
+        )
+        {
+            double dchall:airCoolingKw = 0
+            double dchall:capexMusd = 0.25
+            token dchall:category = "fac"
+            string dchall:displayName = "配电柜 RPP"
+            double dchall:distributionKw = 800
+            int dchall:fabricPorts = 0
+            int dchall:gpuCount = 0
+            double dchall:heightM = 2.1
+            double dchall:liquidCoolingKw = 0
+            double dchall:overheadKw = 0
+            double dchall:powerKw = 0
+            bool dchall:roadmap = 0
+
+            def Mesh "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/rpp/Looks/body>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.552, 1.128, 2.1)
+                double3 xformOp:translate = (0, 0, 1.05)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Front" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/rpp/Looks/front>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.8157, 0.5412, 0.2706)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.468, 0.02, 1.8)
+                double3 xformOp:translate = (0, -0.576, 1.05)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Scope "Looks"
+            {
+                def Material "body"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/rpp/Looks/body/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                        float inputs:metallic = 0.35
+                        float inputs:roughness = 0.55
+                        token outputs:surface
+                    }
+                }
+
+                def Material "front"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/rpp/Looks/front/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.8157, 0.5412, 0.2706)
+                        float inputs:metallic = 0
+                        float inputs:roughness = 0.5
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+
+        class Xform "ib" (
+            prepend apiSchemas = ["DataHallEquipmentAPI"]
+        )
+        {
+            double dchall:airCoolingKw = 0
+            double dchall:capexMusd = 0.9
+            token dchall:category = "net"
+            string dchall:displayName = "Quantum-X800 IB"
+            double dchall:distributionKw = 0
+            int dchall:fabricPorts = 288
+            int dchall:gpuCount = 0
+            double dchall:heightM = 2.2
+            double dchall:liquidCoolingKw = 0
+            double dchall:overheadKw = 0
+            double dchall:powerKw = 24
+            bool dchall:roadmap = 0
+
+            def Mesh "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/ib/Looks/body>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.552, 1.128, 2.2)
+                double3 xformOp:translate = (0, 0, 1.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Front" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/ib/Looks/front>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.6039, 0.549, 0.8784)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.468, 0.02, 1.9)
+                double3 xformOp:translate = (0, -0.576, 1.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Scope "Looks"
+            {
+                def Material "body"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/ib/Looks/body/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                        float inputs:metallic = 0.35
+                        float inputs:roughness = 0.55
+                        token outputs:surface
+                    }
+                }
+
+                def Material "front"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/ib/Looks/front/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.6039, 0.549, 0.8784)
+                        float inputs:metallic = 0
+                        float inputs:roughness = 0.5
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+
+        class Xform "crah" (
+            prepend apiSchemas = ["DataHallEquipmentAPI"]
+        )
+        {
+            double dchall:airCoolingKw = 120
+            double dchall:capexMusd = 0.08
+            token dchall:category = "fac"
+            string dchall:displayName = "列间空调"
+            double dchall:distributionKw = 0
+            int dchall:fabricPorts = 0
+            int dchall:gpuCount = 0
+            double dchall:heightM = 2.1
+            double dchall:liquidCoolingKw = 0
+            double dchall:overheadKw = 9
+            double dchall:powerKw = 0
+            bool dchall:roadmap = 0
+
+            def Mesh "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/crah/Looks/body>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.552, 1.128, 2.1)
+                double3 xformOp:translate = (0, 0, 1.05)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Front" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/crah/Looks/front>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.6039, 0.6588, 0.7098)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.468, 0.02, 1.8)
+                double3 xformOp:translate = (0, -0.576, 1.05)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Scope "Looks"
+            {
+                def Material "body"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/crah/Looks/body/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                        float inputs:metallic = 0.35
+                        float inputs:roughness = 0.55
+                        token outputs:surface
+                    }
+                }
+
+                def Material "front"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/crah/Looks/front/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.6039, 0.6588, 0.7098)
+                        float inputs:metallic = 0
+                        float inputs:roughness = 0.5
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+
+        class Xform "kyber" (
+            prepend apiSchemas = ["DataHallEquipmentAPI", "LiquidCooledAPI"]
+        )
+        {
+            double dchall:airCoolingKw = 0
+            double dchall:capexMusd = 9
+            token dchall:category = "gpu"
+            string dchall:displayName = "Rubin Ultra Kyber"
+            double dchall:distributionKw = 0
+            int dchall:fabricPorts = 0
+            int dchall:gpuCount = 144
+            double dchall:heightM = 2.6
+            double dchall:liquidCoolingKw = 0
+            double dchall:liquidFraction = 1
+            double dchall:overheadKw = 0
+            double dchall:powerKw = 600
+            bool dchall:roadmap = 1
+
+            def Mesh "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/kyber/Looks/body>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.552, 1.128, 2.6)
+                double3 xformOp:translate = (0, 0, 1.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Front" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/kyber/Looks/front>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.4627, 0.7255, 0)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.468, 0.02, 2.3)
+                double3 xformOp:translate = (0, -0.576, 1.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Scope "Looks"
+            {
+                def Material "body"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/kyber/Looks/body/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                        float inputs:metallic = 0.35
+                        float inputs:roughness = 0.55
+                        token outputs:surface
+                    }
+                }
+
+                def Material "front"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/kyber/Looks/front/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.4627, 0.7255, 0)
+                        float inputs:metallic = 0
+                        float inputs:roughness = 0.5
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+
+        class Xform "stor" (
+            prepend apiSchemas = ["DataHallEquipmentAPI"]
+        )
+        {
+            double dchall:airCoolingKw = 0
+            double dchall:capexMusd = 0.6
+            token dchall:category = "net"
+            string dchall:displayName = "存储柜"
+            double dchall:distributionKw = 0
+            int dchall:fabricPorts = 0
+            int dchall:gpuCount = 0
+            double dchall:heightM = 2.2
+            double dchall:liquidCoolingKw = 0
+            double dchall:overheadKw = 0
+            double dchall:powerKw = 18
+            bool dchall:roadmap = 0
+
+            def Mesh "Body" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/stor/Looks/body>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.552, 1.128, 2.2)
+                double3 xformOp:translate = (0, 0, 1.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Mesh "Front" (
+                prepend apiSchemas = ["MaterialBindingAPI"]
+            )
+            {
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                rel material:binding = </DataHall/Catalog/stor/Looks/front>
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.498, 0.6353, 0.7686)]
+                uniform token subdivisionScheme = "none"
+                float3 xformOp:scale = (0.468, 0.02, 1.9)
+                double3 xformOp:translate = (0, -0.576, 1.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+
+            def Scope "Looks"
+            {
+                def Material "body"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/stor/Looks/body/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                        float inputs:metallic = 0.35
+                        float inputs:roughness = 0.55
+                        token outputs:surface
+                    }
+                }
+
+                def Material "front"
+                {
+                    token outputs:surface.connect = </DataHall/Catalog/stor/Looks/front/PreviewSurface.outputs:surface>
+
+                    def Shader "PreviewSurface"
+                    {
+                        uniform token info:id = "UsdPreviewSurface"
+                        color3f inputs:diffuseColor = (0.498, 0.6353, 0.7686)
+                        float inputs:metallic = 0
+                        float inputs:roughness = 0.5
+                        token outputs:surface
+                    }
+                }
+            }
+        }
+    }
+
+    def Scope "Equipment" (
+        kind = "group"
+    )
+    {
+        def Xform "R04_C04" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C04>
+            int dchall:gridColumn = 3
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-2.7, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C05" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 4
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-2.1, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C06" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 5
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-1.5, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C07" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 6
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-0.9, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C08" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 7
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-0.3, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C09" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 8
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (0.3, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C10" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 9
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (0.9, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C11" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 10
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (1.5, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C12" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 11
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (2.1, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C13" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 12
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (2.7, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R06_C04" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/cdu>
+        )
+        {
+            int dchall:gridColumn = 3
+            int dchall:gridRow = 5
+            double3 xformOp:translate = (-2.7, -0.6, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R06_C05" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/cdu>
+        )
+        {
+            int dchall:gridColumn = 4
+            int dchall:gridRow = 5
+            double3 xformOp:translate = (-2.1, -0.6, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R06_C07" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/rpp>
+        )
+        {
+            int dchall:gridColumn = 6
+            int dchall:gridRow = 5
+            double3 xformOp:translate = (-0.9, -0.6, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R06_C10" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/ib>
+        )
+        {
+            int dchall:gridColumn = 9
+            int dchall:gridRow = 5
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (0.9, -0.6, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R06_C13" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/crah>
+        )
+        {
+            int dchall:gridColumn = 12
+            int dchall:gridRow = 5
+            double3 xformOp:translate = (2.7, -0.6, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R08_C15" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/kyber>
+        )
+        {
+            rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            int dchall:gridColumn = 14
+            int dchall:gridRow = 7
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (3.9, -3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "R04_C03" (
+            instanceable = true
+            kind = "component"
+            prepend references = </DataHall/Catalog/stor>
+        )
+        {
+            int dchall:gridColumn = 2
+            int dchall:gridRow = 3
+            rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-3.3, 1.8, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+}
+
