@@ -31,7 +31,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Item | Why | Estimate |
 | --- | --- | --- |
 | "Learn more" panel | A paragraph and source link for each device type and each constraint; why the PUE coefficients are 0.08 and 0.30 | 2–3 h |
-| Scenario comparison cards | At the same utility feed, how many GB200, Rubin and Kyber racks fit and what PUE results. The density trend is the best story to tell | 3–4 h |
+| Scenario comparison cards and scale reference | At the same utility feed, how many GB200, Rubin, Helios and Kyber racks fit and what PUE results. The density trend is the best story to tell. Also a scale reference next to the IT load in the HUD: the hall's load in DGX Sparks (about 240 W), Mac Studios (about 270 W) and average households, so personal-scale readers get a feel for it. Personal devices are not placeable equipment: they are three orders of magnitude below a rack and never touch a constraint | 4–5 h |
 | Load visualization | Animated flow on links after power-on; CDUs and RPPs colored by load, so "nearest assignment" becomes visible | 2–3 h |
 | Annual electricity cost | One electricity price input; convert facility kW into money | 1 h |
 | Mobile polish | Collapsible panel, placement feedback on touch. Most share links are opened on phones | 2 h |
@@ -47,7 +47,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 
 ## Risks and dependencies
 
-- **Tutorial mode touches most of `main.ts` and `ui.ts`**: build it first, then load visualization and comparison cards, to avoid changing the same code twice.
+- **Tutorial mode touches most of `main.ts` and the React panel**: build it first, then load visualization and comparison cards, to avoid changing the same code twice.
 - **Data credibility is the weak spot for spreading**: being called out for a wrong number hurts more than a missing feature. Every new rack figure needs a source (see the data credibility section in `CLAUDE.md`).
 - **Parallel sessions**: check branches before editing `web/src`, and keep feature items from overlapping files.
 
