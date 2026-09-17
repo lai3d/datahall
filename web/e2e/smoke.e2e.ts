@@ -97,20 +97,6 @@ test('opens a share link with a layout', async ({page}) => {
   expect((await layout(page)).items).toEqual(['cdu@3,5', 'rpp@4,5', 'vr200@3,3', 'vr200@4,3']);
 });
 
-test('saves the 3D view as a PNG image', async ({page}) => {
-  const errors = await openApp(page);
-  const button = page.locator('#imageSave');
-  await expect(button).toBeEnabled();
-  const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
-  expect(download.suggestedFilename()).toMatch(/^datahall-\d{4}-\d{2}-\d{2}\.png$/);
-  const png = readFileSync(await download.path());
-  expect(png.subarray(1, 4).toString()).toBe('PNG');
-  // A blank canvas compresses to a few hundred bytes; the rendered hall is far larger
-  expect(png.length).toBeGreaterThan(20_000);
-  await expect(page.locator('#shareMsg')).toContainText('Saved the 3D view');
-  expect(errors).toEqual([]);
-});
-
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);
@@ -144,6 +130,20 @@ test('keyboard: focus stays on the button after activating it', async ({page}) =
   await expect(page.locator('#utility button[data-u="5"]')).toBeFocused();
   await expect(page.locator('#utility button[data-u="5"]')).toHaveAttribute('aria-pressed', 'true');
   expect((await layout(page)).utility).toBe(5);
+});
+
+test('saves the 3D view as a PNG image', async ({page}) => {
+  const errors = await openApp(page);
+  const button = page.locator('#imageSave');
+  await expect(button).toBeEnabled();
+  const [download] = await Promise.all([page.waitForEvent('download'), button.click()]);
+  expect(download.suggestedFilename()).toMatch(/^datahall-\d{4}-\d{2}-\d{2}\.png$/);
+  const png = readFileSync(await download.path());
+  expect(png.subarray(1, 4).toString()).toBe('PNG');
+  // A blank canvas compresses to a few hundred bytes; the rendered hall is far larger
+  expect(png.length).toBeGreaterThan(20_000);
+  await expect(page.locator('#shareMsg')).toContainText('Saved the 3D view');
+  expect(errors).toEqual([]);
 });
 
 test('powers on and off', async ({page}) => {
