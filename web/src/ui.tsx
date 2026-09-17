@@ -7,7 +7,9 @@ import {createRoot} from 'react-dom/client';
 import {createPortal} from 'react-dom';
 import {CATALOG, CAT} from './catalog.ts';
 import {fmt} from './sim.ts';
-import {keyOf, nearest, FEEDS} from './grid.ts';
+import {compareRacks} from './compare.ts';
+import {scaleRefs} from './scale.ts';
+import {GRID, keyOf, nearest, FEEDS} from './grid.ts';
 import {canFail, singlePointsOfFailure} from './redundancy.ts';
 import {state} from './state.ts';
 import type {Notice} from './state.ts';
@@ -93,6 +95,7 @@ function App({stage}: {stage: HTMLElement}){
       <h2 id="hInfo">{tr('hInfo')}</h2>
       <Info model={model} />
       <Growth model={model} />
+      <Compare model={model} />
       <Drill model={model} />
       <Presets />
       <Share notice={state.ui.share} />
@@ -110,6 +113,7 @@ function StageOverlay({model}: {model: HallModel}){
         <div><b id="hGpu">{s.gpus.toLocaleString()}</b><span>GPU</span></div>
         <div><b id="hIt">{fmt(s.it)}</b><span>{tr('hudIt')}</span></div>
         <div><b id="hPue">{s.it ? s.pue.toFixed(2) : '–'}</b><span>{tr('hudPue')}</span></div>
+        {s.it > 0 && <p id="hScale">{tr('hudScale', {sparks: scaleRefs(s.it).sparks.toLocaleString(), homes: scaleRefs(s.it).homes.toLocaleString()})}</p>}
       </div>
       <StageBar />
       <div id="stageTools">
@@ -363,6 +367,39 @@ function Info({model}: {model: HallModel}){
 // Growth planning: cumulative per-phase table, and headroom as of the currently viewed phase
 const KIND_LABEL = {dist: 'gaugeDist', liquid: 'gaugeLiquid', air: 'gaugeAir', network: 'gaugeNetwork', utility: 'gaugeUtility'} as const satisfies Record<ReasonKind, MessageKey>;
 const pct = (r: number): string => r === Infinity ? '∞' : Math.round(r * 100) + '%';
+
+// For each GPU rack type, the largest hall the current utility feed can run (compare.ts). The card for the hall's most common rack type is marked
+function Compare({model}: {model: HallModel}){
+  const halls = useMemo(() => compareRacks(CAT, state.utility, GRID), [state.utility]);
+  const counts = new Map<string, number>();
+  model.all.forEach(i => { if (CAT[i.type].gpus) counts.set(i.type, (counts.get(i.type) || 0) + 1); });
+  const main = [...counts].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const maxCells = Math.max(...halls.map(h => h.racks + h.support.cdu + h.support.rpp + h.support.crah + h.support.ib));
+  return (
+    <>
+      <h2>{tr('hCompare')}</h2>
+      <p className="sub">{tr('compareIntro', {u: state.utility})}</p>
+      <div className="compare" id="compare">
+        {halls.map(h => {
+          const t = CAT[h.type], cells = h.racks + h.support.cdu + h.support.rpp + h.support.crah + h.support.ib;
+          return (
+            <div key={h.type} className="cmp" data-t={h.type} aria-current={h.type === main || undefined}>
+              <i style={{background: `var(${t.c})`}}></i>
+              <div>
+                <strong>{catName(t)}</strong>
+                <b>{tr('compareRacks', {n: h.racks, gpus: h.gpus.toLocaleString()})}</b>
+                <div className="bar" title={tr('compareCells', {cells})}><i style={{width: `${cells / maxCells * 100}%`, background: `var(${t.c})`}}></i></div>
+                <small>{tr('compareDetail', {kw: t.kw || 0, cells, pue: h.pue.toFixed(2), m: h.capex.toFixed(0)})}</small>
+                {h.limit === 'floor' && <small>{tr('compareFloor')}</small>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="sub" style={{marginTop: 6}}>{tr('compareNote')}</p>
+    </>
+  );
+}
 
 function Growth({model}: {model: HallModel}){
   const phases = phasesIn(model.all);
