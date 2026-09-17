@@ -397,32 +397,32 @@
             "type": "vr200",
             "column": 3,
             "row": 3,
-            "powerFeed": "R06_C07",
-            "coolantSource": "R06_C04"
+            "powerFeed": "R06_C04",
+            "coolantSource": "R06_C03"
           },
           {
             "name": "R04_C05",
             "type": "vr200",
             "column": 4,
             "row": 3,
-            "powerFeed": "R06_C07",
-            "coolantSource": "R06_C05"
+            "powerFeed": "R06_C04",
+            "coolantSource": "R06_C03"
           },
           {
             "name": "R04_C06",
             "type": "vr200",
             "column": 5,
             "row": 3,
-            "powerFeed": "R06_C07",
-            "coolantSource": "R06_C06"
+            "powerFeed": "R06_C04",
+            "coolantSource": "R06_C07"
           },
           {
             "name": "R04_C07",
             "type": "vr200",
             "column": 6,
             "row": 3,
-            "powerFeed": "R06_C07",
-            "coolantSource": "R06_C06"
+            "powerFeed": "R06_C08",
+            "coolantSource": "R06_C07"
           },
           {
             "name": "R04_C08",
@@ -430,51 +430,59 @@
             "column": 7,
             "row": 3,
             "powerFeed": "R06_C08",
-            "coolantSource": "R06_C06"
+            "coolantSource": "R06_C07"
           },
           {
             "name": "R04_C09",
             "type": "vr200",
             "column": 8,
             "row": 3,
-            "powerFeed": "R06_C09",
-            "coolantSource": "R06_C06"
+            "powerFeed": "R06_C08",
+            "coolantSource": "R06_C07"
           },
           {
             "name": "R04_C10",
             "type": "vr200",
             "column": 9,
             "row": 3,
-            "powerFeed": "R06_C09",
-            "coolantSource": "R06_C06"
+            "powerFeed": "R06_C08",
+            "coolantSource": "R06_C11"
           },
           {
             "name": "R04_C11",
             "type": "vr200",
             "column": 10,
             "row": 3,
-            "powerFeed": "R06_C09",
-            "coolantSource": "R06_C06"
+            "powerFeed": "R06_C12",
+            "coolantSource": "R06_C11"
           },
           {
             "name": "R04_C12",
             "type": "vr200",
             "column": 11,
             "row": 3,
-            "powerFeed": "R06_C09",
-            "coolantSource": "R06_C06"
+            "powerFeed": "R06_C12",
+            "coolantSource": "R06_C11"
           },
           {
             "name": "R04_C13",
             "type": "vr200",
             "column": 12,
             "row": 3,
-            "powerFeed": "R06_C09",
-            "coolantSource": "R06_C06"
+            "powerFeed": "R06_C12",
+            "coolantSource": "R06_C11"
+          },
+          {
+            "name": "R06_C03",
+            "type": "cdu",
+            "column": 2,
+            "row": 5,
+            "powerFeed": "",
+            "coolantSource": ""
           },
           {
             "name": "R06_C04",
-            "type": "cdu",
+            "type": "rpp",
             "column": 3,
             "row": 5,
             "powerFeed": "",
@@ -482,15 +490,15 @@
           },
           {
             "name": "R06_C05",
-            "type": "cdu",
+            "type": "ib",
             "column": 4,
             "row": 5,
-            "powerFeed": "",
+            "powerFeed": "R06_C04",
             "coolantSource": ""
           },
           {
             "name": "R06_C06",
-            "type": "cdu",
+            "type": "crah",
             "column": 5,
             "row": 5,
             "powerFeed": "",
@@ -498,7 +506,7 @@
           },
           {
             "name": "R06_C07",
-            "type": "rpp",
+            "type": "cdu",
             "column": 6,
             "row": 5,
             "powerFeed": "",
@@ -514,58 +522,50 @@
           },
           {
             "name": "R06_C09",
-            "type": "rpp",
+            "type": "ib",
             "column": 8,
             "row": 5,
-            "powerFeed": "",
+            "powerFeed": "R06_C08",
             "coolantSource": ""
           },
           {
             "name": "R06_C10",
-            "type": "ib",
+            "type": "crah",
             "column": 9,
             "row": 5,
-            "powerFeed": "R06_C09",
+            "powerFeed": "",
             "coolantSource": ""
           },
           {
             "name": "R06_C11",
-            "type": "ib",
+            "type": "cdu",
             "column": 10,
             "row": 5,
-            "powerFeed": "R06_C09",
+            "powerFeed": "",
             "coolantSource": ""
           },
           {
             "name": "R06_C12",
-            "type": "ib",
+            "type": "rpp",
             "column": 11,
             "row": 5,
-            "powerFeed": "R06_C09",
+            "powerFeed": "",
             "coolantSource": ""
           },
           {
             "name": "R06_C13",
-            "type": "crah",
+            "type": "ib",
             "column": 12,
             "row": 5,
-            "powerFeed": "",
+            "powerFeed": "R06_C12",
             "coolantSource": ""
           },
           {
-            "name": "R06_C14",
-            "type": "crah",
-            "column": 13,
-            "row": 5,
-            "powerFeed": "",
-            "coolantSource": ""
-          },
-          {
-            "name": "R04_C03",
+            "name": "R04_C14",
             "type": "stor",
-            "column": 2,
+            "column": 13,
             "row": 3,
-            "powerFeed": "R06_C07",
+            "powerFeed": "R06_C12",
             "coolantSource": ""
           }
         ]

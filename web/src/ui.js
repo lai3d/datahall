@@ -1,11 +1,14 @@
 // 右侧面板：市电选择、设备色板、容量仪表、问题列表、通电按钮、详情
 import {CATALOG, CAT} from './catalog.js';
 import {compute, fmt} from './sim.js';
+import {supplyLoads, supplyIssues} from './supply.js';
+import {keyOf} from './grid.js';
 import {state, itemList} from './state.js';
 
 const $ = s => document.querySelector(s);
 const UTIL = [2, 5, 10];
 let actions;
+let supplyByKey = new Map();   // 设备 key → {supply, source}，供详情面板使用
 
 export function initUI(a){
   actions = a;
@@ -33,7 +36,15 @@ function gauge(label, v, cap, cssVar){
 }
 
 export function refresh(){
-  const s = compute(itemList(), CAT, state.utility);
+  const list = itemList();
+  const s = compute(list, CAT, state.utility);
+  const loads = supplyLoads(list, CAT);
+  const perDevice = supplyIssues(loads, s);
+  const blocking = s.blocking || perDevice.some(i => i.lvl === 'bad');
+  supplyByKey = new Map(list.map(it => [keyOf(it.x, it.z), {supply: loads.supplies.get(it), links: loads.links.get(it), loads}]));
+  const alerts = new Set([...loads.supplies].filter(([, v]) => v.overloaded).map(([it]) => keyOf(it.x, it.z)));
+  loads.unconnected.forEach(u => alerts.add(keyOf(u.item.x, u.item.z)));
+  actions.showAlerts(alerts);
   $('#hGpu').textContent = s.gpus.toLocaleString();
   $('#hIt').textContent = fmt(s.it);
   $('#hPue').textContent = s.it ? s.pue.toFixed(2) : '–';
@@ -45,15 +56,40 @@ export function refresh(){
       <div class="bar"><i style="width:${s.ports ? Math.min(100, s.gpus / s.ports * 100) : (s.gpus ? 100 : 0)}%;background:var(${s.gpus > s.ports ? '--bad' : '--net'})"></i></div></div>` +
     gauge('市电', s.facility, state.utility * 1000, '--ink') +
     `<div class="gauge"><div class="top"><span>硬件投入估算</span><em>约 $${s.capex.toFixed(1)}M</em></div></div>`;
-  let html = s.issues.map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
+  // 全机房总量的检查在前，逐台设备的超载在后
+  let html = [...s.issues, ...perDevice].map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
   if (!s.it) html = '<li class="warn">机房是空的。先放一个 GPU 机柜，再补齐配电、冷却和网络。</li>';
-  else if (!s.blocking) html += `<li class="ok">检查通过，可以通电。</li>`;
+  else if (!blocking) html += `<li class="ok">检查通过，可以通电。</li>`;
   $('#issues').innerHTML = html;
   const btn = $('#power');
-  btn.disabled = !s.it || s.blocking;
+  btn.disabled = !s.it || blocking;
   btn.classList.toggle('on', state.powered);
   btn.textContent = state.powered ? '已通电，点击断电' : '通电';
   renderInfo();
+}
+
+const where = it => `第 ${it.x + 1} 列第 ${it.z + 1} 排`;
+const badText = txt => `<span style="color:var(--bad)">${txt}</span>`;
+
+// 详情面板里的供给关系：CDU、RPP 显示负载，其他设备显示供液和配电来自哪一台
+function supplyRows(t, info){
+  if (!info) return [];
+  const rows = [];
+  if (info.supply){
+    const {loadKw, capacityKw, consumers, overloaded} = info.supply;
+    const text = `${fmt(loadKw)} / ${fmt(capacityKw)}`;
+    rows.push(['当前负载', overloaded ? badText(text + '，超载') : text], ['接入设备', consumers.length + ' 台']);
+  }
+  const source = (field, label, needed) => {
+    if (!needed) return;
+    const s = info.links?.[field];
+    if (!s) { rows.push([label + '来自', badText('没有可接的 ' + (field === 'coolantSource' ? 'CDU' : 'RPP'))]); return; }
+    const text = `${s.type === 'cdu' ? 'CDU' : 'RPP'}（${where(s)}）`;
+    rows.push([label + '来自', info.loads.supplies.get(s).overloaded ? badText(text + '，超载') : text]);
+  };
+  source('coolantSource', '冷却液', t.kw > 0 && t.liq > 0);
+  source('powerFeed', '配电', t.kw > 0);
+  return rows;
 }
 
 export function renderInfo(){
@@ -70,6 +106,7 @@ export function renderInfo(){
   if (t.dist) rows.push(['配电能力', t.dist + ' kW']);
   if (t.ports) rows.push(['GPU 端口', t.ports]);
   rows.push(['价格估算', '$' + t.cap + 'M']);
+  if (it) rows.push(...supplyRows(t, supplyByKey.get(keyOf(it.x, it.z))));
   box.innerHTML = `<strong>${t.name}</strong>${it ? `<span style="color:var(--muted)">，位置 ${it.x + 1} 列 ${it.z + 1} 排</span>` : '<span style="color:var(--muted)">，点地板空位放置</span>'}
     <table>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
     <p>${t.note}</p>
