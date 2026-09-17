@@ -488,6 +488,89 @@
       ]
     },
     {
+      "id": "cm384",
+      "name": "CloudMatrix 384 计算柜",
+      "group": "gpu",
+      "c": "--huawei",
+      "gpus": 32,
+      "kw": 47,
+      "liq": 0.7,
+      "cap": 0.67,
+      "h": 2.25,
+      "note": "华为 Atlas 900 A3 SuperPoD（华为云称 CloudMatrix384）的计算柜。整套 16 柜：12 个计算柜，每柜 4 个节点、共 32 颗昇腾 910C NPU（这里按 GPU 计）；4 个总线交换柜承载全光 UnifiedBus 超节点互联（6,912 个 LPO 光模块），这里不单独建模，功耗和价格摊进计算柜。计算柜液冷、总线柜风冷（华为）。整套约 559 kW，含网络和存储（SemiAnalysis 经 Tom's Hardware，2025-04），约 $8M（FT 经 TrendForce，2025-07）；每柜功耗、液冷比例和价格都是按整套平摊的估算。2025 年 3 月开始交付；后续的 Atlas 950 SuperPoD 每个计算柜 64 颗 NPU、约 100 kW，计划 2026 年四季度上市。",
+      "i18n": {
+        "en": {
+          "name": "CloudMatrix 384 rack",
+          "note": "Compute rack of Huawei's Atlas 900 A3 SuperPoD (offered by Huawei Cloud as CloudMatrix384). A full system is 16 racks: 12 compute racks, each with 4 nodes and 32 Ascend 910C NPUs (counted as GPUs here), and 4 bus switch racks carrying the all-optical UnifiedBus scale-up network (6,912 LPO transceivers). The switch racks are not modeled separately; their power and price are folded into the compute racks. Compute racks are liquid-cooled and switch racks air-cooled (Huawei). The whole system draws about 559 kW including networking and storage (SemiAnalysis via Tom's Hardware, 2025-04) and costs about $8M (FT via TrendForce, 2025-07); per-rack power, liquid share and price spread those totals over the 12 compute racks and are estimates. Deliveries began in March 2025; the successor Atlas 950 SuperPoD puts 64 NPUs and about 100 kW in each compute cabinet and is planned for Q4 2026."
+        }
+      },
+      "sources": [
+        {
+          "title": "Atlas 900 A3 SuperPoD",
+          "publisher": "Huawei Ascend Community",
+          "url": "https://www.hiascend.com/hardware/cluster?tag=900a3",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "gpus",
+            "liq"
+          ]
+        },
+        {
+          "title": "Serving Large Language Models on Huawei CloudMatrix384",
+          "publisher": "arXiv (Huawei and SiliconFlow)",
+          "url": "https://arxiv.org/abs/2506.12708",
+          "date": "2025-06-15",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "gpus"
+          ]
+        },
+        {
+          "title": "Huawei's new AI CloudMatrix cluster beats Nvidia's GB200 by brute force, uses 4X the power",
+          "publisher": "Tom's Hardware",
+          "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/huaweis-new-ai-cloudmatrix-cluster-beats-nvidias-gb200-by-brute-force-uses-4x-the-power",
+          "date": "2025-04-18",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "kw"
+          ]
+        },
+        {
+          "title": "[News] Huawei to Unveil CloudMatrix 384, Rumored to Deliver 2× NVIDIA GB200 NVL72 Throughput",
+          "publisher": "TrendForce",
+          "url": "https://www.trendforce.com/news/2025/07/21/news-huawei-to-unveil-cloudmatrix-384-rumored-to-deliver-2x-nvidia-gb200-nvl72-throughput/",
+          "date": "2025-07-21",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "cap"
+          ]
+        },
+        {
+          "title": "Groundbreaking SuperPoD Interconnect: Leading a New Paradigm for AI Infrastructure",
+          "publisher": "Huawei",
+          "url": "https://www.huawei.com/en/news/2025/9/hc-xu-keynote-speech",
+          "date": "2025-09-18",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": []
+        },
+        {
+          "title": "Per-rack power (559 kW ÷ 12), liquid share and price ($8M ÷ 12) spread the whole system, including the 4 switch racks, over the 12 compute racks",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "kw",
+            "liq",
+            "cap"
+          ]
+        }
+      ]
+    },
+    {
       "id": "ib",
       "name": "Quantum-X800 IB",
       "group": "net",

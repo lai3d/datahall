@@ -73,7 +73,7 @@ describe('presets', () => {
 describe('catalog', () => {
   it('ids are unique and color variables are one of the fixed semantics', () => {
     expect(new Set(CATALOG.map(t => t.id)).size).toBe(CATALOG.length);
-    CATALOG.forEach(t => expect(['--gpu', '--amd', '--net', '--store', '--coolant', '--air', '--copper']).toContain(t.c));
+    CATALOG.forEach(t => expect(['--gpu', '--amd', '--huawei', '--net', '--store', '--coolant', '--air', '--copper']).toContain(t.c));
   });
 });
 

@@ -11,7 +11,7 @@ type Vec3 = [number, number, number];
 // meta.date: generation date YYYY-MM-DD, passed in by the caller to keep the function pure (usd_date_generated for SimReady SR.001)
 export function buildUsda(list: Item[], CAT: Catalog, utility: number, g: Grid, meta: ExportMeta): string{
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta?.date || '')) throw new Error('buildUsda: meta.date must be YYYY-MM-DD');
-  const PALETTE: Record<string, string> = {gpu:'#76B900', amd:'#E0609A', net:'#9A8CE0', store:'#7FA2C4', coolant:'#3FB6C9', air:'#9AA8B5', copper:'#D08A45', rack:'#34404B', floor:'#2A3540'};
+  const PALETTE: Record<string, string> = {gpu:'#76B900', amd:'#E0609A', huawei:'#4C8DFF', net:'#9A8CE0', store:'#7FA2C4', coolant:'#3FB6C9', air:'#9AA8B5', copper:'#D08A45', rack:'#34404B', floor:'#2A3540'};
   const f = (v: number): string => { const s = (Math.round(v * 10000) / 10000).toString(); return s.includes('.') || s.includes('e') ? s : s + '.0'; };
   // USD displayColor and UsdPreviewSurface colors are linear; the palette is sRGB, so convert before writing
   const linear = (c: number): number => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);

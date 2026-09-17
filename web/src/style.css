@@ -1,20 +1,20 @@
 :root{
   --bg:#E6ECF0;--panel:#F5F8FA;--ink:#17212B;--muted:#56646F;--line:#C5D0D8;
   --hall:#D3DCE2;--floor:#C4CFD7;--grid:#A9B7C1;--rack:#2B343D;
-  --gpu:#5E9400;--amd:#B0246A;--coolant:#177F92;--copper:#A8621F;--net:#5F50AE;--air:#5F707E;--store:#4E6A86;
+  --gpu:#5E9400;--amd:#B0246A;--huawei:#2A62D4;--coolant:#177F92;--copper:#A8621F;--net:#5F50AE;--air:#5F707E;--store:#4E6A86;
   --warn:#8A6700;--bad:#B3261E;--ok:#3F7D20;
   --font:"Barlow Semi Condensed","PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#10171E;--panel:#16202A;--ink:#E4EAEF;--muted:#91A0AC;--line:#2A3743;
   --hall:#0D1318;--floor:#17212A;--grid:#283640;--rack:#34404B;
-  --gpu:#76B900;--amd:#E0609A;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
+  --gpu:#76B900;--amd:#E0609A;--huawei:#4C8DFF;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
   --warn:#E8C547;--bad:#F2766B;--ok:#8BC34A;
 }}
 :root[data-theme="dark"]{
   --bg:#10171E;--panel:#16202A;--ink:#E4EAEF;--muted:#91A0AC;--line:#2A3743;
   --hall:#0D1318;--floor:#17212A;--grid:#283640;--rack:#34404B;
-  --gpu:#76B900;--amd:#E0609A;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
+  --gpu:#76B900;--amd:#E0609A;--huawei:#4C8DFF;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
   --warn:#E8C547;--bad:#F2766B;--ok:#8BC34A;
 }
 *{box-sizing:border-box}
