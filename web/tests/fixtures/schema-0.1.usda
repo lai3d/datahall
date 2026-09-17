@@ -1,0 +1,495 @@
+#usda 1.0
+(
+    defaultPrim = "DataHall"
+    metersPerUnit = 1
+    upAxis = "Z"
+    customLayerData = {
+        string generator = "GPU Data Hall Builder"
+        string "dchall:schemaVersion" = "0.1"
+    }
+)
+
+def Xform "DataHall" (
+    kind = "assembly"
+)
+{
+    custom double dchall:utilityMw = 5.0
+    custom int dchall:gridColumns = 16
+    custom int dchall:gridRows = 10
+    custom double dchall:cellWidthM = 0.6
+    custom double dchall:cellDepthM = 1.2
+
+    def Cube "Floor"
+    {
+        double size = 1
+        float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+        color3f[] primvars:displayColor = [(0.1647, 0.2078, 0.251)]
+        double3 xformOp:translate = (0.0, 0.0, -0.01)
+        float3 xformOp:scale = (10.2, 12.6, 0.02)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Scope "Catalog"
+    {
+        class Xform "vr200"
+        {
+            custom string dchall:displayName = "Vera Rubin NVL72"
+            custom token dchall:category = "gpu"
+            custom double dchall:powerKw = 190.0
+            custom int dchall:gpuCount = 72
+            custom double dchall:liquidFraction = 0.95
+            custom double dchall:liquidCoolingKw = 0.0
+            custom double dchall:airCoolingKw = 0.0
+            custom double dchall:overheadKw = 0.0
+            custom double dchall:distributionKw = 0.0
+            custom int dchall:fabricPorts = 0
+            custom double dchall:capexMusd = 6.0
+            custom bool dchall:roadmap = 0
+            custom double dchall:heightM = 2.3
+
+            def Cube "Body"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                double3 xformOp:translate = (0.0, 0.0, 1.15)
+                float3 xformOp:scale = (0.552, 1.128, 2.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Cube "Front"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.4627, 0.7255, 0.0)]
+                double3 xformOp:translate = (0.0, -0.576, 1.15)
+                float3 xformOp:scale = (0.468, 0.02, 2.0)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+        class Xform "cdu"
+        {
+            custom string dchall:displayName = "CDU 冷量分配"
+            custom token dchall:category = "fac"
+            custom double dchall:powerKw = 0.0
+            custom int dchall:gpuCount = 0
+            custom double dchall:liquidFraction = 0.0
+            custom double dchall:liquidCoolingKw = 800.0
+            custom double dchall:airCoolingKw = 0.0
+            custom double dchall:overheadKw = 12.0
+            custom double dchall:distributionKw = 0.0
+            custom int dchall:fabricPorts = 0
+            custom double dchall:capexMusd = 0.35
+            custom bool dchall:roadmap = 0
+            custom double dchall:heightM = 2.1
+
+            def Cube "Body"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                double3 xformOp:translate = (0.0, 0.0, 1.05)
+                float3 xformOp:scale = (0.552, 1.128, 2.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Cube "Front"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2471, 0.7137, 0.7882)]
+                double3 xformOp:translate = (0.0, -0.576, 1.05)
+                float3 xformOp:scale = (0.468, 0.02, 1.8)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+        class Xform "rpp"
+        {
+            custom string dchall:displayName = "配电柜 RPP"
+            custom token dchall:category = "fac"
+            custom double dchall:powerKw = 0.0
+            custom int dchall:gpuCount = 0
+            custom double dchall:liquidFraction = 0.0
+            custom double dchall:liquidCoolingKw = 0.0
+            custom double dchall:airCoolingKw = 0.0
+            custom double dchall:overheadKw = 0.0
+            custom double dchall:distributionKw = 800.0
+            custom int dchall:fabricPorts = 0
+            custom double dchall:capexMusd = 0.25
+            custom bool dchall:roadmap = 0
+            custom double dchall:heightM = 2.1
+
+            def Cube "Body"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                double3 xformOp:translate = (0.0, 0.0, 1.05)
+                float3 xformOp:scale = (0.552, 1.128, 2.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Cube "Front"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.8157, 0.5412, 0.2706)]
+                double3 xformOp:translate = (0.0, -0.576, 1.05)
+                float3 xformOp:scale = (0.468, 0.02, 1.8)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+        class Xform "ib"
+        {
+            custom string dchall:displayName = "Quantum-X800 IB"
+            custom token dchall:category = "net"
+            custom double dchall:powerKw = 24.0
+            custom int dchall:gpuCount = 0
+            custom double dchall:liquidFraction = 0.0
+            custom double dchall:liquidCoolingKw = 0.0
+            custom double dchall:airCoolingKw = 0.0
+            custom double dchall:overheadKw = 0.0
+            custom double dchall:distributionKw = 0.0
+            custom int dchall:fabricPorts = 288
+            custom double dchall:capexMusd = 0.9
+            custom bool dchall:roadmap = 0
+            custom double dchall:heightM = 2.2
+
+            def Cube "Body"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                double3 xformOp:translate = (0.0, 0.0, 1.1)
+                float3 xformOp:scale = (0.552, 1.128, 2.2)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Cube "Front"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.6039, 0.549, 0.8784)]
+                double3 xformOp:translate = (0.0, -0.576, 1.1)
+                float3 xformOp:scale = (0.468, 0.02, 1.9)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+        class Xform "crah"
+        {
+            custom string dchall:displayName = "列间空调"
+            custom token dchall:category = "fac"
+            custom double dchall:powerKw = 0.0
+            custom int dchall:gpuCount = 0
+            custom double dchall:liquidFraction = 0.0
+            custom double dchall:liquidCoolingKw = 0.0
+            custom double dchall:airCoolingKw = 120.0
+            custom double dchall:overheadKw = 9.0
+            custom double dchall:distributionKw = 0.0
+            custom int dchall:fabricPorts = 0
+            custom double dchall:capexMusd = 0.08
+            custom bool dchall:roadmap = 0
+            custom double dchall:heightM = 2.1
+
+            def Cube "Body"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                double3 xformOp:translate = (0.0, 0.0, 1.05)
+                float3 xformOp:scale = (0.552, 1.128, 2.1)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Cube "Front"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.6039, 0.6588, 0.7098)]
+                double3 xformOp:translate = (0.0, -0.576, 1.05)
+                float3 xformOp:scale = (0.468, 0.02, 1.8)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+        class Xform "kyber"
+        {
+            custom string dchall:displayName = "Rubin Ultra Kyber"
+            custom token dchall:category = "gpu"
+            custom double dchall:powerKw = 600.0
+            custom int dchall:gpuCount = 144
+            custom double dchall:liquidFraction = 1.0
+            custom double dchall:liquidCoolingKw = 0.0
+            custom double dchall:airCoolingKw = 0.0
+            custom double dchall:overheadKw = 0.0
+            custom double dchall:distributionKw = 0.0
+            custom int dchall:fabricPorts = 0
+            custom double dchall:capexMusd = 9.0
+            custom bool dchall:roadmap = 1
+            custom double dchall:heightM = 2.6
+
+            def Cube "Body"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                double3 xformOp:translate = (0.0, 0.0, 1.3)
+                float3 xformOp:scale = (0.552, 1.128, 2.6)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Cube "Front"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.4627, 0.7255, 0.0)]
+                double3 xformOp:translate = (0.0, -0.576, 1.3)
+                float3 xformOp:scale = (0.468, 0.02, 2.3)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+        class Xform "stor"
+        {
+            custom string dchall:displayName = "存储柜"
+            custom token dchall:category = "net"
+            custom double dchall:powerKw = 18.0
+            custom int dchall:gpuCount = 0
+            custom double dchall:liquidFraction = 0.0
+            custom double dchall:liquidCoolingKw = 0.0
+            custom double dchall:airCoolingKw = 0.0
+            custom double dchall:overheadKw = 0.0
+            custom double dchall:distributionKw = 0.0
+            custom int dchall:fabricPorts = 0
+            custom double dchall:capexMusd = 0.6
+            custom bool dchall:roadmap = 0
+            custom double dchall:heightM = 2.2
+
+            def Cube "Body"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
+                double3 xformOp:translate = (0.0, 0.0, 1.1)
+                float3 xformOp:scale = (0.552, 1.128, 2.2)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+            def Cube "Front"
+            {
+                double size = 1
+                float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                color3f[] primvars:displayColor = [(0.498, 0.6353, 0.7686)]
+                double3 xformOp:translate = (0.0, -0.576, 1.1)
+                float3 xformOp:scale = (0.468, 0.02, 1.9)
+                uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+            }
+        }
+    }
+
+    def Scope "Equipment"
+    {
+        def Xform "R04_C04" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 3
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C04>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-2.7, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C05" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 4
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-2.1, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C06" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 5
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-1.5, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C07" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 6
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-0.9, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C08" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 7
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-0.3, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C09" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 8
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (0.3, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C10" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 9
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (0.9, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C11" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 10
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (1.5, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C12" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 11
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (2.1, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C13" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/vr200>
+        )
+        {
+            custom int dchall:gridColumn = 12
+            custom int dchall:gridRow = 3
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (2.7, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R06_C04" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/cdu>
+        )
+        {
+            custom int dchall:gridColumn = 3
+            custom int dchall:gridRow = 5
+            double3 xformOp:translate = (-2.7, -0.6, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R06_C05" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/cdu>
+        )
+        {
+            custom int dchall:gridColumn = 4
+            custom int dchall:gridRow = 5
+            double3 xformOp:translate = (-2.1, -0.6, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R06_C07" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/rpp>
+        )
+        {
+            custom int dchall:gridColumn = 6
+            custom int dchall:gridRow = 5
+            double3 xformOp:translate = (-0.9, -0.6, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R06_C10" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/ib>
+        )
+        {
+            custom int dchall:gridColumn = 9
+            custom int dchall:gridRow = 5
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (0.9, -0.6, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R06_C13" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/crah>
+        )
+        {
+            custom int dchall:gridColumn = 12
+            custom int dchall:gridRow = 5
+            double3 xformOp:translate = (2.7, -0.6, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R08_C15" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/kyber>
+        )
+        {
+            custom int dchall:gridColumn = 14
+            custom int dchall:gridRow = 7
+            custom rel dchall:coolantSource = </DataHall/Equipment/R06_C05>
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (3.9, -3.0, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+        def Xform "R04_C03" (
+            kind = "component"
+            instanceable = true
+            prepend references = </DataHall/Catalog/stor>
+        )
+        {
+            custom int dchall:gridColumn = 2
+            custom int dchall:gridRow = 3
+            custom rel dchall:powerFeed = </DataHall/Equipment/R06_C07>
+            double3 xformOp:translate = (-3.3, 1.8, 0.0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+}
