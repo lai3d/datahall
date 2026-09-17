@@ -48,8 +48,10 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
 - **容量模型**：配电（RPP）、液冷（CDU）、风冷（列间空调）、后端网络端口、市电五项约束，任一不满足不能通电。
   PUE 估算：`(IT + 设备自耗 + 液冷热量×0.08 + 风冷热量×0.30 + IT×0.05) / IT`，是教学用简化公式。
 - **OpenUSD 约定**：Z 轴向上，metersPerUnit = 1，defaultPrim = `/DataHall`。
-  - `/DataHall/Catalog/<id>`：`class` 原型，带参数和简化几何
-  - `/DataHall/Equipment/Rxx_Cyy`：`instanceable` 实例，引用 Catalog 原型
+  - `/DataHall/Catalog/<id>`：`class` 原型，带参数、简化几何和自己的 `Looks`（UsdPreviewSurface），几何绑定原型内的材质
+  - `/DataHall/Equipment`：`kind = "group"`；`/DataHall/Equipment/Rxx_Cyy`：`kind = "component"`、`instanceable` 实例，引用 Catalog 原型
+  - SimReady 相关（`docs/simready-audit.md`）：几何是非细分 `Mesh`（共用一个单位立方体，靠 translate/scale 定位），不要换回 `Cube`；
+    `customLayerData` 带 SR.001 字段，生成日期由调用方传 `buildUsda(..., {date})`，`npm run sample` 沿用样例原日期
   - 参数用 `dchall:` 命名空间属性，由 codeless applied API schema 定义（schema 0.2），不写 `custom`：
     - `DataHallAPI`：应用在 `/DataHall` 上，市电和网格尺寸
     - `DataHallEquipmentAPI`：应用在 Catalog 原型上，实例通过 reference 继承；设备参数、网格位置、`dchall:powerFeed`→RPP。
@@ -64,10 +66,8 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
 
 ## 下一步（按优先级）
 
-1. 按 `docs/simready-audit.md` 的“建议修复顺序”修复：Equipment kind=group、原型内 UsdPreviewSurface 材质、SR.001 元数据、Cube 改 Mesh。
-   核对结论：单位合规；kind 和材质绑定不合规；没有面向数据中心的 SimReady profile，不要声称某个 profile 整体通过。
-2. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
-3. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
+1. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
+2. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
 
 ## 数据可信度
 
