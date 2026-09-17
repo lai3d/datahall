@@ -73,5 +73,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .info td{padding:2px 0}
 .info td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .info p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.info p.assign-hint{color:var(--ink)}
+.info select{font:inherit;font-size:13px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:210px}
 .foot{font-size:12px;color:var(--muted);margin-top:14px}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}

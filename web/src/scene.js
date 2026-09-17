@@ -111,26 +111,30 @@ export function removeMesh(it){
   it.mesh.traverse(o => { o.geometry && o.geometry.dispose(); });
 }
 
-// 供液、配电连线，拓扑与 USD 导出一致（supplyLinks）。接到超载 CDU、RPP 的连线画成红色
+// 供液、配电连线，拓扑与 USD 导出一致（supplyLinks）。接到超载 CDU、RPP 的连线画成红色，手动指定的画成虚线
 export function rebuildLinks(){
   if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => o.geometry && o.geometry.dispose()); }
   linkObj = new THREE.Group();
   const list = [...state.items].filter(([key]) => !state.failed.has(key)).map(([, it]) => it);
   const {supplies, links} = supplyLoads(list, CAT);
   const run = (field, y, cssVar) => {
-    const pts = {ok: [], bad: []};
+    const pts = {ok: [], bad: [], okManual: [], badManual: []};
     list.forEach(it => {
       const source = links.get(it)?.[field]; if (!source) return;
       const A = cellPos(it.x, it.z), B = cellPos(source.x, source.z);
       const ha = CAT[it.type].h, hb = CAT[source.type].h;
-      pts[supplies.get(source).overloaded ? 'bad' : 'ok'].push(
+      const want = it.feeds?.[field], manual = !!want && want[0] === source.x && want[1] === source.z;
+      pts[(supplies.get(source).overloaded ? 'bad' : 'ok') + (manual ? 'Manual' : '')].push(
         A.clone().setY(ha), A.clone().setY(y), A.clone().setY(y), B.clone().setY(y), B.clone().setY(y), B.clone().setY(hb));
     });
     for (const [kind, p] of Object.entries(pts)){
       if (!p.length) continue;
-      const m = new THREE.LineBasicMaterial({color: col(kind === 'bad' ? '--bad' : cssVar), transparent: true,
-        opacity: kind === 'bad' ? .95 : state.powered ? .95 : .35});
-      linkObj.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(p), m));
+      const bad = kind.startsWith('bad'), manual = kind.endsWith('Manual');
+      const opts = {color: col(bad ? '--bad' : cssVar), transparent: true, opacity: bad || state.powered ? .95 : manual ? .75 : .35};
+      const m = manual ? new THREE.LineDashedMaterial({...opts, dashSize: .14, gapSize: .09}) : new THREE.LineBasicMaterial(opts);
+      const lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(p), m);
+      if (manual) lines.computeLineDistances();
+      linkObj.add(lines);
     }
   };
   run('coolantSource', 2.85, '--coolant');

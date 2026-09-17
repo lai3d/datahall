@@ -2,7 +2,8 @@
 // 只读根层，不展开 sublayer 和外部引用；设备参数一律以 catalog.json 为准，文件里的参数只用来提示差异。
 // 支持 schema 0.1（custom 属性）和 0.2（applied API schema），以及被 usdview、usdcat、Omniverse 重新保存过的文件。
 import {parseUsda, UsdaSyntaxError} from './usda-parser.js';
-import {keyOf} from './grid.js';
+import {keyOf, FEEDS, supplyLinks} from './grid.js';
+import {setFeed} from './feeds.js';
 import {tr, loc, catName} from './i18n.js';
 
 export class UsdImportError extends Error {}
@@ -18,6 +19,13 @@ const valueOf = (prim, name) => prim?.props[name]?.value;
 const child = (prim, name) => prim?.children.find(c => c.name === name);
 const plain = v => (v && typeof v === 'object' && 'op' in v) ? v.value : v;
 const isActive = prim => plain(prim.metadata.active) !== false;
+
+// 关系的目标 prim 名：只认本层的 </DataHall/Equipment/<name>>，多个目标时取第一个
+function relTarget(prim, name){
+  const v = plain(valueOf(prim, name));
+  const path = (Array.isArray(v) ? v[0] : v)?.path;
+  return path?.match(/^\/DataHall\/Equipment\/(\w+)$/)?.[1] ?? null;
+}
 
 // references 可能是单个值或列表，带或不带列表操作；只认本层内的 </DataHall/Catalog/<id>>
 function catalogIdOf(prim){
@@ -71,7 +79,7 @@ export function importUsda(text, CAT, GRID){
     if (diffs.length) warn(tr('usdParams', {name: catName(t), diffs: diffs.join(tr('listSep'))}));
   }
 
-  const list = [], seen = new Map();
+  const list = [], seen = new Map(), rels = [];
   let skipped = 0;
   const skip = txt => { warn(txt); skipped++; };
   for (const prim of child(hall, 'Equipment')?.children || []){
@@ -101,7 +109,26 @@ export function importUsda(text, CAT, GRID){
     }
     seen.set(key, where);
     list.push([id, x, z]);
+    rels.push({where, entry: list.at(-1), targets: Object.fromEntries(Object.keys(FEEDS).map(f => [f, relTarget(prim, 'dchall:' + f)]))});
   }
+
+  // 供给关系：文件里的 dchall:coolantSource / powerFeed 和就近分配不同的，记成手动指定；
+  // 指向没导入的设备或类型不对的，提示后按就近处理
+  const byName = new Map(rels.map(r => [r.where, r.entry]));
+  const auto = supplyLinks(list.map(([type, x, z]) => ({type, x, z})), CAT);
+  const autoOf = [...auto.values()];
+  rels.forEach(({where, entry, targets}, i) => {
+    for (const [field, name] of Object.entries(targets)){
+      if (!name) continue;
+      const src = byName.get(name);
+      if (!src || src[0] !== FEEDS[field].type || !FEEDS[field].needs(CAT[entry[0]])){ warn(tr('usdFeedInvalid', {where, field, target: name})); continue; }
+      const a = autoOf[i][field];
+      if (a && a.x === src[1] && a.z === src[2]) continue;
+      const it = {feeds: entry[3]};
+      setFeed(it, field, {x: src[1], z: src[2]});
+      entry[3] = it.feeds;
+    }
+  });
 
   return {u: utility, list, warnings, skipped};
 }
