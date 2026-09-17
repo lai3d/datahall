@@ -28,14 +28,17 @@ function parseLayer(src){
   for (const raw of src.split('\n')){
     const line = raw.trim();
     const head = line.match(/^(?:def|class|over) (?:\w+ )?"(\w+)"/);
-    if (head){ pending = {name: head[1], apis: [], ref: null, props: {}}; continue; }
+    if (head){ pending = {name: head[1], type: line.match(/^\w+ (\w+) "/)?.[1] || null, kind: null, apis: [], ref: null, props: {}}; continue; }
     if (pending){
       const apis = line.match(/^prepend apiSchemas = \[(.*)\]$/);
       if (apis) pending.apis = [...apis[1].matchAll(/"(\w+)"/g)].map(m => m[1]);
       const ref = line.match(/^prepend references = <(.+)>$/);
       if (ref) pending.ref = ref[1];
+      const kind = line.match(/^kind = "(\w+)"$/);
+      if (kind) pending.kind = kind[1];
       if (line === '{'){
         pending.path = [...stack.map(p => p.name), pending.name].map(n => '/' + n).join('');
+        pending.parent = stack[stack.length - 1] || null;
         prims.push(pending); stack.push(pending); pending = null;
       }
       continue;
@@ -70,7 +73,7 @@ describe('buildUsda', () => {
     const out = buildUsda([], CAT, 2, GRID);
     expect(out).toMatch(/^#usda 1\.0\n/);
     expect(out).toContain('defaultPrim = "DataHall"');
-    expect(out).toContain('def Scope "Equipment"\n    {\n    }');
+    expect(out).toContain('def Scope "Equipment" (\n        kind = "group"\n    )\n    {\n    }');
   });
 
   it('忽略目录里不存在的设备类型', () => {
@@ -106,5 +109,20 @@ describe('导出与 schema 一致', () => {
   it('LiquidCooledAPI 只应用在液冷设备上', () => {
     const liquid = prims.filter(p => p.path.startsWith('/DataHall/Catalog/') && p.apis.includes('LiquidCooledAPI')).map(p => p.name);
     expect(liquid.sort()).toEqual(CATALOG.filter(t => t.liq > 0).map(t => t.id).sort());
+  });
+});
+
+describe('SimReady 约定（docs/simready-audit.md）', () => {
+  const everyType = CATALOG.map((t, i) => ({type: t.id, x: i, z: 0}));
+  const prims = parseLayer(buildUsda(everyType, CAT, 5, GRID));
+
+  it('模型层级连续：model 的祖先都是 group 或 assembly', () => {
+    const models = prims.filter(p => ['component', 'group', 'assembly'].includes(p.kind));
+    expect(models.filter(p => p.kind === 'component').length).toBe(CATALOG.length);
+    for (const p of models){
+      for (let a = p.parent; a; a = a.parent){
+        expect(['group', 'assembly'], `${p.path} 的祖先 ${a.path}`).toContain(a.kind);
+      }
+    }
   });
 });
