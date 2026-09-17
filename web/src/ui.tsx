@@ -51,6 +51,7 @@ export interface Actions {
   importUsdFile(file: File): void;
   exportUsd(): void;
   exportLayout(): void;
+  saveImage(): void;
   exportHint(): string;
 }
 
@@ -481,6 +482,7 @@ function Share({notice}: {notice: Notice}){
       <h2>{tr('hShare')}</h2>
       <div className="row">
         <button type="button" id="shareCopy" onClick={() => actions.copyShareLink()}>{tr('shareCopy')}</button>
+        <button type="button" id="imageSave" disabled={!state.ui.exportReady || state.ui.exporting} onClick={() => actions.saveImage()}>{tr('imageSave')}</button>
       </div>
       <p className="sub" id="shareMsg" style={{marginTop: 6}}>{notice.text ?? tr('shareHint')}</p>
       <Warnings id="shareWarnings" warnings={notice.warnings} />

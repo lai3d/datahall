@@ -22,7 +22,7 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 - **Failure drill.** Mark a CDU, RPP, in-row cooler or IB switch rack as failed and watch its load move to the nearest working unit. An N+1 check lists every device whose single failure would break the hall.
 - **Guided tutorial.** First-time visitors can build a small GB200 hall step by step and learn why it cannot power on until power distribution, cooling and networking are added.
 - **Editing.** Drag a device to move it, place a whole row with two clicks, and undo or redo any change (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y). Delete removes the selected device.
-- **Share links.** The layout is encoded in the URL hash, so the address bar always links to the current hall.
+- **Share links.** The layout is encoded in the URL hash, so the address bar always links to the current hall. Shared links show a preview image, and "Save image" downloads the 3D view as a PNG.
 - **English and Simplified Chinese UI.**
 - **Unity app (macOS, paused).** It reads the same layout through `layout.json` plus glTF models converted from USD.
 
