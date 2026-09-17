@@ -75,7 +75,9 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
 
 ## 下一步（按优先级）
 
-1. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
+1. Unity 版：方案对比见 `docs/unity-options.md`，推荐离线 pxr → `layout.json` + 每种设备一个 glb，由 glTFast 导入；
+   开工前要先确认 VR 目标（Quest 一体机还是 PC VR）、是否需要在头显里打开任意 USD、Unity 版本和渲染管线、Unity 工程放在哪。
+   Unity 侧需要用户本机装好 Unity 6 和 Android Build Support，否则只能写代码，没法验证。
 
 ## 数据可信度
 
