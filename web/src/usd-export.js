@@ -125,10 +125,15 @@ export const USD_README = `# GPU Data Hall 导出说明
 datahall.usda 是 OpenUSD 文本层，Z 轴向上，单位米。
 
 ## 结构
-/DataHall                  kind=assembly，机房级属性（市电 MW、网格尺寸）
-/DataHall/Floor            地板
-/DataHall/Catalog/<id>     class 原型，带设备参数和简化几何
-/DataHall/Equipment/Rxx_Cyy 摆放的设备，instanceable，引用 Catalog 原型
+/DataHall                   kind=assembly，机房级属性（市电 MW、网格尺寸）
+/DataHall/Floor             地板，绑定 /DataHall/Looks/floor
+/DataHall/Catalog/<id>      class 原型，带设备参数、简化几何（Mesh）和自己的 Looks 材质
+/DataHall/Equipment         kind=group
+/DataHall/Equipment/Rxx_Cyy 摆放的设备，kind=component，instanceable，引用 Catalog 原型
+
+几何是非细分 Mesh，材质是 UsdPreviewSurface，层元数据带 SimReady SR.001 要求的
+asset_name、asset_type、source_file、usd_date_generated、SimReady_Metadata。
+设备原点在底面中心，正面朝 -Y。
 
 ## 属性 schema（dchall: 命名空间，schema 0.2）
 属性由三个 codeless applied API schema 定义：
@@ -146,8 +151,23 @@ dchall:coolantSource → 为该机柜供液的 CDU（LiquidCooledAPI）
 dchall:powerFeed     → 为该设备配电的 RPP（DataHallEquipmentAPI）
 
 ## 替换为高精度模型
-在更强的层里对 /DataHall/Catalog/<id> 写 over，把几何替换成厂商 SimReady 资产的引用，
-所有摆放实例会自动跟着换，参数和拓扑不受影响。
+在更强的层里对 /DataHall/Catalog/<id> 写 over，所有摆放实例会自动跟着换，参数和拓扑不受影响。
+NVIDIA AI Factory 设备资产约定正面朝 +X，本文件正面朝 -Y，所以不要直接对原型加 reference，
+而是停用简化几何，在原型下建子 Xform 引用资产并转 -90°，kind 设为 subcomponent：
+
+    over "DataHall" { over "Catalog" { over "vr200"
+    {
+        over "Body" ( active = false ) {}
+        over "Front" ( active = false ) {}
+        def Xform "simready_model" (
+            prepend references = @./vendor/rack.usd@
+            kind = "subcomponent"
+        )
+        {
+            float3 xformOp:rotateXYZ = (0, 0, -90)
+            uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+        }
+    } } }
 
 数值为公开报道与估算的粗略值，不可作为工程设计依据。
 `;

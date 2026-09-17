@@ -1,6 +1,6 @@
 # SimReady 规范核对
 
-核对日期 2026-09-17，对象是 `samples/datahall.usda`（schema 0.2，17 台设备）。
+核对日期 2026-09-17，对象是 `samples/datahall.usda`（schema 0.2，17 台设备）。下面“结论”到“建议修复顺序”记录的是修复前的状态，修复后的结果见文末“修复结果”。
 
 ## 结论
 
@@ -197,3 +197,37 @@ aif-pipeline-samples 的 GB300 NVL72 元数据模板带有参考值：
 5. 把“替换高精度模型”的写法 B 写进 CLAUDE.md 和导出 README；HI.002 视需要再做。
 
 第 1–3 步不影响 `dchall:` schema，`tools/validate_usd.py` 不用改。第 4–5 步会改变 golden 样例的几何结构。每一步之后都应该运行 `npm run sample`、`tools/validate_usd.py` 和 `tools/simready_audit.py`。
+
+## 修复结果
+
+2026-09-17 按上面的顺序修复了第 1–5 步，每一步单独提交，每一步之后都重新生成样例并运行全部检查。HI.002 没有处理。
+
+| 项目 | 修复前 | 修复后 |
+|---|---|---|
+| 逐条 requirement | 31/38 通过 | 39/43 通过（新增 VG.008、VG.014、VG.027–029，有了 Mesh 之后才有实际检查意义） |
+| OAV 49 条规则 | 17 个问题（KindChecker） | 0 个问题 |
+| Prop-Robotics-Neutral 2.1.0：FET000 Core | 失败（NP.005、NP.006） | 失败（仅 NP.005） |
+| FET001 Minimal | 失败（VG.MESH.001） | **通过** |
+| FET006 Materials（MDL 版） | 失败（VM.MAT.001） | **通过** |
+| FET003–005 物理与抓取 | 失败 | 失败（不适用） |
+
+**剩余失败，都是报告里预期不修的：**
+- **HI.002：** 不在任何 profile。
+- **NP.001：** 命名规则连 `Looks`、`PreviewSurface` 都判失败。
+- **NP.005：** 按单个资产打包的目录结构，浏览器导出的单文件做不到。
+- **SL.001：** 语义标签，需要时再做。
+
+**实现要点：**
+- **Mesh：** 所有几何共用一个 8 顶点、6 个四边面的单位立方体，法线 faceVarying，`subdivisionScheme = "none"`，仍用 translate/scale 定位，世界包围盒与 Cube 版一致。
+- **材质：** 每个原型的 `Looks` 下有 `body`、`front` 两个 UsdPreviewSurface 材质，参数对应网页 three.js（机柜粗糙度 0.55、金属度 0.35），`displayColor` 保留为备用颜色。
+- **元数据：** `buildUsda` 新增必填参数 `meta.date`；网页导出传当天日期，`npm run sample` 沿用样例原日期。
+
+**测试补充：**
+
+web 测试按规范原文检查以下几项，不依赖 `.simready` 环境：
+- 模型层级连续；
+- 每个 Mesh 都绑定了同一原型或 `/DataHall/Looks` 内的材质；
+- SR.001 字段齐全；
+- 立方体每个面朝外，且与法线一致。
+
+**关于网格检查：** 故意把一个面的绕序反过来，SimReady 的 VG.007/008/014/027–029 都没有报错，只有 OAV 的 `ManifoldChecker` 给出 35 条警告。所以绕序靠 web 测试兜底。
