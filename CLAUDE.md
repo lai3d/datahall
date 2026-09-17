@@ -10,7 +10,8 @@
   - `src/catalog.js`：import `spec/catalog.json`，构建时打进包里
   - `src/sim.js`：容量模型与 PUE，纯函数
   - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
-  - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载 `.usda`
+  - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载文件
+  - `src/layout-export.js`：`buildLayout`，给 Unity 版的 `layout.json`，纯函数；拓扑和设备名与 USD 导出共用 `grid.js` 的 `supplyLinks`、`equipmentName`
   - `src/usda-parser.js`：usda 文本的精简解析器（prim、属性、元数据、值），不做组合
   - `src/usd-import.js`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
   - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
@@ -18,9 +19,12 @@
   - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致，
     并解析 `schema/generatedSchema.usda` 检查导出的每个 `dchall:` 属性都由应用的 schema 定义、类型一致（不需要 pxr）
   - `scripts/update-sample.js`：`npm run sample`，导出格式有意变更后按样例原布局重新生成 `samples/datahall.usda`
+  - `scripts/capacity-cases.js`：`npm run capacity-cases`，从 `sim.js` 生成 `spec/capacity-cases.json`（Unity 的 C# 容量模型用它核对）
+  - `scripts/layout-from-usda.js`、`scripts/validate-gltf.js`：给 `tools/test_usd_to_unity.py` 做对照和 glTF-Validator 检查
   - `tests/fixtures/`：导入测试用的文件。`pxr-resaved`、`pxr-edited` 由 `tools/make_import_fixtures.py` 生成；
     `schema-0.1` 取自提交 `2cdd465` 的样例。导出格式变化后要重新生成，并更新 `usd-import.test.js` 里的预期
 - `spec/catalog.json`：设备目录，**唯一数据源**
+- `spec/layout.schema.json`：`layout.json` 格式；`spec/capacity-cases.json`：容量模型共用测试用例（生成文件，不要手改）
 - `schema/`：codeless applied API schema 插件
   - `schema.usda`：源文件，只改这个
   - `generatedSchema.usda`、`plugInfo.json`：`tools/gen_schema.sh` 生成，和源文件一起提交。
@@ -28,7 +32,14 @@
 - `samples/datahall.usda`：导出样例，已用 OpenUSD 26.08 和 schema 校验，同时是导出回归测试的 golden 文件
 - `tools/validate_usd.py`：基于 schema 的 USD 校验，自动注册 `schema/` 插件；`tools/test_validate_usd.py` 是它的测试
 - `tools/simready_setup.sh` + `tools/simready_audit.py`：对照 NVIDIA SimReady Foundation（固定版本）和 OAV 默认规则核对，环境在 `.simready/`
-- `docs/simready-audit.md`：SimReady 核对报告
+- `docs/simready-audit.md`：SimReady 核对报告；`docs/unity-options.md`：Unity 方案对比和决定
+- `tools/usd_to_unity.py`：`.usda` → 布局包（`layout.json` + `assets/<id>.glb`），测试 `tools/test_usd_to_unity.py`
+- `unity/`：Unity 6000.6.1f1 + URP + glTFast 6.20.0 的 macOS 程序
+  - `Assets/DataHall/Runtime`：`LayoutData`（解析校验）、`HallCoordinates`（USD (x, y, z) → Unity (-x, z, -y)）、
+    `CapacityModel`（`sim.js` 的 C# 移植）、`HallBuilder`、`HallApp`（入口和中文 IMGUI 面板）、`OrbitCamera`
+  - `Assets/DataHall/Editor`：`ProjectSetup`（URP、场景、播放器设置）、`BundleImporter`（导入布局包、生成 prefab 变体）、`BuildMac`
+  - `Assets/DataHall/Generated`：导入生成的模型和设备库，由 `tools/unity_sync.sh` 更新；`Assets/DataHall/Prefabs`：模型的 prefab 变体，交互加在这里
+  - `Assets/DataHall/Tests/EditMode`：EditMode 测试；`Fixtures/axis_probe.glb` 由 `tools/make_unity_fixtures.py` 生成
 
 ## 运行
 
@@ -45,6 +56,12 @@ tools/gen_schema.sh             # 改了 schema/schema.usda 之后（默认用 .
 tools/gen_schema.sh --validate  # 检查生成文件是否过期
 export PXR_PLUGINPATH_NAME=$PWD/schema  # 让 usdview、Omniverse 识别 schema
 tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py samples/datahall.usda  # SimReady 核对（需要 uv）
+
+# Unity 版（编辑器 /Applications/Unity/Hub/Editor/6000.6.1f1，UNITY=... 可覆盖）
+tools/unity_sync.sh [file.usda]   # 导入全部设备模型，再把 file.usda（默认 samples/datahall.usda）设为默认布局
+tools/unity_test.sh               # EditMode 测试
+tools/unity_build.sh              # 打包 build/DataHall.app 并跑 batchmode 冒烟断言；LAYOUT=path 换布局
+build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页导出的布局
 ```
 
 ## 已定的设计决策
@@ -71,16 +88,17 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
     `translate` 只用来提示不一致；设备参数以 `catalog.json` 为准，文件里的参数只提示差异
   - 停用（`active = false`）、未知类型、越界、重叠、外部引用的设备跳过并提示；网格尺寸和当前不一致直接拒绝
   - 导入会替换当前机房；提示里含文件内容，界面上只能用 `textContent` 写入
+- **Unity 版**：`layout.json` 是 Unity 唯一读取的布局格式，网页“导出给 Unity”和 `tools/usd_to_unity.py` 产出的内容必须逐字段一致（测试比对）。
+  - 设备几何来自 glb，导入后生成 prefab 变体；交互改变体，不改 `Generated/`。改了导出几何或颜色后跑 `tools/unity_sync.sh`
+  - 颜色：USD 里写线性值（导出器把 sRGB 调色板换算后写入），glTF 同为线性；Unity 工程是线性色彩空间，IMGUI 贴图颜色要写 `.linear`
+  - 打包后的程序默认 run in background，否则从终端启动时主循环暂停；`OpenScene(Single)` 会卸载未引用资产，之后要重新加载
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
 ## 下一步（按优先级）
 
-1. Unity 版：目标平台是 macOS 桌面（Apple Silicon），VR 暂不做。方案对比见 `docs/unity-options.md`：
-   推荐 A：`layout.json`（网页版导出，或 pxr 从 usda 转换）加上每种设备一个 glb（pxr 离线转换），由 glTFast 导入。
-   备选 B3：Unity USD Core（USD 23.02）在运行时直接读 usda，已实测在打包后的 macOS 程序中可用，
-   但打包后必须把 `lib/usd` 的 plugInfo 资源复制进 `.app/Contents/PlugIns/ARM64/usd`，否则打开 stage 就崩溃。
-   Unity USD Importer 在 6000.6 上编译失败，不要用。已决定：方案 A，Unity 6000.6.1f1 + URP，工程放在 `unity/`。
-   本机已装 Unity 6000.6.1f1 和 Unity CLI（`~/.unity/bin/unity`），编辑器路径 `/Applications/Unity/Hub/Editor/6000.6.1f1/Unity.app/Contents/MacOS/Unity`，batchmode 可用。
+1. Unity 版后续：程序内打开文件（目前只能用 `-layout` 参数或 StreamingAssets）、通电动画和供电/冷却连线、
+   托盘拆解等交互（做在 `Prefabs/` 的变体上）、真实 SimReady 高精度资产（方案 A5，见 `docs/unity-options.md`）。
+   目标平台 macOS 桌面，VR 暂不做。Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
 
 ## 数据可信度
 
