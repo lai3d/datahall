@@ -20,6 +20,7 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
     All UI copy, capacity issues and import messages go through `tr(key, vars)`; new strings must be added to both files, and `tests/i18n.test.ts` checks that keys match and no variables are missing
   - `src/supply.ts`: per-device capacity check; compares the load each CDU and RPP gets through nearest assignment via `supplyLinks` against its own capacity, pure functions. Web version only; Unity's `CapacityModel` has no counterpart
   - `src/usd-export.ts`: `buildUsda`, pure function, no dependency on the DOM or three, can be imported directly from node
+  - `src/analytics.ts`: Vercel Web Analytics (`@vercel/analytics` `inject`), production builds only. `beforeSend` strips the hash and query; a visit that opened a `#layout=` share link is reported as the page `/shared` (the Hobby plan has no custom events). The script only tracks `pushState`/`popstate`, so the `replaceState` hash updates on every edit do not add page views
   - `src/download.ts`: uses downloads (zip) when `window.claude` exists, otherwise downloads the file directly via Blob
   - `src/share-link.ts`: share links, layout encoded into the URL hash, pure functions
   - `src/layout-export.ts`: `buildLayout`, the `layout.json` for the Unity version, pure function; topology and equipment names are shared with the USD export through `grid.ts`'s `supplyLinks` and `equipmentName`

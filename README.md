@@ -4,6 +4,8 @@ A simulator for laying out an AI data hall around NVIDIA's latest GPU racks: GB2
 
 **Live demo:** https://datahall-eight.vercel.app ([中文界面](https://datahall-eight.vercel.app/?lang=zh))
 
+The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for aggregate page views. It sets no cookies, and the layout in the URL hash is not sent.
+
 ![A Vera Rubin NVL72 row powered on, with coolant and power links drawn to the CDUs and RPPs](docs/images/web.png)
 
 > Power and price figures are rough estimates from public reports and supply chain sources, not NVIDIA specifications. Use them for learning, not engineering design.
@@ -29,7 +31,7 @@ A simulator for laying out an AI data hall around NVIDIA's latest GPU racks: GB2
 | --- | --- |
 | Web app | TypeScript 7 (strict), Vite 8, three.js 0.186. No UI framework: the panel is plain DOM, the 3D view is three.js. |
 | Web tests | vitest, ajv (layout.json schema), Khronos glTF-Validator |
-| Hosting | Vercel (production from `main`, preview per pull request) |
+| Hosting | Vercel (production from `main`, preview per pull request), Vercel Web Analytics |
 | Data formats | OpenUSD `.usda` with a codeless applied API schema (`dchall:`), `layout.json` (JSON Schema 2020-12), share links in the URL hash |
 | USD tooling | Python with `usd-core` 26.8 (OpenUSD), `usdGenSchema`, NVIDIA SimReady Foundation / OAV rules for the audit |
 | Unity app | Unity 6000.6 (URP), glTFast, a small Objective-C plugin for the macOS file dialog and drag and drop |
