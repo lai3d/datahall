@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 879358dee3a69453ea1fbdbac569f8fe, type: 3}
+  m_Name: EquipmentLibrary
+  m_EditorClassIdentifier: DataHall.Runtime::DataHall.EquipmentLibrary
+  entries:
+  - id: cdu
+    prefab: {fileID: 4576228430382064243, guid: 455aa4f3047bd445ca11e5c2549050f3, type: 3}
+  - id: crah
+    prefab: {fileID: 3908861323118903925, guid: 0ab2b57b575be41f9aba3317bb95ceed, type: 3}
+  - id: ib
+    prefab: {fileID: 2327197559567367210, guid: 5cfd4de57e2e047c4922cdf73f5bbeae, type: 3}
+  - id: kyber
+    prefab: {fileID: 2896688890795028609, guid: 2e0ec5f972db143fcb8733e7aab2c860, type: 3}
+  - id: rpp
+    prefab: {fileID: 630518123144942120, guid: 4f609a462a5f84e8cac169ff4238e638, type: 3}
+  - id: stor
+    prefab: {fileID: 800279750822487114, guid: 6442377ab69fb41ce92bb795b30fac31, type: 3}
+  - id: vr200
+    prefab: {fileID: 6500301115944900274, guid: df25314a293df4ef2b9c3917f2e5e30c, type: 3}

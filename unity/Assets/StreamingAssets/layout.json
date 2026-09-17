@@ -1,0 +1,265 @@
+{
+  "format": "dchall.layout",
+  "version": 1,
+  "generator": "GPU Data Hall Builder tools/usd_to_unity.py",
+  "generated": "2026-09-17",
+  "grid": {
+    "columns": 16,
+    "rows": 10,
+    "cellWidthM": 0.6,
+    "cellDepthM": 1.2
+  },
+  "utilityMw": 5,
+  "catalog": [
+    {
+      "id": "vr200",
+      "name": "Vera Rubin NVL72",
+      "category": "gpu",
+      "powerKw": 190,
+      "gpuCount": 72,
+      "liquidFraction": 0.95,
+      "liquidCoolingKw": 0,
+      "airCoolingKw": 0,
+      "overheadKw": 0,
+      "distributionKw": 0,
+      "fabricPorts": 0,
+      "capexMusd": 6,
+      "roadmap": false,
+      "heightM": 2.3
+    },
+    {
+      "id": "cdu",
+      "name": "CDU 冷量分配",
+      "category": "fac",
+      "powerKw": 0,
+      "gpuCount": 0,
+      "liquidFraction": 0,
+      "liquidCoolingKw": 800,
+      "airCoolingKw": 0,
+      "overheadKw": 12,
+      "distributionKw": 0,
+      "fabricPorts": 0,
+      "capexMusd": 0.35,
+      "roadmap": false,
+      "heightM": 2.1
+    },
+    {
+      "id": "rpp",
+      "name": "配电柜 RPP",
+      "category": "fac",
+      "powerKw": 0,
+      "gpuCount": 0,
+      "liquidFraction": 0,
+      "liquidCoolingKw": 0,
+      "airCoolingKw": 0,
+      "overheadKw": 0,
+      "distributionKw": 800,
+      "fabricPorts": 0,
+      "capexMusd": 0.25,
+      "roadmap": false,
+      "heightM": 2.1
+    },
+    {
+      "id": "ib",
+      "name": "Quantum-X800 IB",
+      "category": "net",
+      "powerKw": 24,
+      "gpuCount": 0,
+      "liquidFraction": 0,
+      "liquidCoolingKw": 0,
+      "airCoolingKw": 0,
+      "overheadKw": 0,
+      "distributionKw": 0,
+      "fabricPorts": 288,
+      "capexMusd": 0.9,
+      "roadmap": false,
+      "heightM": 2.2
+    },
+    {
+      "id": "crah",
+      "name": "列间空调",
+      "category": "fac",
+      "powerKw": 0,
+      "gpuCount": 0,
+      "liquidFraction": 0,
+      "liquidCoolingKw": 0,
+      "airCoolingKw": 120,
+      "overheadKw": 9,
+      "distributionKw": 0,
+      "fabricPorts": 0,
+      "capexMusd": 0.08,
+      "roadmap": false,
+      "heightM": 2.1
+    },
+    {
+      "id": "kyber",
+      "name": "Rubin Ultra Kyber",
+      "category": "gpu",
+      "powerKw": 600,
+      "gpuCount": 144,
+      "liquidFraction": 1,
+      "liquidCoolingKw": 0,
+      "airCoolingKw": 0,
+      "overheadKw": 0,
+      "distributionKw": 0,
+      "fabricPorts": 0,
+      "capexMusd": 9,
+      "roadmap": true,
+      "heightM": 2.6
+    },
+    {
+      "id": "stor",
+      "name": "存储柜",
+      "category": "net",
+      "powerKw": 18,
+      "gpuCount": 0,
+      "liquidFraction": 0,
+      "liquidCoolingKw": 0,
+      "airCoolingKw": 0,
+      "overheadKw": 0,
+      "distributionKw": 0,
+      "fabricPorts": 0,
+      "capexMusd": 0.6,
+      "roadmap": false,
+      "heightM": 2.2
+    }
+  ],
+  "equipment": [
+    {
+      "name": "R04_C04",
+      "type": "vr200",
+      "column": 3,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C04"
+    },
+    {
+      "name": "R04_C05",
+      "type": "vr200",
+      "column": 4,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C06",
+      "type": "vr200",
+      "column": 5,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C07",
+      "type": "vr200",
+      "column": 6,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C08",
+      "type": "vr200",
+      "column": 7,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C09",
+      "type": "vr200",
+      "column": 8,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C10",
+      "type": "vr200",
+      "column": 9,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C11",
+      "type": "vr200",
+      "column": 10,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C12",
+      "type": "vr200",
+      "column": 11,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C13",
+      "type": "vr200",
+      "column": 12,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R06_C04",
+      "type": "cdu",
+      "column": 3,
+      "row": 5,
+      "powerFeed": "",
+      "coolantSource": ""
+    },
+    {
+      "name": "R06_C05",
+      "type": "cdu",
+      "column": 4,
+      "row": 5,
+      "powerFeed": "",
+      "coolantSource": ""
+    },
+    {
+      "name": "R06_C07",
+      "type": "rpp",
+      "column": 6,
+      "row": 5,
+      "powerFeed": "",
+      "coolantSource": ""
+    },
+    {
+      "name": "R06_C10",
+      "type": "ib",
+      "column": 9,
+      "row": 5,
+      "powerFeed": "R06_C07",
+      "coolantSource": ""
+    },
+    {
+      "name": "R06_C13",
+      "type": "crah",
+      "column": 12,
+      "row": 5,
+      "powerFeed": "",
+      "coolantSource": ""
+    },
+    {
+      "name": "R08_C15",
+      "type": "kyber",
+      "column": 14,
+      "row": 7,
+      "powerFeed": "R06_C07",
+      "coolantSource": "R06_C05"
+    },
+    {
+      "name": "R04_C03",
+      "type": "stor",
+      "column": 2,
+      "row": 3,
+      "powerFeed": "R06_C07",
+      "coolantSource": ""
+    }
+  ]
+}
