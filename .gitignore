@@ -5,3 +5,4 @@ __pycache__/
 .venv/
 .simready/
 build/
+.playwright-mcp/

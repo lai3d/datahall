@@ -7,6 +7,8 @@ A simulator for laying out an AI data hall around NVIDIA's latest GPU racks: GB2
 ![A Vera Rubin NVL72 row powered on, with coolant and power links drawn to the CDUs and RPPs](docs/images/web.png)
 
 > Power and price figures are rough estimates from public reports and supply chain sources, not NVIDIA specifications. Use them for learning, not engineering design.
+>
+> This is an independent project. It is not affiliated with, endorsed by or sponsored by NVIDIA. NVIDIA, GB200, GB300, Vera Rubin, Kyber, Omniverse and SimReady are trademarks of NVIDIA Corporation, used here only to describe the equipment being simulated.
 
 ## Features
 
@@ -98,6 +100,10 @@ GitHub Actions runs on pushes to `main` and on pull requests:
 - **usd-tools job:** schema freshness, sample validation and the Python tests
 
 Unity isn't built in CI.
+
+## License
+
+[MIT](LICENSE).
 
 ## Contributing notes
 
