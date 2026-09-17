@@ -3,13 +3,14 @@ import {GRID, keyOf} from './grid.js';
 import {state, itemList, snapshot} from './state.js';
 import * as view from './scene.js';
 import {initControls} from './controls.js';
-import {initUI, buildUI, refresh, renderInfo} from './ui.js';
+import {initUI, buildUI, refresh, renderInfo, applyStaticText} from './ui.js';
 import {PRESETS, saveLayout, restoreLayout} from './layout.js';
 import {buildUsda} from './usd-export.js';
 import {importUsda, UsdImportError} from './usd-import.js';
 import {buildLayout, layoutToText} from './layout-export.js';
 import {createSaver} from './download.js';
 import {encodeLayout, decodeLayout} from './share-link.js';
+import {DEFAULT_LANG, setLang, htmlLang, tr} from './i18n.js';
 
 const $ = s => document.querySelector(s);
 
@@ -39,9 +40,8 @@ function changed(){ view.rebuildLinks(); view.setOutline(); refresh(); saveLayou
 // ---------- share link ----------
 // 每次改动都把布局写进地址栏的 hash；replaceState 不产生历史记录，也不会触发 hashchange。
 // 同时把分享区的提示恢复为默认说明，之后的载入结果或复制结果会覆盖它
-const SHARE_HINT = '地址栏里的网址随时对应当前机房，发给别人就能看到同样的布局。';
 function updateShareLink(){
-  $('#shareMsg').textContent = SHARE_HINT;
+  $('#shareMsg').textContent = tr('shareHint');
   $('#shareWarnings').replaceChildren();
   const hash = encodeLayout(snapshot());
   try { history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search); } catch (e) {}   // claude.ai 沙箱里可能不允许
@@ -53,11 +53,11 @@ function loadFromLink(){
   if (!link) return false;
   const msg = $('#shareMsg'), list = $('#shareWarnings');
   if (!link.list.length && link.warnings.length){
-    showImportResult(msg, list, '没有载入分享链接。', link.warnings);
+    showImportResult(msg, list, tr('shareNotLoaded'), link.warnings);
     return false;
   }
   loadLayout(link);
-  showImportResult(msg, list, `已从分享链接载入 ${link.list.length} 台设备，市电 ${link.u} MW。`, link.warnings);
+  showImportResult(msg, list, tr('shareLoaded', {n: link.list.length, u: link.u}), link.warnings);
   return true;
 }
 
@@ -65,13 +65,13 @@ function initShare(){
   const msg = $('#shareMsg'), list = $('#shareWarnings');
   $('#shareCopy').onclick = async () => {
     list.replaceChildren();
-    if (!state.items.size){ msg.textContent = '机房是空的，先放设备再分享。'; return; }
+    if (!state.items.size){ msg.textContent = tr('shareEmpty'); return; }
     updateShareLink();
     try {
       await navigator.clipboard.writeText(location.href);
-      msg.textContent = `已复制链接（${state.items.size} 台设备）。`;
+      msg.textContent = tr('shareCopied', {n: state.items.size});
     } catch (e) {
-      msg.textContent = '浏览器不允许自动复制，请直接复制地址栏里的网址。';
+      msg.textContent = tr('shareCopyFailed');
     }
   };
   window.addEventListener('hashchange', loadFromLink);
@@ -97,7 +97,7 @@ const MAX_WARNINGS = 8;
 function showImportResult(msg, list, text, warnings = []){
   msg.textContent = text;
   const lines = warnings.slice(0, MAX_WARNINGS);
-  if (warnings.length > MAX_WARNINGS) lines.push(`另有 ${warnings.length - MAX_WARNINGS} 条提示未列出。`);
+  if (warnings.length > MAX_WARNINGS) lines.push(tr('moreMessages', {n: warnings.length - MAX_WARNINGS}));
   // 提示里有文件中的 prim 名，用 textContent 写入，不当成 HTML
   list.replaceChildren(...lines.map(txt => Object.assign(document.createElement('li'), {className: 'warn', textContent: txt})));
 }
@@ -113,26 +113,28 @@ function initImport(msg){
       const result = importUsda(await file.text(), CAT, GRID);
       loadLayout(result);
       showImportResult(msg, list,
-        `已从 ${file.name} 导入 ${result.list.length} 台设备，市电 ${result.u} MW。` + (result.skipped ? `跳过 ${result.skipped} 台。` : ''),
+        tr('importDone', {file: file.name, n: result.list.length, u: result.u}) + (result.skipped ? tr('importSkipped', {n: result.skipped}) : ''),
         result.warnings);
     } catch (e) {
       if (!(e instanceof UsdImportError)) console.error(e);
-      showImportResult(msg, list, e instanceof UsdImportError ? `没有导入：${e.message}` : '没有导入：读取文件时出错。');
+      showImportResult(msg, list, e instanceof UsdImportError ? tr('importFailed', {reason: e.message}) : tr('importReadError'));
     }
   };
 }
 
+let exportHint = () => '';
 async function initExport(){
   const saver = await createSaver();
   const box = $('#usdBox'), msg = $('#usdMsg'), btn = $('#usdExport');
-  msg.textContent = saver.hint + 'Z 轴向上，单位米，可直接在 Omniverse、usdview 或 Blender 中打开。';
+  exportHint = () => saver.hint() + tr('usdHint');
+  msg.textContent = exportHint();
   box.hidden = false;
   initImport(msg);
   // 两种导出共用：OpenUSD 层，以及给 Unity 版用的 layout.json（格式见 spec/layout.schema.json）
   const exportWith = (button, filename, build, done) => {
     button.onclick = async () => {
       $('#usdWarnings').innerHTML = '';
-      if (!state.items.size){ msg.textContent = '机房是空的，先放设备再导出。'; return; }
+      if (!state.items.size){ msg.textContent = tr('exportEmpty'); return; }
       const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
       const text = build({date});
       button.disabled = true;
@@ -141,19 +143,43 @@ async function initExport(){
         msg.textContent = done();
       } catch (e) {
         const code = e && e.code;
-        if (code === 'declined') msg.textContent = '已取消导出。';
-        else if (code === 'rate_limited') msg.textContent = '已有一个保存确认框，处理完再试。';
-        else msg.textContent = '导出失败，当前环境可能不允许下载文件。';
+        if (code === 'declined') msg.textContent = tr('exportCancelled');
+        else if (code === 'rate_limited') msg.textContent = tr('exportBusy');
+        else msg.textContent = tr('exportFailed');
       } finally { button.disabled = false; }
     };
   };
   exportWith(btn, 'datahall.usda', meta => buildUsda(itemList(), CAT, state.utility, GRID, meta),
-    () => `已导出 ${state.items.size} 台设备。`);
+    () => tr('exportUsdDone', {n: state.items.size}));
   exportWith($('#layoutExport'), 'layout.json', meta => layoutToText(buildLayout(itemList(), CAT, state.utility, GRID, meta)),
-    () => `已导出 layout.json（${state.items.size} 台设备），在 Unity 版里打开。`);
+    () => tr('exportLayoutDone', {n: state.items.size}));
+}
+
+// ---------- language ----------
+// 默认英文；选择记在 localStorage。?lang=zh 可以直接指定（不写入分享链接的 hash）
+const LANG_KEY = 'datahall.lang';
+function initialLang(){
+  const fromQuery = new URLSearchParams(location.search).get('lang');
+  let saved = null;
+  try { saved = localStorage.getItem(LANG_KEY); } catch (e) {}
+  return fromQuery || saved || DEFAULT_LANG;
+}
+function applyLang(id, persist){
+  setLang(id);
+  if (persist) try { localStorage.setItem(LANG_KEY, id); } catch (e) {}
+  document.documentElement.lang = htmlLang();
+  applyStaticText();
+}
+// 切换后重画面板；分享区和导出区的上一条结果提示换成当前语言的默认说明
+function switchLang(id){
+  applyLang(id, true);
+  buildUI(); refresh(); updateShareLink();
+  $('#usdMsg').textContent = exportHint();
+  $('#usdWarnings').replaceChildren();
 }
 
 // ---------- boot ----------
+applyLang(initialLang(), false);
 const el = view.initScene($('#stage'));
 initControls(el, view.camera, {
   onTap: tap,
@@ -168,6 +194,7 @@ initUI({
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
   showAlerts: keys => view.setAlerts(keys),
+  setLang: switchLang,
 });
 initExport();
 initShare();

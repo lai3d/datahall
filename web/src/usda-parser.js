@@ -2,8 +2,10 @@
 // 足够读取本项目导出、以及被 usdview、usdcat、Omniverse 重新保存过的文件。
 // 不支持的语法（variantSet、spline 等）按括号配对整体跳过。
 
+import {tr} from './i18n.js';
+
 export class UsdaSyntaxError extends Error {
-  constructor(message, line){ super(`第 ${line} 行：${message}`); this.line = line; }
+  constructor(message, line){ super(tr('parseLine', {line, msg: message})); this.line = line; }
 }
 
 const LIST_OPS = new Set(['add', 'append', 'delete', 'prepend', 'reorder']);
@@ -25,14 +27,14 @@ function tokenize(src){
       const q = triple ? c.repeat(3) : c;
       let j = i + q.length, out = '';
       for (;;){
-        if (j >= src.length) fail('字符串没有结束');
+        if (j >= src.length) fail(tr('parseString'));
         if (src.startsWith(q, j)) break;
         if (src[j] === '\\' && j + 1 < src.length){
           const e = src[j + 1];
           out += e === 'n' ? '\n' : e === 't' ? '\t' : e;
           j += 2; continue;
         }
-        if (src[j] === '\n'){ if (!triple) fail('字符串没有结束'); line++; }
+        if (src[j] === '\n'){ if (!triple) fail(tr('parseString')); line++; }
         out += src[j++];
       }
       push('string', out);
@@ -41,7 +43,7 @@ function tokenize(src){
     }
     if (c === '<'){
       const j = src.indexOf('>', i);
-      if (j < 0) fail('路径没有结束');
+      if (j < 0) fail(tr('parsePath'));
       push('path', src.slice(i + 1, j));
       i = j + 1;
       continue;
@@ -49,7 +51,7 @@ function tokenize(src){
     if (c === '@'){
       const q = src.startsWith('@@@', i) ? '@@@' : '@';
       const j = src.indexOf(q, i + q.length);
-      if (j < 0) fail('资产路径没有结束');
+      if (j < 0) fail(tr('parseAsset'));
       push('asset', src.slice(i + q.length, j));
       i = j + q.length;
       continue;
@@ -60,7 +62,7 @@ function tokenize(src){
     // 标识符可以带命名空间和属性后缀：dchall:powerKw、outputs:surface.connect、float3[] 的 float3
     const id = src.slice(i).match(/^[A-Za-z_][\w]*(?:[:.][A-Za-z_][\w]*)*/);
     if (id){ push('ident', id[0]); i += id[0].length; continue; }
-    fail(`无法识别的字符 ${JSON.stringify(c)}`);
+    fail(tr('parseChar', {c: JSON.stringify(c)}));
   }
   push('eof', null);
   return tokens;
@@ -76,7 +78,7 @@ class Parser {
   expect(type, value){
     if (this.is(type, value)) return this.next();
     const p = this.peek;
-    throw new UsdaSyntaxError(`应为 ${value ?? type}，实际是 ${p.type === 'eof' ? '文件结尾' : JSON.stringify(p.value)}`, p.line);
+    throw new UsdaSyntaxError(tr('parseExpected', {expected: value ?? type, got: p.type === 'eof' ? tr('parseEof') : JSON.stringify(p.value)}), p.line);
   }
 
   // 跳过一个成对括号包起来的块（当前 token 必须是开括号）
@@ -85,7 +87,7 @@ class Parser {
     let depth = 1;
     while (depth){
       const tok = this.next();
-      if (tok.type === 'eof') throw new UsdaSyntaxError(`${open} 没有配对的 ${close}`, tok.line);
+      if (tok.type === 'eof') throw new UsdaSyntaxError(tr('parseUnpaired', {open, close}), tok.line);
       if (tok.type === 'punct' && tok.value === open) depth++;
       if (tok.type === 'punct' && tok.value === close) depth--;
     }
@@ -118,7 +120,7 @@ class Parser {
       return items;
     }
     if (this.is('punct', '{')) return this.dictionary();
-    throw new UsdaSyntaxError(`无法解析的值 ${JSON.stringify(tok.value)}`, tok.line);
+    throw new UsdaSyntaxError(tr('parseValue', {v: JSON.stringify(tok.value)}), tok.line);
   }
 
   // 字典：customLayerData、customData 的 `type name = value`，以及 timeSamples 的 `time: value`
@@ -170,7 +172,7 @@ class Parser {
   primOrSkip(into){
     if (this.is('ident') && SPECIFIERS.has(this.peek.value)){ into.push(this.prim()); return; }
     const tok = this.peek;
-    throw new UsdaSyntaxError(`应为 def、over 或 class，实际是 ${JSON.stringify(tok.value)}`, tok.line);
+    throw new UsdaSyntaxError(tr('parseSpecifier', {v: JSON.stringify(tok.value)}), tok.line);
   }
 
   prim(){
@@ -218,7 +220,7 @@ class Parser {
 
 export function parseUsda(src){
   const header = src.match(/^#usda\s+(\d+\.\d+)/);
-  if (!header) throw new UsdaSyntaxError('不是 usda 文本文件（缺少 #usda 文件头）', 1);
+  if (!header) throw new UsdaSyntaxError(tr('parseHeader'), 1);
   const layer = new Parser(tokenize(src.slice(header[0].length))).layer();
   layer.version = header[1];
   return layer;

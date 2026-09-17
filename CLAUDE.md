@@ -10,6 +10,8 @@
   - `vercel.json`：Vercel 构建设置（Vite，`npm ci`、`npm run build`、输出 `dist`）
   - `src/catalog.js`：import `spec/catalog.json`，构建时打进包里
   - `src/sim.js`：容量模型与 PUE，纯函数
+  - `src/i18n.js` + `src/locales/en.js`、`zh.js`：界面语言，默认英文，可切换简体中文（右上角切换，记在 localStorage，`?lang=zh` 可直接指定）。
+    所有界面文案、容量问题、导入提示都走 `tr(key, vars)`；新增文案要两个文件同时加，`tests/i18n.test.js` 检查键一致、不漏变量
   - `src/supply.js`：按设备的容量检查，每台 CDU、RPP 按 `supplyLinks` 就近分到的负载和自身容量比较，纯函数。只在网页版，Unity 的 `CapacityModel` 没有对应实现
   - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
   - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载文件
@@ -26,7 +28,8 @@
   - `scripts/layout-from-usda.js`、`scripts/validate-gltf.js`：给 `tools/test_usd_to_unity.py` 做对照和 glTF-Validator 检查
   - `tests/fixtures/`：导入测试用的文件。`pxr-resaved`、`pxr-edited` 由 `tools/make_import_fixtures.py` 生成；
     `schema-0.1` 取自提交 `2cdd465` 的样例。导出格式变化后要重新生成，并更新 `usd-import.test.js` 里的预期
-- `spec/catalog.json`：设备目录，**唯一数据源**
+- `spec/catalog.json`：设备目录，**唯一数据源**。`name`、`note` 是中文原文，导出的 USD `displayName` 和 `layout.json` 沿用它；
+  英文写在每项的 `i18n.en` 下（缺的字段回退原文）。改 note 的数值或来源时中英文一起改
 - `spec/layout.schema.json`：`layout.json` 格式；`spec/capacity-cases.json`：容量模型共用测试用例（生成文件，不要手改）
 - `schema/`：codeless applied API schema 插件
   - `schema.usda`：源文件，只改这个
@@ -137,6 +140,8 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
 
 ## 风格
 
-- UI 文案中文，简体，句子式，不用全大写标签
+- UI 默认英文，支持简体中文。两种语言都用句子式，英文用 sentence case，不用全大写标签
+- `spec/capacity-cases.json` 里的问题文本固定生成中文（`buildCases` 临时切到中文），Unity 的 C# 容量模型逐字比对；改容量问题的中文措辞要同步改 C#
+- 导出文件（`.usda` 注释和 README、`layout.json`）的内容不随界面语言变化
 - 配色语义固定：GPU 绿、冷却液青、配电铜色、网络紫
 - 回答直接，不要客套

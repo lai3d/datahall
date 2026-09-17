@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>GPU 机房搭建模拟器</title>
+<title data-i18n="title">GPU data hall builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
@@ -13,40 +13,43 @@
 <main id="stage">
   <div id="hud" aria-live="polite">
     <div><b id="hGpu">0</b><span>GPU</span></div>
-    <div><b id="hIt">0 kW</b><span>IT 负载</span></div>
-    <div><b id="hPue">–</b><span>PUE 估算</span></div>
+    <div><b id="hIt">0 kW</b><span data-i18n="hudIt">IT load</span></div>
+    <div><b id="hPue">–</b><span data-i18n="hudPue">Estimated PUE</span></div>
   </div>
-  <button id="camReset" type="button">重置视角</button>
+  <button id="camReset" type="button" data-i18n="camReset">Reset view</button>
 </main>
 
 <aside id="panel">
-  <h1>GPU 机房搭建模拟器</h1>
-  <p class="sub">选设备，点地板空位放置。拖动旋转视角，双指或滚轮缩放。</p>
+  <div class="head">
+    <h1 data-i18n="title">GPU data hall builder</h1>
+    <div class="row seg lang" id="lang" role="group" data-i18n-aria="language" aria-label="Language"></div>
+  </div>
+  <p class="sub" data-i18n="subtitle">Pick a device, then click an empty floor cell to place it. Drag to orbit; pinch or scroll to zoom.</p>
 
-  <h2>市电容量</h2>
+  <h2 data-i18n="hUtility">Utility power</h2>
   <div class="row seg" id="utility"></div>
 
-  <h2>设备</h2>
+  <h2 data-i18n="hDevices">Devices</h2>
   <div class="palette" id="palette"></div>
 
-  <h2>容量检查</h2>
+  <h2 data-i18n="hCheck">Capacity check</h2>
   <div id="gauges"></div>
   <ul class="issues" id="issues"></ul>
-  <button id="power" type="button" disabled>通电</button>
+  <button id="power" type="button" disabled>Power on</button>
 
-  <h2>详情</h2>
+  <h2 data-i18n="hInfo">Details</h2>
   <div class="info" id="info"></div>
 
-  <h2>预设场景</h2>
+  <h2 data-i18n="hPresets">Presets</h2>
   <div class="row">
-    <button type="button" data-preset="empty">清空机房</button>
-    <button type="button" data-preset="gb200">GB200 集群</button>
-    <button type="button" data-preset="rubin">Vera Rubin 一排</button>
+    <button type="button" data-preset="empty" data-i18n="presetEmpty">Clear hall</button>
+    <button type="button" data-preset="gb200" data-i18n="presetGb200">GB200 cluster</button>
+    <button type="button" data-preset="rubin" data-i18n="presetRubin">Vera Rubin row</button>
   </div>
 
-  <h2>分享</h2>
+  <h2 data-i18n="hShare">Share</h2>
   <div class="row">
-    <button type="button" id="shareCopy">复制分享链接</button>
+    <button type="button" id="shareCopy" data-i18n="shareCopy">Copy share link</button>
   </div>
   <p class="sub" id="shareMsg" style="margin-top:6px"></p>
   <ul class="issues" id="shareWarnings"></ul>
@@ -54,15 +57,15 @@
   <div id="usdBox" hidden>
     <h2>OpenUSD</h2>
     <div class="row">
-      <button type="button" id="usdExport">导出 OpenUSD</button>
-      <button type="button" id="usdImport">导入 .usda</button>
-      <button type="button" id="layoutExport">导出给 Unity</button>
+      <button type="button" id="usdExport" data-i18n="usdExport">Export OpenUSD</button>
+      <button type="button" id="usdImport" data-i18n="usdImport">Import .usda</button>
+      <button type="button" id="layoutExport" data-i18n="layoutExport">Export for Unity</button>
       <input type="file" id="usdFile" accept=".usda,.usd" hidden>
     </div>
     <p class="sub" id="usdMsg" style="margin-top:6px"></p>
     <ul class="issues" id="usdWarnings"></ul>
   </div>
-  <p class="foot">功耗、价格为公开报道与供应链估算的粗略值，用于体验和教学，不可作为工程设计依据。Vera Rubin NVL72 功耗按 Max-Q 约 190 kW 计。</p>
+  <p class="foot" data-i18n="foot">Power and price figures are rough estimates from public reports and supply chain sources, for learning only. Do not use them for engineering design. Vera Rubin NVL72 power assumes Max-Q at about 190 kW.</p>
 </aside>
 
 <script type="module" src="./src/main.js"></script>

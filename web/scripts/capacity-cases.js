@@ -6,11 +6,19 @@ import {compute} from '../src/sim.js';
 import {CAT, CATALOG} from '../src/catalog.js';
 import {GRID} from '../src/grid.js';
 import {PRESETS} from '../src/layout.js';
+import {getLang, setLang} from '../src/i18n.js';
 
 export const CASES_PATH = new URL('../../spec/capacity-cases.json', import.meta.url);
 const META = {date: '2026-09-17'};
 
+// 用例里的问题文本固定用中文：Unity 的 C# 容量模型输出中文并逐字比对
 export function buildCases(){
+  const previous = getLang();
+  setLang('zh');
+  try { return cases(); } finally { setLang(previous); }
+}
+
+function cases(){
   const inputs = [
     ...Object.entries(PRESETS).map(([name, p]) => [`preset ${name}`, p.u, p.list]),
     ['every type once', 10, CATALOG.map((t, i) => [t.id, i, 9])],

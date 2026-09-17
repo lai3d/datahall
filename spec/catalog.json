@@ -16,7 +16,12 @@
       "liq": 0.85,
       "cap": 3.2,
       "h": 2.3,
-      "note": "72 颗 Blackwell GPU + 36 颗 Grace CPU，Oberon 机柜，NVLink 72 卡全互联。计算和交换托盘液冷，其余部分仍需风冷。"
+      "note": "72 颗 Blackwell GPU + 36 颗 Grace CPU，Oberon 机柜，NVLink 72 卡全互联。计算和交换托盘液冷，其余部分仍需风冷。",
+      "i18n": {
+        "en": {
+          "note": "72 Blackwell GPUs + 36 Grace CPUs in an Oberon rack, all 72 GPUs connected by NVLink. Compute and switch trays are liquid-cooled; the rest still needs air cooling."
+        }
+      }
     },
     {
       "id": "gb300",
@@ -28,7 +33,12 @@
       "liq": 0.85,
       "cap": 3.8,
       "h": 2.3,
-      "note": "Blackwell Ultra 版本，机柜形态与 GB200 相同，单柜约 132–142 kW。"
+      "note": "Blackwell Ultra 版本，机柜形态与 GB200 相同，单柜约 132–142 kW。",
+      "i18n": {
+        "en": {
+          "note": "Blackwell Ultra version in the same rack form factor as GB200, about 132–142 kW per rack."
+        }
+      }
     },
     {
       "id": "vr200",
@@ -40,7 +50,12 @@
       "liq": 0.95,
       "cap": 6,
       "h": 2.3,
-      "note": "72 颗 Rubin GPU + 36 颗 Vera CPU，HBM4 与 NVLink 6，2026 下半年出货。Max-Q 约 190 kW，Max-P 约 230 kW（供应链估算）。"
+      "note": "72 颗 Rubin GPU + 36 颗 Vera CPU，HBM4 与 NVLink 6，2026 下半年出货。Max-Q 约 190 kW，Max-P 约 230 kW（供应链估算）。",
+      "i18n": {
+        "en": {
+          "note": "72 Rubin GPUs + 36 Vera CPUs with HBM4 and NVLink 6, shipping in the second half of 2026. Max-Q about 190 kW, Max-P about 230 kW (supply chain estimates)."
+        }
+      }
     },
     {
       "id": "dgx",
@@ -52,7 +67,12 @@
       "liq": 0,
       "cap": 2,
       "h": 2.2,
-      "note": "一柜 4 台 10U DGX B200，每台 8 GPU、约 14.3 kW。纯风冷，单柜接近 60 kW，实际常需背板换热器。"
+      "note": "一柜 4 台 10U DGX B200，每台 8 GPU、约 14.3 kW。纯风冷，单柜接近 60 kW，实际常需背板换热器。",
+      "i18n": {
+        "en": {
+          "note": "Four 10U DGX B200 systems per rack, each with 8 GPUs and about 14.3 kW. Air-cooled only and close to 60 kW per rack, so real deployments often need rear-door heat exchangers."
+        }
+      }
     },
     {
       "id": "kyber",
@@ -65,7 +85,12 @@
       "cap": 9,
       "h": 2.6,
       "future": true,
-      "note": "2027 路线图产品，单柜约 600 kW，全液冷，配电需要 800 VDC 架构。价格为推测值。"
+      "note": "2027 路线图产品，单柜约 600 kW，全液冷，配电需要 800 VDC 架构。价格为推测值。",
+      "i18n": {
+        "en": {
+          "note": "Roadmap product for 2027, about 600 kW per rack, fully liquid-cooled, and needs an 800 VDC power architecture. Price is speculative."
+        }
+      }
     },
     {
       "id": "ib",
@@ -77,7 +102,12 @@
       "ports": 288,
       "cap": 0.9,
       "h": 2.2,
-      "note": "800G InfiniBand 交换机柜。简化模型：每柜可接 288 个 GPU 后端网络端口。"
+      "note": "800G InfiniBand 交换机柜。简化模型：每柜可接 288 个 GPU 后端网络端口。",
+      "i18n": {
+        "en": {
+          "note": "800G InfiniBand switch rack. Simplified model: each rack provides 288 back-end network ports for GPUs."
+        }
+      }
     },
     {
       "id": "stor",
@@ -88,7 +118,13 @@
       "liq": 0,
       "cap": 0.6,
       "h": 2.2,
-      "note": "全闪存储，承载数据集与检查点。"
+      "note": "全闪存储，承载数据集与检查点。",
+      "i18n": {
+        "en": {
+          "name": "Storage rack",
+          "note": "All-flash storage for datasets and checkpoints."
+        }
+      }
     },
     {
       "id": "cdu",
@@ -99,7 +135,13 @@
       "ovh": 12,
       "cap": 0.35,
       "h": 2.1,
-      "note": "列间 CDU，把机柜冷板回路接到设施水。每台带走约 800 kW 液冷热量，自身泵耗约 12 kW。"
+      "note": "列间 CDU，把机柜冷板回路接到设施水。每台带走约 800 kW 液冷热量，自身泵耗约 12 kW。",
+      "i18n": {
+        "en": {
+          "name": "CDU coolant unit",
+          "note": "In-row coolant distribution unit connecting rack cold-plate loops to facility water. Each removes about 800 kW of liquid-cooling heat, and its pumps draw about 12 kW."
+        }
+      }
     },
     {
       "id": "crah",
@@ -110,7 +152,13 @@
       "ovh": 9,
       "cap": 0.08,
       "h": 2.1,
-      "note": "列间风冷单元，每台约 120 kW 显冷量，风机耗电约 9 kW。"
+      "note": "列间风冷单元，每台约 120 kW 显冷量，风机耗电约 9 kW。",
+      "i18n": {
+        "en": {
+          "name": "In-row cooler",
+          "note": "In-row air cooling unit with about 120 kW of sensible cooling each; its fans draw about 9 kW."
+        }
+      }
     },
     {
       "id": "rpp",
@@ -120,7 +168,13 @@
       "dist": 800,
       "cap": 0.25,
       "h": 2.1,
-      "note": "远程配电柜，每台可为机柜分配约 800 kW。"
+      "note": "远程配电柜，每台可为机柜分配约 800 kW。",
+      "i18n": {
+        "en": {
+          "name": "RPP power panel",
+          "note": "Remote power panel; each distributes about 800 kW to racks."
+        }
+      }
     }
   ]
 }

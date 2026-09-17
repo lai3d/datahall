@@ -3,6 +3,7 @@
 // 支持 schema 0.1（custom 属性）和 0.2（applied API schema），以及被 usdview、usdcat、Omniverse 重新保存过的文件。
 import {parseUsda, UsdaSyntaxError} from './usda-parser.js';
 import {keyOf} from './grid.js';
+import {tr, loc, catName} from './i18n.js';
 
 export class UsdImportError extends Error {}
 
@@ -29,11 +30,11 @@ function catalogIdOf(prim){
 }
 
 export function importUsda(text, CAT, GRID){
-  if (text.startsWith('PXR-USDC')) throw new UsdImportError('这是二进制 .usd（usdc）文件，只支持文本 .usda。可以用 usdcat 转换：usdcat in.usd -o out.usda');
+  if (text.startsWith('PXR-USDC')) throw new UsdImportError(tr('usdBinary'));
   let layer;
   try { layer = parseUsda(text); }
   catch (e){
-    if (e instanceof UsdaSyntaxError) throw new UsdImportError(`文件格式有误，${e.message}`);
+    if (e instanceof UsdaSyntaxError) throw new UsdImportError(tr('usdSyntax', {msg: e.message}));
     throw e;
   }
 
@@ -42,7 +43,7 @@ export function importUsda(text, CAT, GRID){
   const meta = layer.metadata;
   const hallName = meta.defaultPrim || 'DataHall';
   const hall = layer.prims.find(p => p.name === hallName && p.specifier === 'def');
-  if (!hall || hallName !== 'DataHall') throw new UsdImportError('没有找到 /DataHall，这个文件不是本工具导出的机房布局。');
+  if (!hall || hallName !== 'DataHall') throw new UsdImportError(tr('usdNoHall'));
 
   // 位置只看 gridColumn/gridRow，和坐标轴无关；坐标轴只用来核对 translate
   const zUpMeters = meta.upAxis === 'Z' && meta.metersPerUnit === 1;
@@ -50,13 +51,13 @@ export function importUsda(text, CAT, GRID){
   const grid = {GW: 'dchall:gridColumns', GD: 'dchall:gridRows', CX: 'dchall:cellWidthM', CZ: 'dchall:cellDepthM'};
   for (const [k, name] of Object.entries(grid)){
     const v = valueOf(hall, name);
-    if (v === undefined) warn(`文件没有 ${name}，按 ${GRID.GW} 列 × ${GRID.GD} 排、${GRID.CX} m × ${GRID.CZ} m 的网格导入。`);
-    else if (Math.abs(v - GRID[k]) > 1e-6) throw new UsdImportError(`文件的网格 ${name} = ${v}，和当前网格（${GRID[k]}）不一致，无法导入。`);
+    if (v === undefined) warn(tr('usdGridMissing', {name, gw: GRID.GW, gd: GRID.GD, cx: GRID.CX, cz: GRID.CZ}));
+    else if (Math.abs(v - GRID[k]) > 1e-6) throw new UsdImportError(tr('usdGridMismatch', {name, v, cur: GRID[k]}));
   }
 
   let utility = valueOf(hall, 'dchall:utilityMw');
   if (!(typeof utility === 'number' && utility > 0 && Number.isFinite(utility))){
-    warn('文件没有有效的 dchall:utilityMw，市电容量按 2 MW 导入。');
+    warn(tr('usdUtility'));
     utility = 2;
   }
 
@@ -67,7 +68,7 @@ export function importUsda(text, CAT, GRID){
     const diffs = Object.entries(PARAMS)
       .filter(([name, field]) => typeof valueOf(proto, name) === 'number' && Math.abs(valueOf(proto, name) - (t[field] || 0)) > 1e-6)
       .map(([name, field]) => `${name.slice(7)} ${valueOf(proto, name)} → ${t[field] || 0}`);
-    if (diffs.length) warn(`${t.name} 的参数和当前目录不同（${diffs.join('，')}），按当前目录计算。`);
+    if (diffs.length) warn(tr('usdParams', {name: catName(t), diffs: diffs.join(tr('listSep'))}));
   }
 
   const list = [], seen = new Map();
@@ -76,27 +77,27 @@ export function importUsda(text, CAT, GRID){
   for (const prim of child(hall, 'Equipment')?.children || []){
     const where = prim.name;
     if (prim.specifier !== 'def') continue;
-    if (!isActive(prim)){ skip(`${where} 已停用（active = false），未导入。`); continue; }
+    if (!isActive(prim)){ skip(tr('usdInactive', {where})); continue; }
     const id = catalogIdOf(prim);
-    if (!id){ skip(`${where} 没有引用 /DataHall/Catalog 下的设备原型，未导入。`); continue; }
-    if (!CAT[id]){ skip(`${where} 的设备类型 ${id} 不在当前目录里，未导入。`); continue; }
+    if (!id){ skip(tr('usdNoProto', {where})); continue; }
+    if (!CAT[id]){ skip(tr('usdUnknownType', {where, id})); continue; }
 
     let x = valueOf(prim, 'dchall:gridColumn'), z = valueOf(prim, 'dchall:gridRow');
     if (!Number.isInteger(x) || !Number.isInteger(z)){
       const m = where.match(/^R(\d\d)_C(\d\d)$/);
-      if (!m){ skip(`${where} 没有 dchall:gridColumn / gridRow，也无法从名字推断位置，未导入。`); continue; }
+      if (!m){ skip(tr('usdNoGrid', {where})); continue; }
       [z, x] = [+m[1] - 1, +m[2] - 1];
-      warn(`${where} 没有 dchall:gridColumn / gridRow，按名字放在第 ${x + 1} 列第 ${z + 1} 排。`);
+      warn(tr('usdGridFromName', {where, loc: loc(x, z)}));
     }
-    if (x < 0 || x >= GRID.GW || z < 0 || z >= GRID.GD){ skip(`${where} 的位置（第 ${x + 1} 列第 ${z + 1} 排）超出网格，未导入。`); continue; }
+    if (x < 0 || x >= GRID.GW || z < 0 || z >= GRID.GD){ skip(tr('usdOutside', {where, loc: loc(x, z)})); continue; }
     const key = keyOf(x, z);
-    if (seen.has(key)){ skip(`${where} 和 ${seen.get(key)} 占用同一格（第 ${x + 1} 列第 ${z + 1} 排），未导入。`); continue; }
+    if (seen.has(key)){ skip(tr('usdOverlap', {where, other: seen.get(key), loc: loc(x, z)})); continue; }
 
     // 在 usdview、Omniverse 里拖动过的设备，translate 会和网格位置对不上
     const t = valueOf(prim, 'xformOp:translate');
     if (zUpMeters && Array.isArray(t)){
       const ex = (x - (GRID.GW - 1) / 2) * GRID.CX, ey = -((z - (GRID.GD - 1) / 2) * GRID.CZ);
-      if (Math.hypot(t[0] - ex, t[1] - ey) > 0.05) warn(`${where} 的 xformOp:translate 和第 ${x + 1} 列第 ${z + 1} 排的位置不一致，按 dchall:gridColumn / gridRow 放置。`);
+      if (Math.hypot(t[0] - ex, t[1] - ey) > 0.05) warn(tr('usdTranslate', {where, loc: loc(x, z)}));
     }
     seen.set(key, where);
     list.push([id, x, z]);

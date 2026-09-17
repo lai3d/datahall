@@ -1,0 +1,150 @@
+// English UI copy (default language). Keys must match zh.js; tests/i18n.test.js checks this.
+// Function values take a single vars object. Sentence case, no all-caps labels.
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+export default {
+  // Location on the grid; x and z are 1-based
+  loc: ({x, z}) => `column ${x}, row ${z}`,
+  listSep: ', ',
+
+  // Static page copy
+  title: 'GPU data hall builder',
+  subtitle: 'Pick a device, then click an empty floor cell to place it. Drag to orbit; pinch or scroll to zoom.',
+  language: 'Language',
+  hudIt: 'IT load',
+  hudPue: 'Estimated PUE',
+  camReset: 'Reset view',
+  hUtility: 'Utility power',
+  hDevices: 'Devices',
+  hCheck: 'Capacity check',
+  hInfo: 'Details',
+  hPresets: 'Presets',
+  hShare: 'Share',
+  presetEmpty: 'Clear hall',
+  presetGb200: 'GB200 cluster',
+  presetRubin: 'Vera Rubin row',
+  shareCopy: 'Copy share link',
+  usdExport: 'Export OpenUSD',
+  usdImport: 'Import .usda',
+  layoutExport: 'Export for Unity',
+  foot: 'Power and price figures are rough estimates from public reports and supply chain sources, for learning only. Do not use them for engineering design. Vera Rubin NVL72 power assumes Max-Q at about 190 kW.',
+
+  // Palette chips
+  chipCooling: ({kw}) => `cools ${kw} kW`,
+  chipDist: ({kw}) => `feeds ${kw} kW`,
+  chipPorts: ({n}) => `${n} ports`,
+
+  // Gauges
+  gaugeDist: 'Power distribution',
+  gaugeLiquid: 'Liquid cooling',
+  gaugeAir: 'Air cooling',
+  gaugeNetwork: 'Back-end network',
+  gaugeUtility: 'Utility',
+  gaugeCapex: 'Estimated hardware cost',
+  ports: ({used, total}) => `${used} / ${total} ports`,
+  capex: ({m}) => `about $${m}M`,
+
+  // Capacity issues (sim.js)
+  issueDist: ({need, cap}) => `Not enough power distribution: racks need ${need}, RPPs can distribute only ${cap}. Add an RPP.`,
+  issueLiquid: ({heat, cap}) => `Not enough liquid cooling: ${heat} of heat, CDUs can remove only ${cap}. Add a CDU.`,
+  issueAir: ({heat, cap}) => `Not enough air cooling: ${heat} of heat, air handlers can remove only ${cap}. Add an in-row cooler.`,
+  issueNetwork: ({gpus, ports}) => `Not enough back-end network: ${gpus} GPUs, only ${ports} ports. Add an IB switch rack.`,
+  issueUtility: ({facility, u}) => `Over utility power: the facility draws ${facility}, utility supplies only ${u} MW.`,
+  issueKyber: 'Kyber racks need 800 VDC power distribution and are still a roadmap product.',
+  issueDgx: 'A DGX B200 rack draws about 57 kW, all air-cooled. Real deployments usually add rear-door heat exchangers.',
+  issueEmpty: 'The hall is empty. Place a GPU rack first, then add power, cooling and networking.',
+  issueOk: 'All checks pass. Ready to power on.',
+
+  // Per-device check (supply.js)
+  overloadCdu: ({loc, n, load, cap}) => `CDU (${loc}) is overloaded: ${plural(n, 'device', 'devices')} assigned, ${load} of liquid-cooling heat, but it can remove only ${cap}. Move some devices closer to another CDU, or add one nearby.`,
+  overloadRpp: ({loc, n, load, cap}) => `RPP (${loc}) is overloaded: ${plural(n, 'device', 'devices')} assigned, ${load} of power, but it can distribute only ${cap}. Move some devices closer to another RPP, or add one nearby.`,
+  overloadMore: ({n, label}) => n === 1 ? `1 more ${label} is overloaded.` : `${n} more ${label}s are overloaded.`,
+
+  // Power button
+  powerOn: 'Power on',
+  powerOff: 'Powered on, click to power off',
+
+  // Details panel
+  infoEmpty: 'Click a device to see its details, or pick a device above to start placing.',
+  infoAt: ({loc}) => `, ${loc}`,
+  infoPlaceHint: ', click an empty floor cell to place',
+  rowPower: 'Power',
+  rowGpu: 'GPU',
+  rowCooling: 'Cooling',
+  liquidPct: ({pct}) => `liquid ${pct}%`,
+  air: 'air',
+  rowLiquidCap: 'Liquid cooling capacity',
+  rowAirCap: 'Air cooling capacity',
+  rowDistCap: 'Distribution capacity',
+  rowPorts: 'GPU ports',
+  rowPrice: 'Estimated price',
+  rowLoad: 'Current load',
+  overloadedSuffix: ', overloaded',
+  rowConsumers: 'Connected devices',
+  deviceCount: ({n}) => plural(n, 'device', 'devices'),
+  rowCoolantFrom: 'Coolant from',
+  rowPowerFrom: 'Power from',
+  noSupply: ({label}) => `no ${label} to connect`,
+  supplyAt: ({label, loc}) => `${label} (${loc})`,
+  remove: 'Remove device',
+
+  // Share link
+  shareHint: 'The URL in the address bar always matches the current hall. Send it to someone and they see the same layout.',
+  shareNotLoaded: 'Share link not loaded.',
+  shareLoaded: ({n, u}) => `Loaded ${plural(n, 'device', 'devices')} from the share link, utility ${u} MW.`,
+  shareEmpty: 'The hall is empty. Place devices before sharing.',
+  shareCopied: ({n}) => `Link copied (${plural(n, 'device', 'devices')}).`,
+  shareCopyFailed: 'The browser blocked copying. Copy the URL from the address bar instead.',
+  linkVersion: ({v}) => `Share link version ${v} is not supported. No layout loaded.`,
+  linkUtility: 'Utility capacity in the share link is invalid. Loaded as 2 MW.',
+  linkType: ({type}) => `Device type ${type} in the share link is not in the current catalog. Skipped.`,
+  linkCell: ({cell}) => `Position ${cell} in the share link is malformed. Skipped.`,
+  linkOutside: ({name, loc}) => `${name} at ${loc} is outside the grid. Skipped.`,
+  linkOverlap: ({name, loc}) => `${name} shares a cell with another device (${loc}). Skipped.`,
+
+  // Import and export
+  moreMessages: ({n}) => `${n} more ${n === 1 ? 'message' : 'messages'} not shown.`,
+  importDone: ({file, n, u}) => `Imported ${plural(n, 'device', 'devices')} from ${file}, utility ${u} MW.`,
+  importSkipped: ({n}) => ` Skipped ${n}.`,
+  importFailed: ({reason}) => `Not imported: ${reason}`,
+  importReadError: 'Not imported: the file could not be read.',
+  usdHint: 'Z-up, meters. Opens directly in Omniverse, usdview or Blender.',
+  saverZip: 'OpenUSD downloads as a zip with datahall.usda and a field reference. ',
+  saverFile: 'OpenUSD downloads the datahall.usda text layer. ',
+  exportEmpty: 'The hall is empty. Place devices before exporting.',
+  exportCancelled: 'Export cancelled.',
+  exportBusy: 'A save dialog is already open. Finish it, then try again.',
+  exportFailed: 'Export failed. This environment may not allow downloads.',
+  exportUsdDone: ({n}) => `Exported ${plural(n, 'device', 'devices')}.`,
+  exportLayoutDone: ({n}) => `Exported layout.json (${plural(n, 'device', 'devices')}). Open it in the Unity app.`,
+
+  // usd-import.js
+  usdBinary: 'This is a binary .usd (usdc) file. Only text .usda is supported. Convert it with usdcat: usdcat in.usd -o out.usda',
+  usdSyntax: ({msg}) => `the file is malformed. ${msg}`,
+  usdNoHall: 'No /DataHall found. This file is not a hall layout exported by this tool.',
+  usdGridMissing: ({name, gw, gd, cx, cz}) => `The file has no ${name}. Importing with a ${gw} × ${gd} grid of ${cx} m × ${cz} m cells.`,
+  usdGridMismatch: ({name, v, cur}) => `The file's grid ${name} = ${v} differs from the current grid (${cur}). Cannot import.`,
+  usdUtility: 'The file has no valid dchall:utilityMw. Importing with 2 MW utility.',
+  usdParams: ({name, diffs}) => `${name} parameters differ from the current catalog (${diffs}). Using the current catalog.`,
+  usdInactive: ({where}) => `${where} is deactivated (active = false). Not imported.`,
+  usdNoProto: ({where}) => `${where} does not reference a device prototype under /DataHall/Catalog. Not imported.`,
+  usdUnknownType: ({where, id}) => `${where} has device type ${id}, which is not in the current catalog. Not imported.`,
+  usdNoGrid: ({where}) => `${where} has no dchall:gridColumn / gridRow, and its position cannot be inferred from its name. Not imported.`,
+  usdGridFromName: ({where, loc}) => `${where} has no dchall:gridColumn / gridRow. Placed at ${loc} based on its name.`,
+  usdOutside: ({where, loc}) => `${where} at ${loc} is outside the grid. Not imported.`,
+  usdOverlap: ({where, other, loc}) => `${where} shares a cell with ${other} (${loc}). Not imported.`,
+  usdTranslate: ({where, loc}) => `${where} has an xformOp:translate that does not match ${loc}. Placed by dchall:gridColumn / gridRow.`,
+
+  // usda-parser.js
+  parseLine: ({line, msg}) => `Line ${line}: ${msg}`,
+  parseString: 'unterminated string',
+  parsePath: 'unterminated path',
+  parseAsset: 'unterminated asset path',
+  parseChar: ({c}) => `unrecognized character ${c}`,
+  parseExpected: ({expected, got}) => `expected ${expected}, got ${got}`,
+  parseEof: 'end of file',
+  parseUnpaired: ({open, close}) => `${open} has no matching ${close}`,
+  parseValue: ({v}) => `cannot parse value ${v}`,
+  parseSpecifier: ({v}) => `expected def, over or class, got ${v}`,
+  parseHeader: 'not a usda text file (missing #usda header)',
+};
