@@ -27,7 +27,8 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
   background:color-mix(in srgb,var(--panel) 82%,transparent);padding:6px 10px;border-radius:6px;border:1px solid var(--line)}
 #hud b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;display:block;line-height:1.1}
 #hud span{font-size:12px;color:var(--muted)}
-#camReset{position:absolute;right:10px;top:10px}
+#stageTools{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+#stageTools button{background:color-mix(in srgb,var(--panel) 82%,transparent)}
 #panel{background:var(--panel);border-top:1px solid var(--line);max-height:56vh;overflow-y:auto;padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
 @media (min-width:900px){
   body{flex-direction:row}
@@ -35,10 +36,13 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 }
 h1{font-size:22px;font-weight:700;margin:0 0 2px;letter-spacing:.2px}
 .head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.lang{flex:none;gap:0}
-.lang button{padding:3px 8px;font-size:12px;min-height:0}
-.lang button:first-child{border-radius:6px 0 0 6px}
-.lang button:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
+.lang,.mini{flex:none;gap:0;flex-wrap:nowrap}
+.lang button,.mini button{padding:3px 8px;font-size:12px;min-height:0}
+.lang button:first-child,.mini button:first-child{border-radius:6px 0 0 6px}
+.lang button:last-child,.mini button:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
+.h2row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 8px}
+.h2row h2{margin:0}
+#placeHint{margin:-2px 0 8px}
 .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
 h2{font-size:15px;font-weight:600;margin:16px 0 8px;color:var(--muted)}
 button{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}

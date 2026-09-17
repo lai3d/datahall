@@ -13,6 +13,7 @@ A simulator for laying out an AI data hall around NVIDIA's latest GPU racks: GB2
 - **Capacity model.** Five constraints must all hold before the hall can power on: power distribution (RPP), liquid cooling (CDU), air cooling (in-row coolers), back-end network ports and utility power. A simplified PUE estimate is shown alongside.
 - **Per-device checks.** Each rack is fed by its nearest CDU and RPP. An overloaded supply blocks power-on even when hall totals are fine. Overloaded supplies and unconnected devices are marked red in 3D.
 - **OpenUSD export and import.** The export is Z-up, in meters, and uses instanceable equipment that references catalog prototypes. Parameters are defined by a codeless applied API schema (`dchall:` namespace). The page can re-import its own `.usda` files, including files re-saved by usdview or Omniverse.
+- **Editing.** Drag a device to move it, place a whole row with two clicks, and undo or redo any change (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y). Delete removes the selected device.
 - **Share links.** The layout is encoded in the URL hash, so the address bar always links to the current hall.
 - **English and Simplified Chinese UI.**
 - **Unity app (macOS, paused).** It reads the same layout through `layout.json` plus glTF models converted from USD.

@@ -15,6 +15,7 @@ export function initUI(a){
   actions = a;
   $('#utility').onclick = e => { const b = e.target.closest('button'); if (b) actions.setUtility(+b.dataset.u); };
   $('#palette').onclick = e => { const b = e.target.closest('button'); if (b) actions.setTool(b.dataset.t); };
+  $('#placeMode').onclick = e => { const b = e.target.closest('button'); if (b) actions.setPlaceMode(b.dataset.mode); };
   $('#power').onclick = () => actions.togglePower();
   $('#lang').onclick = e => { const b = e.target.closest('button'); if (b) actions.setLang(b.dataset.lang); };
   document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => actions.loadPreset(b.dataset.preset));
@@ -29,6 +30,11 @@ export function applyStaticText(){
 }
 
 export function buildUI(){
+  $('#placeMode').innerHTML = [['one', 'placeOne'], ['row', 'placeRow']].map(([mode, key]) =>
+    `<button type="button" data-mode="${mode}" aria-pressed="${state.placeMode === mode}">${tr(key)}</button>`).join('');
+  const hint = state.placeMode !== 'row' ? '' : !state.tool ? tr('rowHintTool') : tr(state.rowAnchor ? 'rowHintEnd' : 'rowHintStart');
+  $('#placeHint').textContent = hint;
+  $('#placeHint').hidden = !hint;
   $('#utility').innerHTML = UTIL.map(u => `<button type="button" data-u="${u}" aria-pressed="${u === state.utility}">${u} MW</button>`).join('');
   $('#palette').innerHTML = CATALOG.map(t => {
     const bits = [t.kw ? t.kw + ' kW' : '', t.gpus ? t.gpus + ' GPU' : '', t.liqCool ? tr('chipCooling', {kw: t.liqCool}) : '',

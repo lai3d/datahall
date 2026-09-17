@@ -16,7 +16,11 @@
     <div><b id="hIt">0 kW</b><span data-i18n="hudIt">IT load</span></div>
     <div><b id="hPue">–</b><span data-i18n="hudPue">Estimated PUE</span></div>
   </div>
-  <button id="camReset" type="button" data-i18n="camReset">Reset view</button>
+  <div id="stageTools">
+    <button id="undo" type="button" data-i18n="undo" aria-keyshortcuts="Meta+Z Control+Z" disabled>Undo</button>
+    <button id="redo" type="button" data-i18n="redo" aria-keyshortcuts="Meta+Shift+Z Control+Y" disabled>Redo</button>
+    <button id="camReset" type="button" data-i18n="camReset">Reset view</button>
+  </div>
 </main>
 
 <aside id="panel">
@@ -24,12 +28,16 @@
     <h1 data-i18n="title">GPU data hall builder</h1>
     <div class="row seg lang" id="lang" role="group" data-i18n-aria="language" aria-label="Language"></div>
   </div>
-  <p class="sub" data-i18n="subtitle">Pick a device, then click an empty floor cell to place it. Drag to orbit; pinch or scroll to zoom.</p>
+  <p class="sub" data-i18n="subtitle">Pick a device, then click an empty floor cell to place it. Drag a device to move it, drag the floor to orbit, pinch or scroll to zoom.</p>
 
   <h2 data-i18n="hUtility">Utility power</h2>
   <div class="row seg" id="utility"></div>
 
-  <h2 data-i18n="hDevices">Devices</h2>
+  <div class="h2row">
+    <h2 data-i18n="hDevices">Devices</h2>
+    <div class="row seg mini" id="placeMode" role="group" data-i18n-aria="placeMode" aria-label="Placement"></div>
+  </div>
+  <p class="sub" id="placeHint" hidden></p>
   <div class="palette" id="palette"></div>
 
   <h2 data-i18n="hCheck">Capacity check</h2>
