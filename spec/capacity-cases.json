@@ -62,7 +62,7 @@
             "overheadKw": 0,
             "distributionKw": 0,
             "fabricPorts": 0,
-            "capexMusd": 3.2,
+            "capexMusd": 3,
             "roadmap": false,
             "heightM": 2.3
           },
@@ -288,7 +288,7 @@
         "distributionKw": 1600,
         "fabricPorts": 576,
         "overheadKw": 42,
-        "capexMusd": 28.759999999999994,
+        "capexMusd": 27.159999999999997,
         "facilityKw": 1269.8000000000002,
         "pue": 1.211641221374046,
         "blocking": false,
@@ -322,7 +322,7 @@
             "overheadKw": 0,
             "distributionKw": 0,
             "fabricPorts": 0,
-            "capexMusd": 3.2,
+            "capexMusd": 3,
             "roadmap": false,
             "heightM": 2.3
           },
@@ -584,7 +584,7 @@
         "distributionKw": 2400,
         "fabricPorts": 864,
         "overheadKw": 63,
-        "capexMusd": 30.339999999999993,
+        "capexMusd": 28.739999999999995,
         "facilityKw": 1323.1999999999998,
         "pue": 1.234328358208955,
         "blocking": false,
@@ -612,7 +612,7 @@
             "category": "gpu",
             "powerKw": 190,
             "gpuCount": 72,
-            "liquidFraction": 0.95,
+            "liquidFraction": 1,
             "liquidCoolingKw": 0,
             "airCoolingKw": 0,
             "overheadKw": 0,
@@ -907,16 +907,16 @@
       "expected": {
         "itKw": 1990,
         "gpus": 720,
-        "liquidHeatKw": 1805,
-        "airHeatKw": 185.0000000000001,
+        "liquidHeatKw": 1900,
+        "airHeatKw": 90,
         "liquidCapacityKw": 2400,
         "airCapacityKw": 240,
         "distributionKw": 2400,
         "fabricPorts": 864,
         "overheadKw": 54,
         "capexMusd": 65.25999999999999,
-        "facilityKw": 2343.4,
-        "pue": 1.1775879396984925,
+        "facilityKw": 2322.5,
+        "pue": 1.1670854271356783,
         "blocking": false,
         "issues": []
       }
@@ -948,7 +948,7 @@
             "overheadKw": 0,
             "distributionKw": 0,
             "fabricPorts": 0,
-            "capexMusd": 3.2,
+            "capexMusd": 3,
             "roadmap": false,
             "heightM": 2.3
           },
@@ -958,13 +958,13 @@
             "category": "gpu",
             "powerKw": 140,
             "gpuCount": 72,
-            "liquidFraction": 0.85,
+            "liquidFraction": 0.9,
             "liquidCoolingKw": 0,
             "airCoolingKw": 0,
             "overheadKw": 0,
             "distributionKw": 0,
             "fabricPorts": 0,
-            "capexMusd": 3.8,
+            "capexMusd": 4.3,
             "roadmap": false,
             "heightM": 2.3
           },
@@ -974,7 +974,7 @@
             "category": "gpu",
             "powerKw": 190,
             "gpuCount": 72,
-            "liquidFraction": 0.95,
+            "liquidFraction": 1,
             "liquidCoolingKw": 0,
             "airCoolingKw": 0,
             "overheadKw": 0,
@@ -1002,7 +1002,7 @@
           },
           {
             "id": "kyber",
-            "name": "Rubin Ultra Kyber",
+            "name": "Vera Rubin Ultra NVL144 (Kyber)",
             "category": "gpu",
             "powerKw": 600,
             "gpuCount": 144,
@@ -1012,7 +1012,7 @@
             "overheadKw": 0,
             "distributionKw": 0,
             "fabricPorts": 0,
-            "capexMusd": 9,
+            "capexMusd": 8.8,
             "roadmap": true,
             "heightM": 2.6
           },
@@ -1243,16 +1243,16 @@
       "expected": {
         "itKw": 1509,
         "gpus": 528,
-        "liquidHeatKw": 1336.75,
-        "airHeatKw": 172.25,
+        "liquidHeatKw": 1353.25,
+        "airHeatKw": 155.75,
         "liquidCapacityKw": 800,
         "airCapacityKw": 120,
         "distributionKw": 800,
         "fabricPorts": 288,
         "overheadKw": 21,
-        "capexMusd": 33.83,
-        "facilityKw": 1764.065,
-        "pue": 1.1690291583830352,
+        "capexMusd": 33.93,
+        "facilityKw": 1760.4350000000002,
+        "pue": 1.1666235917826375,
         "blocking": true,
         "issues": [
           {
@@ -1261,11 +1261,11 @@
           },
           {
             "level": "bad",
-            "text": "液冷不足：1.34 MW 热量，CDU 只能带走 800 kW。加 CDU。"
+            "text": "液冷不足：1.35 MW 热量，CDU 只能带走 800 kW。加 CDU。"
           },
           {
             "level": "bad",
-            "text": "风冷不足：172 kW 热量，空调只能带走 120 kW。加列间空调。"
+            "text": "风冷不足：156 kW 热量，空调只能带走 120 kW。加列间空调。"
           },
           {
             "level": "bad",
@@ -1309,7 +1309,7 @@
             "overheadKw": 0,
             "distributionKw": 0,
             "fabricPorts": 0,
-            "capexMusd": 3.2,
+            "capexMusd": 3,
             "roadmap": false,
             "heightM": 2.3
           }
@@ -1336,7 +1336,7 @@
         "distributionKw": 0,
         "fabricPorts": 0,
         "overheadKw": 0,
-        "capexMusd": 3.2,
+        "capexMusd": 3,
         "facilityKw": 145.375,
         "pue": 1.163,
         "blocking": true,
@@ -1377,7 +1377,7 @@
         "catalog": [
           {
             "id": "kyber",
-            "name": "Rubin Ultra Kyber",
+            "name": "Vera Rubin Ultra NVL144 (Kyber)",
             "category": "gpu",
             "powerKw": 600,
             "gpuCount": 144,
@@ -1387,7 +1387,7 @@
             "overheadKw": 0,
             "distributionKw": 0,
             "fabricPorts": 0,
-            "capexMusd": 9,
+            "capexMusd": 8.8,
             "roadmap": true,
             "heightM": 2.6
           }
@@ -1441,7 +1441,7 @@
         "distributionKw": 0,
         "fabricPorts": 0,
         "overheadKw": 0,
-        "capexMusd": 36,
+        "capexMusd": 35.2,
         "facilityKw": 2712,
         "pue": 1.13,
         "blocking": true,

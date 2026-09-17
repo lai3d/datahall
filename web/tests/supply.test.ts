@@ -22,7 +22,7 @@ describe('supplyLoads', () => {
     const list = [...racks(3, [0, 1, 2]), at('ib', 3, 3), at('cdu', 0, 5), at('rpp', 1, 5), at('cdu', 15, 5)];
     const {loads} = check(list);
     const cdu = loadOf(loads, 0, 5);
-    expect(cdu.loadKw).toBeCloseTo(3 * 190 * .95);
+    expect(cdu.loadKw).toBeCloseTo(3 * CAT.vr200.kw! * CAT.vr200.liq!);
     expect(cdu.consumers).toHaveLength(3);          // IB is air-cooled and not connected to a CDU
     expect(loadOf(loads, 15, 5).loadKw).toBe(0);
     const rpp = loadOf(loads, 1, 5);

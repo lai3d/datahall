@@ -166,6 +166,9 @@ test('methodology dialog opens from the header and from section links, and close
   await expect(dialog.locator('#m-pue .formula')).toContainText('liquid-cooled heat × 0.08 + air-cooled heat × 0.30 + IT × 0.05');
   await expect(dialog.locator('#m-checks')).toContainText('800 kW each');
   await expect(dialog.locator('#m-devices li[data-t="vr200"]')).toContainText('Vera Rubin NVL72');
+  // Every device lists its sources, with links for everything that is not this project's own estimate
+  await expect(dialog.locator('#m-devices li[data-t="vr200"] .sources a')).toHaveCount(4);
+  await expect(dialog.locator('#m-devices li[data-t="vr200"] .sources')).toContainText('range in sources 190–230 kW');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await page.locator('button[data-method="planning"]').click();

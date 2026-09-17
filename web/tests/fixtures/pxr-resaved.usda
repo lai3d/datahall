@@ -77,7 +77,7 @@ def Xform "DataHall" (
             int dchall:gpuCount = 72
             double dchall:heightM = 2.3
             double dchall:liquidCoolingKw = 0
-            double dchall:liquidFraction = 0.95
+            double dchall:liquidFraction = 1
             double dchall:overheadKw = 0
             double dchall:powerKw = 190
             bool dchall:roadmap = 0
@@ -505,9 +505,9 @@ def Xform "DataHall" (
         )
         {
             double dchall:airCoolingKw = 0
-            double dchall:capexMusd = 9
+            double dchall:capexMusd = 8.8
             token dchall:category = "gpu"
-            string dchall:displayName = "Rubin Ultra Kyber"
+            string dchall:displayName = "Vera Rubin Ultra NVL144 (Kyber)"
             double dchall:distributionKw = 0
             int dchall:fabricPorts = 0
             int dchall:gpuCount = 144

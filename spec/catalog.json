@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "0.1",
+  "schemaVersion": "0.2",
   "units": {
     "power": "kW",
     "length": "m",
@@ -14,13 +14,75 @@
       "gpus": 72,
       "kw": 125,
       "liq": 0.85,
-      "cap": 3.2,
+      "cap": 3.0,
       "h": 2.3,
-      "note": "72 颗 Blackwell GPU + 36 颗 Grace CPU，Oberon 机柜，NVLink 72 卡全互联。计算和交换托盘液冷，其余部分仍需风冷。",
+      "note": "72 颗 Blackwell GPU + 36 颗 Grace CPU，Oberon 机柜，NVLink 72 卡全互联。计算和交换托盘液冷，其余部分仍需风冷。NVIDIA 给出整柜约 120 kW 的冷却需求，Vertiv 参考设计按每柜最高 132 kW 设计；QCT 资料中液冷约 115 kW、风冷约 17 kW，液冷比例按 85% 取整。价格约 $3M（Wolfe Research，2026-01）。",
       "i18n": {
         "en": {
-          "note": "72 Blackwell GPUs + 36 Grace CPUs in an Oberon rack, all 72 GPUs connected by NVLink. Compute and switch trays are liquid-cooled; the rest still needs air cooling."
+          "note": "72 Blackwell GPUs + 36 Grace CPUs in an Oberon rack, all 72 GPUs connected by NVLink. Compute and switch trays are liquid-cooled; the rest still needs air cooling. NVIDIA gives about 120 kW of cooling per rack, and Vertiv's reference design supports up to 132 kW; QCT lists about 115 kW to liquid and 17 kW to air, rounded here to 85% liquid. About $3M per rack (Wolfe Research, 2026-01)."
         }
+      },
+      "sources": [
+        {
+          "title": "GB200 NVL72",
+          "publisher": "NVIDIA",
+          "url": "https://www.nvidia.com/en-us/data-center/gb200-nvl72/",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "gpus"
+          ]
+        },
+        {
+          "title": "NVIDIA Contributes NVIDIA GB200 NVL72 Designs to Open Compute Project",
+          "publisher": "NVIDIA Technical Blog",
+          "url": "https://developer.nvidia.com/blog/nvidia-contributes-nvidia-gb200-nvl72-designs-to-open-compute-project/",
+          "date": "2024-10-15",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw"
+          ]
+        },
+        {
+          "title": "Vertiv codevelops with NVIDIA complete power and cooling blueprint for NVIDIA GB200 NVL72 platform",
+          "publisher": "Vertiv",
+          "url": "https://www.vertiv.com/en-emea/about/news-and-events/news-releases/vertiv-codevelops-with-nvidia-complete-power-and-cooling-blueprint-for--nvidia-gb200-nvl72-platform/",
+          "date": "2024-10-17",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw"
+          ]
+        },
+        {
+          "title": "QCT QoolRack Stand-alone: Advanced Liquid Cooling for NVIDIA GB200 NVL72 Systems",
+          "publisher": "QCT",
+          "url": "https://blog.qct.io/wp-content/uploads/2025/04/QCT-Qoolrack-Stand-Alone_Advanced-Liquid-Cooling-for-NVIDIA-GB200-NVL72-Systems.pdf",
+          "date": "2025-04",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "liq"
+          ]
+        },
+        {
+          "title": "Wolfe lifts Nvidia target by $25 on rack-scale growth",
+          "publisher": "Investing.com via Yahoo Finance",
+          "url": "https://ca.finance.yahoo.com/news/wolfe-lifts-nvidia-target-25-145211458.html",
+          "date": "2026-01-30",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "cap"
+          ]
+        }
+      ],
+      "ranges": {
+        "kw": [
+          120,
+          132
+        ]
       }
     },
     {
@@ -30,14 +92,67 @@
       "c": "--gpu",
       "gpus": 72,
       "kw": 140,
-      "liq": 0.85,
-      "cap": 3.8,
+      "liq": 0.9,
+      "cap": 4.3,
       "h": 2.3,
-      "note": "Blackwell Ultra 版本，机柜形态与 GB200 相同，单柜约 132–142 kW。",
+      "note": "Blackwell Ultra 版本，机柜形态与 GB200 相同。NVIDIA 参考架构写整柜最高 142 kW，Supermicro 配置为 132 kW，Lenovo 标 135 kW TDP（峰值约 155 kW），约 90% 热量走液冷。价格约 $4.3M（Wolfe Research，2026-01）。",
       "i18n": {
         "en": {
-          "note": "Blackwell Ultra version in the same rack form factor as GB200, about 132–142 kW per rack."
+          "note": "Blackwell Ultra version in the same rack form factor as GB200. NVIDIA's reference architecture gives up to 142 kW per rack, Supermicro configures 132 kW, and Lenovo lists 135 kW TDP (about 155 kW peak) with about 90% of the heat going to liquid. About $4.3M per rack (Wolfe Research, 2026-01)."
         }
+      },
+      "sources": [
+        {
+          "title": "System Hardware & Components — NVIDIA NVL72 AI Factory",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/enterprise-reference-architectures/nvl72-ai-factory/latest/components.html",
+          "date": "2026-09-15",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw"
+          ]
+        },
+        {
+          "title": "SRS-GB300-NVL72",
+          "publisher": "Supermicro",
+          "url": "https://www.supermicro.com/en/products/system/gpu/48u/srs-gb300-nvl72",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw",
+            "gpus"
+          ]
+        },
+        {
+          "title": "Lenovo NVIDIA GB300 NVL72 Rack Scale AI Product Guide",
+          "publisher": "Lenovo Press",
+          "url": "https://lenovopress.lenovo.com/lp2357-lenovo-nvidia-gb300-nvl72-rack-scale-ai",
+          "date": "2026-08-30",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw",
+            "liq"
+          ]
+        },
+        {
+          "title": "Wolfe lifts Nvidia target by $25 on rack-scale growth",
+          "publisher": "Investing.com via Yahoo Finance",
+          "url": "https://ca.finance.yahoo.com/news/wolfe-lifts-nvidia-target-25-145211458.html",
+          "date": "2026-01-30",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "cap"
+          ]
+        }
+      ],
+      "ranges": {
+        "kw": [
+          132,
+          142
+        ]
       }
     },
     {
@@ -47,14 +162,69 @@
       "c": "--gpu",
       "gpus": 72,
       "kw": 190,
-      "liq": 0.95,
+      "liq": 1,
       "cap": 6,
       "h": 2.3,
-      "note": "72 颗 Rubin GPU + 36 颗 Vera CPU，HBM4 与 NVLink 6，2026 下半年出货。Max-Q 约 190 kW，Max-P 约 230 kW（供应链估算）。",
+      "note": "72 颗 Rubin GPU + 36 颗 Vera CPU，HBM4 与 NVLink 6，2026 下半年出货。计算托盘无风扇，NVIDIA 称可 100% 液冷。NVIDIA 未公布整柜功率：郭明錤供应链调查称 Max-Q 约 190 kW、Max-P 约 230 kW（2026-01），这里用 Max-Q。报价约 $5–7M，含约 $1M 存储（Tom's Hardware，2026-03）。",
       "i18n": {
         "en": {
-          "note": "72 Rubin GPUs + 36 Vera CPUs with HBM4 and NVLink 6, shipping in the second half of 2026. Max-Q about 190 kW, Max-P about 230 kW (supply chain estimates)."
+          "note": "72 Rubin GPUs + 36 Vera CPUs with HBM4 and NVLink 6, shipping in the second half of 2026. Compute trays are fanless and NVIDIA says the racks can be 100% liquid-cooled. NVIDIA has not published rack power: Ming-Chi Kuo's supply chain checks put Max-Q at about 190 kW and Max-P at about 230 kW (2026-01); this uses Max-Q. Quoted at about $5–7M per rack, including about $1M of storage (Tom's Hardware, 2026-03)."
         }
+      },
+      "sources": [
+        {
+          "title": "NVIDIA Vera Rubin NVL72",
+          "publisher": "NVIDIA",
+          "url": "https://www.nvidia.com/en-us/data-center/vera-rubin-nvl72/",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "gpus"
+          ]
+        },
+        {
+          "title": "NVIDIA Vera Rubin POD: Seven Chips, Five Rack-Scale Systems, One AI Supercomputer",
+          "publisher": "NVIDIA Technical Blog",
+          "url": "https://developer.nvidia.com/blog/nvidia-vera-rubin-pod-seven-chips-five-rack-scale-systems-one-ai-supercomputer/",
+          "date": "2026-03-16",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "liq"
+          ]
+        },
+        {
+          "title": "Nvidia's VR200 NVL72 AI server brings major power upgrades - Kuo",
+          "publisher": "Investing.com",
+          "url": "https://www.investing.com/news/stock-market-news/nvidias-vr200-nvl72-ai-server-brings-major-power-upgrades--kuo-93CH-4432521",
+          "date": "2026-01-06",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "kw"
+          ]
+        },
+        {
+          "title": "Price of Nvidia's Vera Rubin NVL72 racks skyrockets to as much as $8.8 million apiece, but server makers' margins will be tight — Nvidia is moving closer to shipping entire full-scale systems",
+          "publisher": "Tom's Hardware",
+          "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems",
+          "date": "2026-03-24",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "cap"
+          ]
+        }
+      ],
+      "ranges": {
+        "kw": [
+          190,
+          230
+        ],
+        "cap": [
+          5,
+          7
+        ]
       }
     },
     {
@@ -67,29 +237,124 @@
       "liq": 0,
       "cap": 2,
       "h": 2.2,
-      "note": "一柜 4 台 10U DGX B200，每台 8 GPU、约 14.3 kW。纯风冷，单柜接近 60 kW，实际常需背板换热器。",
+      "note": "一柜 4 台 10U DGX B200，每台 8 GPU、最大约 14.3 kW（NVIDIA）。纯风冷，单柜接近 60 kW；NVIDIA 给后续 DGX B300 的 4 台一柜方案（平均约 58 kW）配的是主动式背门换热器。每柜价格为估算。",
       "i18n": {
         "en": {
-          "note": "Four 10U DGX B200 systems per rack, each with 8 GPUs and about 14.3 kW. Air-cooled only and close to 60 kW per rack, so real deployments often need rear-door heat exchangers."
+          "note": "Four 10U DGX B200 systems per rack, each with 8 GPUs and about 14.3 kW maximum (NVIDIA). Air-cooled only and close to 60 kW per rack; for four of the newer DGX B300 per rack (about 58 kW average), NVIDIA specifies an active rear-door heat exchanger. The price per rack is an estimate."
         }
-      }
+      },
+      "sources": [
+        {
+          "title": "Introduction to NVIDIA DGX B200 Systems — NVIDIA DGX B200 User Guide",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/dgx/dgxb200-user-guide/introduction-to-dgxb200.html",
+          "date": "2026-09-08",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw",
+            "gpus"
+          ]
+        },
+        {
+          "title": "Data Center Best Practices with DGX B300",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/dgx-pdf/data-center-best-practices-with-dgx-b300-v1.pdf",
+          "date": "2026-02-27",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": []
+        },
+        {
+          "title": "Four systems per rack, air cooling only, and the price of about $500K per system are estimates",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "kw",
+            "gpus",
+            "liq",
+            "cap"
+          ]
+        }
+      ]
     },
     {
       "id": "kyber",
-      "name": "Rubin Ultra Kyber",
+      "name": "Vera Rubin Ultra NVL144 (Kyber)",
       "group": "gpu",
       "c": "--gpu",
       "gpus": 144,
       "kw": 600,
       "liq": 1,
-      "cap": 9,
+      "cap": 8.8,
       "h": 2.6,
       "future": true,
-      "note": "2027 路线图产品，单柜约 600 kW，全液冷，配电需要 800 VDC 架构。价格为推测值。",
+      "note": "Kyber 机柜，每柜 144 颗 Rubin Ultra GPU（按封装计；NVL576 现在指 8 个 72 GPU 机柜组成的 NVLink 域），全液冷，需要 800 VDC 供电。约 600 kW 是 GTC 2025 旧设计的数字，NVIDIA 没有为 2026 年的新设计重新公布功耗。官方时间是 2027 年，SemiAnalysis 报道推迟到 2028 年（NVIDIA 称路线图不变）。报价约 $7–8.8M（Tom's Hardware，2026-03）。",
       "i18n": {
         "en": {
-          "note": "Roadmap product for 2027, about 600 kW per rack, fully liquid-cooled, and needs an 800 VDC power architecture. Price is speculative."
+          "note": "Kyber rack with 144 Rubin Ultra GPUs (counted by package; NVL576 now means eight 72-GPU racks in one NVLink domain), fully liquid-cooled, and needs 800 VDC power. About 600 kW is the figure for the GTC 2025 design; NVIDIA has not restated power for the 2026 design. NVIDIA targets 2027, and SemiAnalysis reports a slip to 2028 (NVIDIA says its roadmap is intact). Reported at about $7–8.8M per rack (Tom's Hardware, 2026-03)."
         }
+      },
+      "sources": [
+        {
+          "title": "NVIDIA Vera Rubin POD: Seven Chips, Five Rack-Scale Systems, One AI Supercomputer",
+          "publisher": "NVIDIA Technical Blog",
+          "url": "https://developer.nvidia.com/blog/nvidia-vera-rubin-pod-seven-chips-five-rack-scale-systems-one-ai-supercomputer/",
+          "date": "2026-03-16",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "gpus"
+          ]
+        },
+        {
+          "title": "Nvidia shows off Rubin Ultra with 600,000-Watt Kyber racks and infrastructure, coming in 2027",
+          "publisher": "Tom's Hardware",
+          "url": "https://www.tomshardware.com/pc-components/gpus/nvidia-shows-off-rubin-ultra-with-600-000-watt-kyber-racks-and-infrastructure-coming-in-2027",
+          "date": "2025-03-19",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "kw"
+          ]
+        },
+        {
+          "title": "NVIDIA 800 V HVDC Architecture Will Power the Next Generation of AI Factories",
+          "publisher": "NVIDIA Technical Blog",
+          "url": "https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/",
+          "date": "2025-05-20",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": []
+        },
+        {
+          "title": "Nvidia's Kyber rack for Rubin Ultra reportedly delayed to 2028, stopgap solution also axed due to customer pushback — Analyst firm SemiAnalysis says PCB midplane problems led to the delay [Updated]",
+          "publisher": "Tom's Hardware",
+          "url": "https://www.tomshardware.com/pc-components/gpus/nvidias-kyber-rack-for-rubin-ultra-slips-to-2028",
+          "date": "2026-07-06",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "liq"
+          ]
+        },
+        {
+          "title": "Price of Nvidia's Vera Rubin NVL72 racks skyrockets to as much as $8.8 million apiece, but server makers' margins will be tight — Nvidia is moving closer to shipping entire full-scale systems",
+          "publisher": "Tom's Hardware",
+          "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/price-of-nvidias-vera-rubin-nvl72-racks-skyrockets-to-as-much-as-usd8-8-million-apiece-but-server-makers-margins-will-be-tight-nvidia-is-moving-closer-to-shipping-entire-full-scale-systems",
+          "date": "2026-03-24",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "cap"
+          ]
+        }
+      ],
+      "ranges": {
+        "cap": [
+          7,
+          8.8
+        ]
       }
     },
     {
@@ -102,11 +367,67 @@
       "liq": 1,
       "cap": 5.25,
       "h": 2.3,
-      "note": "72 颗 MI455X + 18 颗 EPYC Venice，UALink 72 卡全互联，全液冷，2026 年三季度末出货。整柜约 225–245 kW（StorageReview，2026-07），售价约 $5–5.5M（Futurum 经 CNBC，2026-07）。真实机柜是 1.2 m 宽的 Open Rack Wide，这里按一格简化。",
+      "note": "72 颗 MI455X + 18 颗 EPYC Venice，UALink over Ethernet 72 卡互联，计算和交换托盘液冷（这里按全液冷简化），2026 年三季度末开始出货。整柜约 225–245 kW（StorageReview，2026-07），售价约 $5–5.5M（Futurum 经 CNBC，2026-07）。真实机柜是 1.2 m 宽的 Open Rack Wide，这里按一格简化。",
       "i18n": {
         "en": {
-          "note": "72 MI455X GPUs + 18 EPYC Venice CPUs, all 72 GPUs connected by UALink, fully liquid-cooled, shipping from late Q3 2026. About 225–245 kW per rack (StorageReview, 2026-07) and about $5–5.5M (Futurum via CNBC, 2026-07). The real rack is a 1.2 m wide Open Rack Wide; it is simplified to one cell here."
+          "note": "72 MI455X GPUs + 18 EPYC Venice CPUs, all 72 GPUs connected by UALink over Ethernet, with liquid-cooled compute and switch trays (simplified here to fully liquid-cooled), shipping from late Q3 2026. About 225–245 kW per rack (StorageReview, 2026-07) and about $5–5.5M (Futurum via CNBC, 2026-07). The real rack is a 1.2 m wide Open Rack Wide; it is simplified to one cell here."
         }
+      },
+      "sources": [
+        {
+          "title": "AAI 2026: AMD Delivers Full-Stack Compute for the Agentic AI Era",
+          "publisher": "AMD",
+          "url": "https://ir.amd.com/news-events/press-releases/detail/1294/aai-2026-amd-delivers-full-stack-compute-for-the-agentic-ai-era",
+          "date": "2026-07-23",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "gpus"
+          ]
+        },
+        {
+          "title": "AMD Helios",
+          "publisher": "AMD",
+          "url": "https://www.amd.com/en/products/rackscale-solutions/helios.html",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "liq"
+          ]
+        },
+        {
+          "title": "AMD MI455X and Helios: 432GB HBM4, 72-GPU Racks, and a Real Answer to Vera Rubin",
+          "publisher": "StorageReview",
+          "url": "https://www.storagereview.com/news/amd-mi455x-and-helios-432gb-hbm4-72-gpu-racks-and-a-real-answer-to-vera-rubin",
+          "date": "2026-07-23",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "kw",
+            "gpus"
+          ]
+        },
+        {
+          "title": "AMD launches Helios, its first rack AI system to rival Nvidia, adding Microsoft as newest buyer",
+          "publisher": "CNBC",
+          "url": "https://www.cnbc.com/2026/07/20/amd-helios-microsoft-ai-nvidia.html",
+          "date": "2026-07-20",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": [
+            "cap"
+          ]
+        }
+      ],
+      "ranges": {
+        "kw": [
+          225,
+          245
+        ],
+        "cap": [
+          5,
+          5.5
+        ]
       }
     },
     {
@@ -119,13 +440,52 @@
       "liq": 0.8,
       "cap": 2.4,
       "h": 2.2,
-      "note": "一柜 8 台 4U 液冷服务器，每台 8 颗 MI355X（1400 W）+ 2 颗 EPYC，整柜 64 GPU、约 120 kW（GIGABYTE GIGAPOD DLC 机柜）。GPU 和 CPU 冷板液冷，其余风冷，液冷比例按 80% 估算。价格按 MI355X 约 $25k 一颗加整机估算。",
+      "note": "一柜 8 台 GIGABYTE G4L3 4U 液冷服务器，每台 8 颗 MI355X（典型板卡功耗 1400 W）+ 2 颗 EPYC 9005/9004，整柜 64 GPU、功耗最高约 120 kW（GIGABYTE GIGAPOD）。GPU 冷板液冷，其余风冷；机柜内 CDU 冷量 100 kW，液冷比例按 80% 估算。价格按 2025 年报道的每颗约 $25–30k 加整机估算。",
       "i18n": {
         "en": {
           "name": "MI355X DLC rack ×8",
-          "note": "Eight 4U liquid-cooled servers per rack, each with 8 MI355X GPUs (1400 W) and 2 EPYC CPUs: 64 GPUs and about 120 kW per rack (GIGABYTE GIGAPOD DLC rack). GPUs and CPUs are cold-plate cooled and the rest is air-cooled; the liquid fraction is an 80% estimate. Price estimated from about $25k per MI355X plus the servers."
+          "note": "Eight GIGABYTE G4L3 4U liquid-cooled servers per rack, each with 8 MI355X GPUs (1400 W typical board power) and 2 EPYC 9005/9004 CPUs: 64 GPUs and up to about 120 kW per rack (GIGABYTE GIGAPOD). GPUs are cold-plate cooled and the rest is air-cooled; the in-rack CDU is rated at 100 kW, and the liquid share is estimated at 80%. Price estimated from about $25–30k per GPU (2025 reports) plus the servers."
         }
-      }
+      },
+      "sources": [
+        {
+          "title": "AMD Instinct MI355X GIGAPOD AI DLC Rack Scale Solution",
+          "publisher": "GIGABYTE",
+          "url": "https://www.gigabyte.com/Enterprise/GIGAPOD-Rack-Scale/AI-DLC-Rack_AMD-Instinct-MI355X",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw",
+            "gpus"
+          ]
+        },
+        {
+          "title": "AMD Instinct MI355X GPUs",
+          "publisher": "AMD",
+          "url": "https://www.amd.com/en/products/accelerators/instinct/mi350/mi355x.html",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": []
+        },
+        {
+          "title": "AMD Stock Jumps as AI Chip Prices Soar Ahead of Q2 Earnings",
+          "publisher": "GuruFocus via Yahoo Finance",
+          "url": "https://finance.yahoo.com/news/amd-stock-jumps-ai-chip-184602059.html",
+          "date": "2025-07-28",
+          "checked": "2026-09-18",
+          "type": "reported",
+          "supports": []
+        },
+        {
+          "title": "Liquid share from the 100 kW in-rack CDU against up to 120 kW of rack power; price from about $25–30k per GPU plus servers",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "liq",
+            "cap"
+          ]
+        }
+      ]
     },
     {
       "id": "ib",
@@ -137,12 +497,45 @@
       "ports": 288,
       "cap": 0.9,
       "h": 2.2,
-      "note": "800G InfiniBand 交换机柜。简化模型：每柜可接 288 个 GPU 后端网络端口。",
+      "note": "800G InfiniBand 交换机柜。一台 Quantum-X800 Q3400 交换机有 144 个 800G 端口，典型功耗约 2.9 kW、最大 7 kW（NVIDIA）。这里简化为每柜 288 个 GPU 后端端口（约两台交换机）、24 kW（含光模块等余量），不是真实拓扑。价格为估算。",
       "i18n": {
         "en": {
-          "note": "800G InfiniBand switch rack. Simplified model: each rack provides 288 back-end network ports for GPUs."
+          "note": "800G InfiniBand switch rack. One Quantum-X800 Q3400 switch has 144 ports at 800G and draws about 2.9 kW typical, 7 kW maximum (NVIDIA). Simplified here to 288 back-end GPU ports per rack (about two switches) and 24 kW including optics and overhead; it is not a real topology. The price is an estimate."
         }
-      }
+      },
+      "sources": [
+        {
+          "title": "Introduction | NVIDIA Q32xx and Q34xx XDR 800Gb/s InfiniBand Switch Systems User Manual",
+          "publisher": "NVIDIA",
+          "url": "https://networking-docs.nvidia.com/xdrswitcheshw/introduction",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "ports"
+          ]
+        },
+        {
+          "title": "Specifications | NVIDIA Q32xx and Q34xx XDR 800Gb/s InfiniBand Switch Systems User Manual",
+          "publisher": "NVIDIA",
+          "url": "https://networking-docs.nvidia.com/xdrswitcheshw/specifications",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "kw"
+          ]
+        },
+        {
+          "title": "288 ports and 24 kW model about two Q3400 switches plus optics and overhead; air cooling and price are estimates",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "kw",
+            "ports",
+            "liq",
+            "cap"
+          ]
+        }
+      ]
     },
     {
       "id": "stor",
@@ -153,13 +546,34 @@
       "liq": 0,
       "cap": 0.6,
       "h": 2.2,
-      "note": "全闪存储，承载数据集与检查点。",
+      "note": "全闪存储，承载数据集与检查点。按一柜约 7 个 FlashBlade//E 机箱（每 5U 约 2.5 kW）估算约 18 kW。价格为估算。",
       "i18n": {
         "en": {
           "name": "Storage rack",
-          "note": "All-flash storage for datasets and checkpoints."
+          "note": "All-flash storage for datasets and checkpoints. About 18 kW, estimated from about seven FlashBlade//E chassis per rack at about 2.5 kW per 5U. The price is an estimate."
         }
-      }
+      },
+      "sources": [
+        {
+          "title": "Everpure FlashBlade//E data sheet",
+          "publisher": "Everpure (Pure Storage)",
+          "url": "https://www.everpuredata.com/content/dam/pdf/en/datasheets/ds-pure-storage-flashblade-e.pdf",
+          "date": "2026-04",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": []
+        },
+        {
+          "title": "About seven FlashBlade//E chassis per rack at about 2.5 kW each; air cooling and price are estimates",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "kw",
+            "liq",
+            "cap"
+          ]
+        }
+      ]
     },
     {
       "id": "cdu",
@@ -170,12 +584,42 @@
       "ovh": 12,
       "cap": 0.35,
       "h": 2.1,
-      "note": "列间 CDU，把机柜冷板回路接到设施水。每台带走约 800 kW 液冷热量，自身泵耗约 12 kW。",
+      "note": "列间 CDU，把机柜冷板回路接到设施水。真实产品约 600–2300 kW（Vertiv CoolChip CDU），这里取每台 800 kW；泵耗按 Vertiv 标称功耗约占冷量 1.5% 取 12 kW。价格为估算。",
       "i18n": {
         "en": {
           "name": "CDU coolant unit",
-          "note": "In-row coolant distribution unit connecting rack cold-plate loops to facility water. Each removes about 800 kW of liquid-cooling heat, and its pumps draw about 12 kW."
+          "note": "In-row coolant distribution unit connecting rack cold-plate loops to facility water. Real units range from about 600 to 2300 kW (Vertiv CoolChip CDU); 800 kW is used here, and the 12 kW of pump power follows Vertiv's nominal power of about 1.5% of capacity. The price is an estimate."
         }
+      },
+      "sources": [
+        {
+          "title": "Vertiv CoolChip CDU – Liquid-to-liquid coolant distribution unit (SL-80005)",
+          "publisher": "Vertiv",
+          "url": "https://www.vertiv.com/493b1e/globalassets/shared/vertiv-coolchip-cdu-2300kw-data-sheet-sl-80005.pdf",
+          "date": "2026-05",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "liqCool",
+            "ovh"
+          ]
+        },
+        {
+          "title": "800 kW sits between Vertiv's 600 and 1350 kW models; pump power scaled from Vertiv's ratio; price is an estimate",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "liqCool",
+            "ovh",
+            "cap"
+          ]
+        }
+      ],
+      "ranges": {
+        "liqCool": [
+          600,
+          2300
+        ]
       }
     },
     {
@@ -187,13 +631,47 @@
       "ovh": 9,
       "cap": 0.08,
       "h": 2.1,
-      "note": "列间风冷单元，每台约 120 kW 显冷量，风机耗电约 9 kW。",
+      "note": "列间风冷单元。真实产品单台最大约 58–70 kW（Vertiv Liebert CRV、Schneider InRow RC），这里一台 120 kW 代表约两台；风机耗电按约 9 kW 估算。价格为估算。",
       "i18n": {
         "en": {
           "name": "In-row cooler",
-          "note": "In-row air cooling unit with about 120 kW of sensible cooling each; its fans draw about 9 kW."
+          "note": "In-row air cooling unit. Real units top out at about 58–70 kW each (Vertiv Liebert CRV, Schneider InRow RC), so one 120 kW unit here stands in for about two; its fans are estimated at about 9 kW. The price is an estimate."
         }
-      }
+      },
+      "sources": [
+        {
+          "title": "Vertiv Liebert CRV from 10 to 60 kW",
+          "publisher": "Vertiv",
+          "url": "https://www.vertiv.com/globalassets/products/thermal-management/in-row-cooling/liebert-crv-11-50-kw-brochure-english.pdf",
+          "date": "2021-01",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "airCool"
+          ]
+        },
+        {
+          "title": "ACRC600 - InRow RC, 600mm, Chilled Water",
+          "publisher": "Schneider Electric",
+          "url": "https://www.se.com/us/en/product/ACRC600/inrow-rc-600mm-chilled-water-200240v-50-60hz/",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "airCool",
+            "ovh"
+          ]
+        },
+        {
+          "title": "120 kW stands in for about two in-row units; fan power and price are estimates",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "airCool",
+            "ovh",
+            "cap"
+          ]
+        }
+      ]
     },
     {
       "id": "rpp",
@@ -203,13 +681,34 @@
       "dist": 800,
       "cap": 0.25,
       "h": 2.1,
-      "note": "远程配电柜，每台可为机柜分配约 800 kW。",
+      "note": "远程配电柜。传统 RPP 约 225–800 A，面向 AI 机房的高密度型号到 2,400 A（Hyper）；每台 800 kW 约相当于 415 V 下 1,200 A 的高密度配电柜或母线槽。价格为估算。",
       "i18n": {
         "en": {
           "name": "RPP power panel",
-          "note": "Remote power panel; each distributes about 800 kW to racks."
+          "note": "Remote power panel. Traditional RPPs are rated about 225–800 A and high-density models for AI halls reach 2,400 A (Hyper); 800 kW corresponds to a high-density panel or busway of about 1,200 A at 415 V. The price is an estimate."
         }
-      }
+      },
+      "sources": [
+        {
+          "title": "Remote Power Panels (RPP)",
+          "publisher": "Hyper",
+          "url": "https://hyper.com/our-products/remote-power-panels-rpp/",
+          "checked": "2026-09-18",
+          "type": "official",
+          "supports": [
+            "dist"
+          ]
+        },
+        {
+          "title": "800 kW is about 1,200 A at 415 V; price is an estimate",
+          "checked": "2026-09-18",
+          "type": "estimate",
+          "supports": [
+            "dist",
+            "cap"
+          ]
+        }
+      ]
     }
   ]
 }

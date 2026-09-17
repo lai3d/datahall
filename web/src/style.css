@@ -119,8 +119,10 @@ dialog.method::backdrop{background:rgb(0 0 0 / .45)}
 .method-body ul{padding-left:18px;margin:6px 0}
 .method-body li{margin-bottom:4px}
 .method-body .formula{font-variant-numeric:tabular-nums;background:color-mix(in srgb,var(--ink) 6%,transparent);border-radius:6px;padding:6px 8px}
-.method-body .src{font-size:12px;color:var(--muted)}
-.method-body .src a{color:inherit}
+.src{font-size:12px;color:var(--muted)}
+.src a{color:inherit}
+.info p.sources{margin-top:4px}
+.method-body .devices .sources{margin:2px 0 6px}
 .method-body .devices{font-size:13px}
 .method-body section{scroll-margin-top:56px}
 .compare{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
