@@ -18,7 +18,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | --- | --- | --- | --- |
 | Migrate JS to TS (strict) | Everything that follows is built on TS | — | Done, 2026-09-17 |
 | English docs and code comments | Docs and comments default to English from 2026-09-17. CLAUDE.md, docs/ and all code comments are converted; UI copy, catalog data and asserted Chinese output stay Chinese | 2–3 h | Done, 2026-09-17 |
-| Fix the 3 bugs from the 2026-09-17 review | Nearest-supply ties resolve by placement order and dragging changes that order, so an identical layout can "mysteriously" overload and the result travels with share links; a corrupt localStorage entry keeps the page from loading; the share-link phase cap does not match the UI | 1 h | Not started |
+| Fix the 3 bugs from the 2026-09-17 review | Nearest-supply ties resolve by placement order and dragging changes that order, so an identical layout can "mysteriously" overload and the result travels with share links; a corrupt localStorage entry keeps the page from loading; the share-link phase cap does not match the UI | 1 h | Done, 2026-09-17 |
 | Guided scenario (tutorial mode) | New users open the page and do not know what to do. "Place 8 racks → why it cannot power on → add a CDU → power on" is the teaching storyline | 4–6 h | Done, 2026-09-17 |
 | Social preview image and one-click screenshot | Spreading depends on links, and links need an image. One OG image; export the 3D view as PNG (`toDataURL` after `renderOnce` already works) | 1–2 h | Not started |
 | Vercel Web Analytics | Without measurement there is no way to know whether anyone uses it | 0.5 h | Done, 2026-09-17 |

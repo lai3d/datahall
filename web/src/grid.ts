@@ -7,8 +7,13 @@ export const keyOf = (x: number, z: number): string => x + ',' + z;
 export const clamp = (v: number, a: number, b: number): number => Math.max(a, Math.min(b, v));
 
 // Nearest supply equipment (CDU / RPP); cross-row distance is doubled to prefer the same row
+// Ties go to the lower row, then the lower column, so the result depends only on positions and not on list
+// order (dragging a device moves it to the end of the list)
 export const nearest = <T extends Pos>(it: Pos, arr: T[]): {a: T; d: number} | null => arr.reduce<{a: T; d: number} | null>((b, a) => {
-  const d = Math.hypot(a.x - it.x, (a.z - it.z) * 2); return !b || d < b.d ? {a, d} : b; }, null);
+  const d = Math.hypot(a.x - it.x, (a.z - it.z) * 2);
+  if (!b || d < b.d - 1e-9) return {a, d};
+  return Math.abs(d - b.d) <= 1e-9 && (a.z - b.a.z || a.x - b.a.x) < 0 ? {a, d} : b;
+}, null);
 
 // Device name: row z+1, column x+1, e.g. R04_C05 (shared by USD prim names and layout.json)
 export const equipmentName = (it: Pos): string => `R${String(it.z + 1).padStart(2, '0')}_C${String(it.x + 1).padStart(2, '0')}`;

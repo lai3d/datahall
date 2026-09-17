@@ -105,7 +105,8 @@ def build_layout(stage, date, warn):
 
     def phase(prim):
         v = attr(prim, "dchall:phase", 1)
-        return v if isinstance(v, int) and v >= 1 else 1
+        # Same cap as MAX_PHASE in web/src/growth.ts; out-of-range phases fall back to 1 like the web import
+        return v if isinstance(v, int) and 1 <= v <= 20 else 1
 
     def target(prim, rel_name):
         rel = prim.GetRelationship(rel_name)
