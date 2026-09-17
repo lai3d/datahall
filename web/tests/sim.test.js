@@ -86,7 +86,7 @@ describe('spec/capacity-cases.json', () => {
     const {buildCases, CASES_PATH} = await import('../scripts/capacity-cases.js');
     const file = JSON.parse(readFileSync(CASES_PATH, 'utf8'));
     expect(file.cases).toEqual(buildCases());
-    expect(file.cases.length).toBe(7);
+    expect(file.cases.length).toBe(Object.keys(PRESETS).length + 4);   // 每个预设一条，另有 4 条特例
     expect(file.cases.some(c => c.expected.blocking) && file.cases.some(c => !c.expected.blocking)).toBe(true);
   });
 });

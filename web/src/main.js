@@ -12,6 +12,7 @@ import {createSaver} from './download.js';
 import {encodeLayout, decodeLayout} from './share-link.js';
 import {DEFAULT_LANG, setLang, htmlLang, tr} from './i18n.js';
 import {lineCells, freeCells, sameLayout, createHistory} from './edit.js';
+import {canFail} from './redundancy.js';
 
 const $ = s => document.querySelector(s);
 
@@ -46,7 +47,8 @@ function edit(fn){
   changed();
 }
 const removeItem = key => edit(() => remove(key));
-const loadLayout = p => edit(() => replaceLayout(p));
+// 载入预设、导入文件、打开分享链接是换了一个机房，故障演练清空；撤销和重做保留（格子上的设施还在就保持故障）
+const loadLayout = p => edit(() => { state.failed.clear(); replaceLayout(p); });
 // 不进撤销历史：启动时载入、撤销和重做本身
 function showLayout(p){ replaceLayout(p); state.powered = false; state.rowAnchor = null; changed(); }
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
@@ -54,6 +56,7 @@ function redo(){ if (drag) return; const p = undoStack.redo(snapshot()); if (p) 
 
 function select(key){ state.selected = key; view.setOutline(); renderInfo(); }
 function changed(){
+  for (const key of state.failed) if (!canFail(CAT[state.items.get(key)?.type])) state.failed.delete(key);
   buildUI(); view.rebuildLinks(); view.setOutline(); refresh(); updateGhost();
   saveLayout(snapshot()); updateShareLink();
   $('#undo').disabled = !undoStack.canUndo;
@@ -96,6 +99,7 @@ const dragItem = {
     state.items.delete(drag.key);
     it.x = c.x; it.z = c.z;
     state.items.set(to, it);
+    if (state.failed.delete(drag.key)) state.failed.add(to);
     view.moveMesh(it, to);
     Object.assign(drag, {key: to, moved: true});
     state.selected = to; state.powered = false;
@@ -116,6 +120,16 @@ const dragItem = {
     if (moved) showLayout(before);
   },
 };
+
+// ---------- failure drill ----------
+// 标记故障不改布局：不进撤销历史，不断电，只重算连线和容量检查
+function toggleFailed(key){
+  const it = state.items.get(key);
+  if (!it || !canFail(CAT[it.type])) return;
+  if (!state.failed.delete(key)) state.failed.add(key);
+  view.rebuildLinks(); refresh();
+}
+function restoreAll(){ state.failed.clear(); view.rebuildLinks(); refresh(); }
 
 // ---------- keyboard ----------
 function escape(){
@@ -138,6 +152,7 @@ function initKeyboard(){
     else if (mod || e.altKey) return;
     else if ((e.key === 'Delete' || e.key === 'Backspace') && state.selected){ e.preventDefault(); removeItem(state.selected); }
     else if (e.key === 'Escape') escape();
+    else if (k === 'f' && state.selected) toggleFailed(state.selected);
   });
 }
 
@@ -303,7 +318,9 @@ initUI({
   setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; buildUI(); updateGhost(); },
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
-  showAlerts: keys => view.setAlerts(keys),
+  showAlerts: keys => { view.setAlerts(keys); view.setFailed(state.failed); },
+  toggleFailed,
+  restoreAll,
   setLang: switchLang,
 });
 initExport();

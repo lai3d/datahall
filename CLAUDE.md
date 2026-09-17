@@ -21,6 +21,7 @@
   - `src/usd-import.js`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
   - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
   - `src/edit.js`：编辑用的纯函数（整排放置的格子、布局比较、撤销历史）
+  - `src/redundancy.js`：故障演练和 N+1 检查，纯函数；`blockingReasons` 和界面“不能通电”的条件一一对应（有测试保证）
   - `src/ui.js`：右侧面板；`src/state.js`：共享状态；`src/layout.js`：预设与 localStorage；`src/grid.js`：网格常量
   - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致，
     并解析 `schema/generatedSchema.usda` 检查导出的每个 `dchall:` 属性都由应用的 schema 定义、类型一致（不需要 pxr）
@@ -119,6 +120,12 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
     拖放是在 Unity 的 `PlayerWindowView` 类上添加拖放方法：NSView 自带默认实现，所以只检查 NSView 以下 Unity 自己的类，有实现就不接管。
     系统拖拽手势和对话框点选无法自动化，冒烟测试用伪造的拖放对象调用真实视图的 `performDragOperation:`
   - 重跑 `ProjectSetup` 会重建场景（fileID 变化）并可能改动 `UniversalRenderPipelineGlobalSettings.asset`，内容没变的话不要提交这些变动
+- **故障演练**：可以标记故障的是提供容量的设施（CDU、RPP、列间空调、IB 交换柜），GPU 机柜和存储柜不行。
+  - 故障设施从计算里拿掉：不提供容量也不耗电，其余设备按 `supplyLinks` 重新就近分配；三维里半透明、不投影、不亮，连线不画
+  - 故障标记（`state.failed`，按格子 key）不进布局、撤销历史、分享链接和导出；拖动时跟着设备走，撤销、重做后格子上还是可故障设施就保留；
+    载入预设、导入文件、打开分享链接清空。标记故障不断电，已通电时即使演练出问题也能断电
+  - N+1 检查针对完整布局（不看当前演练）：依次让每台设施单独故障，列出会让机房不满足容量检查的设备和原因；布局本身不满足时不检查
+  - `gb200n1` 预设是 N+1 的示范；其他预设不要求 N+1
 - **编辑**：所有改布局的操作都经过 `main.js` 的 `edit()`，布局真的变了才记一条撤销历史（最多 100 条），
   包括放置、删除、整排放置、拖动、改市电、载入预设、导入文件、打开分享链接；启动时的载入和撤销、重做本身不记。
   - 拖动：按下的位置有设备就移动设备，否则旋转视角。按设备侧面时指针下的地板是后面的格子，所以按指针移动的格数挪，不是挪到指针下的格子；

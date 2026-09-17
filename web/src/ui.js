@@ -3,6 +3,7 @@ import {CATALOG, CAT} from './catalog.js';
 import {compute, fmt} from './sim.js';
 import {supplyLoads, supplyIssues} from './supply.js';
 import {keyOf} from './grid.js';
+import {canFail, singlePointsOfFailure} from './redundancy.js';
 import {state, itemList} from './state.js';
 import {LANGS, getLang, tr, loc, catName, catNote} from './i18n.js';
 
@@ -18,6 +19,7 @@ export function initUI(a){
   $('#placeMode').onclick = e => { const b = e.target.closest('button'); if (b) actions.setPlaceMode(b.dataset.mode); };
   $('#power').onclick = () => actions.togglePower();
   $('#lang').onclick = e => { const b = e.target.closest('button'); if (b) actions.setLang(b.dataset.lang); };
+  $('#drillRestoreAll').onclick = () => actions.restoreAll();
   document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => actions.loadPreset(b.dataset.preset));
 }
 
@@ -52,7 +54,9 @@ function gauge(label, v, cap, cssVar){
 }
 
 export function refresh(){
-  const list = itemList();
+  // 故障演练中标记为故障的设施不参与计算
+  const all = itemList();
+  const list = all.filter(it => !state.failed.has(keyOf(it.x, it.z)));
   const s = compute(list, CAT, state.utility);
   const loads = supplyLoads(list, CAT);
   const perDevice = supplyIssues(loads, s);
@@ -73,15 +77,42 @@ export function refresh(){
     gauge(tr('gaugeUtility'), s.facility, state.utility * 1000, '--ink') +
     `<div class="gauge"><div class="top"><span>${tr('gaugeCapex')}</span><em>${tr('capex', {m: s.capex.toFixed(1)})}</em></div></div>`;
   // 全机房总量的检查在前，逐台设备的超载在后
-  let html = [...s.issues, ...perDevice].map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
+  const drill = state.failed.size ? [{lvl: 'warn', txt: tr('drillIssues', {n: state.failed.size})}] : [];
+  let html = [...drill, ...s.issues, ...perDevice].map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
   if (!s.it) html = `<li class="warn">${tr('issueEmpty')}</li>`;
   else if (!blocking) html += `<li class="ok">${tr('issueOk')}</li>`;
   $('#issues').innerHTML = html;
   const btn = $('#power');
-  btn.disabled = !s.it || blocking;
+  btn.disabled = !s.it || (blocking && !state.powered);   // 通电后演练出问题，仍然可以断电
   btn.classList.toggle('on', state.powered);
   btn.textContent = tr(state.powered ? 'powerOff' : 'powerOn');
+  renderDrill(all);
   renderInfo();
+}
+
+// 不满足容量检查的原因（redundancy.js 的 blockingReasons）写成短语
+function reasonText(r){
+  if (r.kind === 'overload') return tr('reasonOverload', {label: r.item.type.toUpperCase(), loc: loc(r.item.x, r.item.z)});
+  return tr({dist: 'reasonDist', liquid: 'reasonLiquid', air: 'reasonAir', network: 'reasonNetwork', utility: 'reasonUtility'}[r.kind]);
+}
+
+// 故障演练区：当前故障数量，以及不考虑演练时整个布局的 N+1 检查
+const MAX_SPOF = 5;
+function renderDrill(all){
+  $('#drillBar').hidden = !state.failed.size;
+  $('#drillStatus').textContent = tr('drillActive', {n: state.failed.size});
+  let html = '';
+  if (all.some(i => canFail(CAT[i.type]))){
+    const spof = singlePointsOfFailure(all, CAT, state.utility);
+    if (spof === null) html = `<li class="warn">${tr('n1Blocked')}</li>`;
+    else if (!spof.length) html = `<li class="ok">${tr('n1Ok')}</li>`;
+    else {
+      html = `<li class="warn">${tr('n1Bad', {n: spof.length})}</li>` + spof.slice(0, MAX_SPOF).map(r =>
+        `<li class="warn">${tr('n1Item', {name: catName(CAT[r.item.type]), loc: loc(r.item.x, r.item.z), reasons: r.reasons.map(reasonText).join(tr('listSep'))})}</li>`).join('');
+      if (spof.length > MAX_SPOF) html += `<li class="warn">${tr('moreMessages', {n: spof.length - MAX_SPOF})}</li>`;
+    }
+  }
+  $('#n1').innerHTML = html;
 }
 
 const badText = txt => `<span style="color:var(--bad)">${txt}</span>`;
@@ -121,11 +152,14 @@ export function renderInfo(){
   if (t.dist) rows.push([tr('rowDistCap'), t.dist + ' kW']);
   if (t.ports) rows.push([tr('rowPorts'), t.ports]);
   rows.push([tr('rowPrice'), '$' + t.cap + 'M']);
+  const failable = !!it && canFail(t), failed = failable && state.failed.has(state.selected);
+  if (failed) rows.push([tr('rowStatus'), badText(tr('statusFailed'))]);
   if (it) rows.push(...supplyRows(t, supplyByKey.get(keyOf(it.x, it.z))));
   const at = it ? tr('infoAt', {x: it.x + 1, z: it.z + 1, loc: loc(it.x, it.z)}) : tr('infoPlaceHint');
   box.innerHTML = `<strong>${catName(t)}</strong><span style="color:var(--muted)">${at}</span>
     <table>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
     <p>${catNote(t)}</p>
-    ${it ? `<div class="row" style="margin-top:8px"><button type="button" id="del">${tr('remove')}</button></div>` : ''}`;
+    ${it ? `<div class="row" style="margin-top:8px">${failable ? `<button type="button" id="failToggle" title="F" aria-keyshortcuts="F">${tr(failed ? 'drillRestore' : 'drillFail')}</button>` : ''}<button type="button" id="del">${tr('remove')}</button></div>` : ''}`;
   const d = $('#del'); if (d) d.onclick = () => actions.removeItem(state.selected);
+  const f = $('#failToggle'); if (f) f.onclick = () => actions.toggleFailed(state.selected);
 }

@@ -41,14 +41,19 @@ export function supplyLoads(list, CAT){
   return {supplies, links, unconnected};
 }
 
-// 超载提示。某种资源的全机房总量已经不够时（compute 里已有“配电不足”“液冷不足”），不再逐台列出，避免重复
-export function supplyIssues(loads, totals){
+// 需要报告的超载设备 [[item, supply], ...]，按排、列排序。某种资源的全机房总量已经不够时
+// （compute 里已有“配电不足”“液冷不足”），这种设备不再逐台列出，避免重复
+export function reportedOverloads(loads, totals, kind){
   const globalShort = {cdu: totals.liqHeat > totals.liqCap, rpp: totals.it > totals.dist};
+  if (globalShort[kind]) return [];
+  return [...loads.supplies].filter(([, s]) => s.kind === kind && s.overloaded)
+    .sort(([a], [b]) => (a.z - b.z) || (a.x - b.x));
+}
+
+export function supplyIssues(loads, totals){
   const issues = [];
   for (const [id, kind] of Object.entries(KINDS)){
-    if (globalShort[id]) continue;
-    const over = [...loads.supplies].filter(([, s]) => s.kind === id && s.overloaded)
-      .sort(([a], [b]) => (a.z - b.z) || (a.x - b.x));
+    const over = reportedOverloads(loads, totals, id);
     over.slice(0, MAX_LISTED).forEach(([it, s]) => issues.push({lvl: 'bad',
       txt: tr(kind.message, {loc: loc(it.x, it.z), n: s.consumers.length, load: fmt(s.loadKw), cap: fmt(s.capacityKw)})}));
     if (over.length > MAX_LISTED) issues.push({lvl: 'bad', txt: tr('overloadMore', {n: over.length - MAX_LISTED, label: kind.label})});
