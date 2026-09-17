@@ -72,7 +72,7 @@ def Xform "DataHall" (
             token dchall:category = "gpu"
             double dchall:powerKw = 190.0
             int dchall:gpuCount = 72
-            double dchall:liquidFraction = 0.95
+            double dchall:liquidFraction = 1.0
             double dchall:liquidCoolingKw = 0.0
             double dchall:airCoolingKw = 0.0
             double dchall:overheadKw = 0.0
@@ -489,7 +489,7 @@ def Xform "DataHall" (
             prepend apiSchemas = ["DataHallEquipmentAPI", "LiquidCooledAPI"]
         )
         {
-            string dchall:displayName = "Rubin Ultra Kyber"
+            string dchall:displayName = "Vera Rubin Ultra NVL144 (Kyber)"
             token dchall:category = "gpu"
             double dchall:powerKw = 600.0
             int dchall:gpuCount = 144
@@ -499,7 +499,7 @@ def Xform "DataHall" (
             double dchall:overheadKw = 0.0
             double dchall:distributionKw = 0.0
             int dchall:fabricPorts = 0
-            double dchall:capexMusd = 9.0
+            double dchall:capexMusd = 8.8
             bool dchall:roadmap = 1
             double dchall:heightM = 2.6
 

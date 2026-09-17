@@ -20,7 +20,13 @@ export interface CatalogItem {
   future?: boolean;       // Roadmap product
   note: string;
   i18n?: Record<string, {name?: string; note?: string}>;
+  sources: Source[];      // where the figures come from (spec/catalog.schema.json)
+  ranges?: Partial<Record<SourcedField, [number, number]>>;   // range the sources give, when wider than one value
 }
+// A source behind catalog figures. official: vendor material; reported: journalists or analysts; estimate: this project's own reasoning (no URL)
+export type SourceType = 'official' | 'reported' | 'estimate';
+export type SourcedField = 'kw' | 'gpus' | 'liq' | 'liqCool' | 'airCool' | 'dist' | 'ports' | 'ovh' | 'cap';
+export interface Source {title: string; publisher?: string; url?: string; date?: string; checked: string; type: SourceType; supports: SourcedField[]}
 export type Catalog = Record<string, CatalogItem>;
 // Compile-time check that catalog.json matches CatalogItem
 export type CatalogJson = typeof catalog;

@@ -165,7 +165,7 @@ class UsdToUnityTest(unittest.TestCase):
         self.assertEqual(sorted(os.listdir(os.path.join(out, "assets"))),
                          sorted(f"{c['id']}.glb" for c in layout["catalog"]))
         vr = next(c for c in layout["catalog"] if c["id"] == "vr200")
-        self.assertEqual((vr["powerKw"], vr["liquidFraction"], vr["heightM"], vr["roadmap"]), (190, 0.95, 2.3, False))
+        self.assertEqual((vr["powerKw"], vr["liquidFraction"], vr["heightM"], vr["roadmap"]), (190, 1.0, 2.3, False))
         r = next(e for e in layout["equipment"] if e["name"] == "R04_C04")
         self.assertEqual((r["type"], r["column"], r["row"], r["coolantSource"], r["powerFeed"]), ("vr200", 3, 3, "R06_C04", "R06_C07"))
         self.assertEqual(self.warnings, [])

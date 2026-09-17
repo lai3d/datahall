@@ -17,7 +17,7 @@ afterEach(() => setLang(DEFAULT_LANG));
 const VARS = {x: 3, z: 4, loc: 'L', n: 2, u: 5, kw: 800, used: 1, total: 2, m: '1.0', need: 'A', cap: 'B', heat: 'C',
   gpus: 7, ports: 8, facility: 'D', load: 'E', label: 'CDU', pct: 85, file: 'f.usda', reason: 'R', v: 'V', type: 'T', cell: 'T:c',
   name: 'N', msg: 'M', gw: 16, gd: 10, cx: .6, cz: 1.2, cur: 'K', diffs: 'P', where: 'W', id: 'I', other: 'O', line: 9,
-  c: '"?"', expected: 'X', got: 'Y', open: '(', close: ')', reasons: 'Q', field: 'F', target: 'T', source: 'S', phase: 2, limit: 'L', gap: 7, pue: '1.2', sparks: '1,000', homes: '200', cells: 20, liq: '0.08', air: '0.30', loss: '0.05', airPue: '1.35', liqPue: '1.13', ovh: 12};
+  c: '"?"', expected: 'X', got: 'Y', open: '(', close: ')', reasons: 'Q', field: 'F', target: 'T', source: 'S', phase: 2, limit: 'L', gap: 7, pue: '1.2', sparks: '1,000', homes: '200', cells: 20, liq: '0.08', air: '0.30', loss: '0.05', airPue: '1.35', liqPue: '1.13', ovh: 12, lo: 190, hi: 230, ranges: 'R', date: '2026-09-18'};
 
 describe('message tables', () => {
   it('defaults to English', () => expect(DEFAULT_LANG).toBe('en'));
@@ -55,11 +55,11 @@ describe('English output', () => {
   });
 
   it('capacity issues', () => {
-    const s = compute([{type: 'vr200', x: 0, z: 0}], CAT, 2);
+    const s = compute([{type: 'gb300', x: 0, z: 0}], CAT, 2);
     expect(s.issues.map(i => i.txt)).toEqual([
-      'Not enough power distribution: racks need 190 kW, RPPs can distribute only 0 kW. Add an RPP.',
-      'Not enough liquid cooling: 181 kW of heat, CDUs can remove only 0 kW. Add a CDU.',
-      'Not enough air cooling: 10 kW of heat, air handlers can remove only 0 kW. Add an in-row cooler.',
+      'Not enough power distribution: racks need 140 kW, RPPs can distribute only 0 kW. Add an RPP.',
+      'Not enough liquid cooling: 126 kW of heat, CDUs can remove only 0 kW. Add a CDU.',
+      'Not enough air cooling: 14 kW of heat, air handlers can remove only 0 kW. Add an in-row cooler.',
       'Not enough back-end network: 72 GPUs, only 0 ports. Add an IB switch rack.',
     ]);
   });

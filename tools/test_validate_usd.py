@@ -51,8 +51,8 @@ class ValidateUsdTest(unittest.TestCase):
         self.assertError(errors, "dchall:bogusKw is not defined by any applied schema")
 
     def test_wrong_type(self):
-        errors = self.run_mutated("int dchall:gpuCount = 72\n            double dchall:liquidFraction = 0.95",
-                                  "double dchall:gpuCount = 72\n            double dchall:liquidFraction = 0.95")
+        errors = self.run_mutated("int dchall:gpuCount = 72\n            double dchall:liquidFraction = 1.0",
+                                  "double dchall:gpuCount = 72\n            double dchall:liquidFraction = 1.0")
         self.assertError(errors, "dchall:gpuCount authored as double, schema says int")
 
     def test_custom_schema_property(self):
@@ -74,7 +74,8 @@ class ValidateUsdTest(unittest.TestCase):
         self.assertError(errors, "DataHallEquipmentAPI requires an authored dchall:heightM")
 
     def test_liquid_fraction_range(self):
-        errors = self.run_mutated("dchall:liquidFraction = 0.95", "dchall:liquidFraction = 1.5")
+        errors = self.run_mutated("int dchall:gpuCount = 72\n            double dchall:liquidFraction = 1.0",
+                                  "int dchall:gpuCount = 72\n            double dchall:liquidFraction = 1.5")
         self.assertError(errors, "dchall:liquidFraction must be in (0, 1], got 1.5")
 
     def test_grid_collision_and_name(self):

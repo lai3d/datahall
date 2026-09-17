@@ -39,7 +39,7 @@ describe('buildLayout', () => {
   it('catalog lists only the device types used, with parameters from catalog.json', () => {
     const layout = buildLayout(toItems([['vr200', 0, 0], ['cdu', 1, 0], ['vr200', 2, 0]]), CAT, 5, GRID, META);
     expect(layout.catalog.map(c => c.id)).toEqual(['vr200', 'cdu']);
-    expect(layout.catalog[0]).toMatchObject({name: 'Vera Rubin NVL72', category: 'gpu', powerKw: 190, gpuCount: 72, liquidFraction: 0.95, heightM: 2.3, roadmap: false});
+    expect(layout.catalog[0]).toMatchObject({name: 'Vera Rubin NVL72', category: 'gpu', powerKw: 190, gpuCount: 72, liquidFraction: 1, heightM: 2.3, roadmap: false});
     expect(layout.catalog[1]).toMatchObject({liquidCoolingKw: 800, overheadKw: 12, powerKw: 0, liquidFraction: 0});
     expect(layout.equipment[0]).toEqual({name: 'R01_C01', type: 'vr200', column: 0, row: 0, phase: 1, powerFeed: '', coolantSource: 'R01_C02'});
   });

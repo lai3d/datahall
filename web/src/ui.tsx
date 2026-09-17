@@ -197,6 +197,29 @@ function Header(){
   );
 }
 
+// Where a device's figures come from (catalog.json sources): linked titles with their type, the ranges the sources give, and when they were last checked.
+// Publisher names and titles stay in their original language
+const SOURCE_TYPE = {official: 'srcOfficial', reported: 'srcReported', estimate: 'srcEstimate'} as const;
+// compact: publisher names only (details panel); the full titles are in the methodology dialog and in each link's title
+function SourceList({t, compact = false}: {t: CatalogItem; compact?: boolean}){
+  const checked = t.sources.map(s => s.checked).sort().at(-1);
+  const ranges = Object.entries(t.ranges ?? {}).map(([f, [lo, hi]]) => f === 'cap' ? tr('rangeCap', {lo, hi}) : f === 'kw' ? tr('rangeKw', {lo, hi}) : `${f} ${lo}–${hi}`);
+  return (
+    <p className="src sources">
+      {tr('methodSources')}{' '}
+      {t.sources.map((s, i) => (
+        <span key={i}>
+          {i > 0 && tr('listSep')}
+          {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" title={s.title}>{compact ? s.publisher : `${s.publisher}: ${s.title}`}</a> : compact ? tr('srcOwnEstimate') : s.title}
+          {' '}({[s.date, tr(SOURCE_TYPE[s.type])].filter(Boolean).join(', ')})
+        </span>
+      ))}
+      {ranges.length > 0 && <>{tr('listSep')}{tr('rangeLabel', {ranges: ranges.join(tr('listSep'))})}</>}
+      {checked && <>{tr('listSep')}{tr('srcChecked', {date: checked})}</>}
+    </p>
+  );
+}
+
 // Methodology and assumptions, in a modal dialog opened from the header or from "How it works" links next to the sections it explains.
 // Figures quoted in the text come from the catalog and PUE_FACTORS, so the explanation cannot drift from the model
 export type MethodSection = 'intro' | 'checks' | 'pue' | 'cost' | 'planning' | 'devices';
@@ -256,7 +279,7 @@ function Method(){
           <h3>{tr('mHDevices')}</h3>
           <p>{tr('mDevicesIntro')}</p>
           <ul className="devices">
-            {CATALOG.map(t => <li key={t.id} data-t={t.id}><strong>{catName(t)}</strong> {catNote(t)}</li>)}
+            {CATALOG.map(t => <li key={t.id} data-t={t.id}><strong>{catName(t)}</strong> {catNote(t)}<SourceList t={t} /></li>)}
           </ul>
         </section>
       </div>
@@ -428,6 +451,7 @@ function Info({model}: {model: HallModel}){
       <table><tbody>{rows.map(([label, value]) => <tr key={label}><td>{label}</td><td>{value}</td></tr>)}</tbody></table>
       {it && assigning && <p className="assign-hint">{tr('assignHint', {label: it.type.toUpperCase()})}</p>}
       <p>{catNote(t)}</p>
+      <SourceList t={t} compact />
       {it && key && (
         <div className="row" style={{marginTop: 8}}>
           {supplyType && <button type="button" id="assignToggle" aria-pressed={assigning} onClick={() => actions.toggleAssignMode(key)}>{tr(assigning ? 'assignDone' : 'assignStart')}</button>}
