@@ -1,5 +1,7 @@
 // OpenUSD 导出：纯函数，不依赖 DOM 和 three，可以在 node 里直接测试
 // 坐标换算：(x, y, z)_three → (x, -z, y)_usd，Z 轴向上，单位米
+// 属性由 schema/schema.usda 里的 DataHallAPI、DataHallEquipmentAPI、LiquidCooledAPI 定义，
+// 改属性时先改 schema，web 测试会检查两边是否一致
 import {nearest} from './grid.js';
 
 export function buildUsda(list, CAT, utility, g){
@@ -30,32 +32,34 @@ export function buildUsda(list, CAT, utility, g){
     '    upAxis = "Z"',
     '    customLayerData = {',
     '        string generator = "GPU Data Hall Builder"',
-    '        string "dchall:schemaVersion" = "0.1"',
+    '        string "dchall:schemaVersion" = "0.2"',
     '    }',
     ')', '');
-  L.push('def Xform "DataHall" (', '    kind = "assembly"', ')', '{');
-  L.push(`    custom double dchall:utilityMw = ${f(utility)}`,
-    `    custom int dchall:gridColumns = ${g.GW}`, `    custom int dchall:gridRows = ${g.GD}`,
-    `    custom double dchall:cellWidthM = ${f(g.CX)}`, `    custom double dchall:cellDepthM = ${f(g.CZ)}`, '');
+  L.push('def Xform "DataHall" (', '    prepend apiSchemas = ["DataHallAPI"]', '    kind = "assembly"', ')', '{');
+  L.push(`    double dchall:utilityMw = ${f(utility)}`,
+    `    int dchall:gridColumns = ${g.GW}`, `    int dchall:gridRows = ${g.GD}`,
+    `    double dchall:cellWidthM = ${f(g.CX)}`, `    double dchall:cellDepthM = ${f(g.CZ)}`, '');
   L.push(cube('    ', 'Floor', PALETTE.floor, [0, 0, -0.01], [g.GW * g.CX + 0.6, g.GD * g.CZ + 0.6, 0.02]), '');
 
   L.push('    def Scope "Catalog"', '    {');
   used.forEach(id => {
     const t = CAT[id], h = t.h, accent = PALETTE[t.c.slice(2)] || PALETTE.rack;
-    L.push(`        class Xform "${id}"`, '        {',
-      `            custom string dchall:displayName = ${str(t.name)}`,
-      `            custom token dchall:category = "${t.group}"`,
-      `            custom double dchall:powerKw = ${f(t.kw || 0)}`,
-      `            custom int dchall:gpuCount = ${t.gpus || 0}`,
-      `            custom double dchall:liquidFraction = ${f(t.liq || 0)}`,
-      `            custom double dchall:liquidCoolingKw = ${f(t.liqCool || 0)}`,
-      `            custom double dchall:airCoolingKw = ${f(t.airCool || 0)}`,
-      `            custom double dchall:overheadKw = ${f(t.ovh || 0)}`,
-      `            custom double dchall:distributionKw = ${f(t.dist || 0)}`,
-      `            custom int dchall:fabricPorts = ${t.ports || 0}`,
-      `            custom double dchall:capexMusd = ${f(t.cap || 0)}`,
-      `            custom bool dchall:roadmap = ${t.future ? 1 : 0}`,
-      `            custom double dchall:heightM = ${f(h)}`, '',
+    const liquid = t.liq > 0;
+    const apis = ['DataHallEquipmentAPI', ...(liquid ? ['LiquidCooledAPI'] : [])].map(s => `"${s}"`).join(', ');
+    L.push(`        class Xform "${id}" (`, `            prepend apiSchemas = [${apis}]`, '        )', '        {',
+      `            string dchall:displayName = ${str(t.name)}`,
+      `            token dchall:category = "${t.group}"`,
+      `            double dchall:powerKw = ${f(t.kw || 0)}`,
+      `            int dchall:gpuCount = ${t.gpus || 0}`,
+      ...(liquid ? [`            double dchall:liquidFraction = ${f(t.liq)}`] : []),
+      `            double dchall:liquidCoolingKw = ${f(t.liqCool || 0)}`,
+      `            double dchall:airCoolingKw = ${f(t.airCool || 0)}`,
+      `            double dchall:overheadKw = ${f(t.ovh || 0)}`,
+      `            double dchall:distributionKw = ${f(t.dist || 0)}`,
+      `            int dchall:fabricPorts = ${t.ports || 0}`,
+      `            double dchall:capexMusd = ${f(t.cap || 0)}`,
+      `            bool dchall:roadmap = ${t.future ? 1 : 0}`,
+      `            double dchall:heightM = ${f(h)}`, '',
       cube('            ', 'Body', PALETTE.rack, [0, 0, h / 2], [g.CX * .92, g.CZ * .94, h]),
       cube('            ', 'Front', accent, [0, -(g.CZ * .47 + .012), h / 2], [g.CX * .78, .02, h - .3]),
       '        }');
@@ -68,9 +72,9 @@ export function buildUsda(list, CAT, utility, g){
     const [px, py] = pos(it);
     L.push(`        def Xform "${primName(it)}" (`, '            kind = "component"', '            instanceable = true',
       `            prepend references = </DataHall/Catalog/${it.type}>`, '        )', '        {',
-      `            custom int dchall:gridColumn = ${it.x}`, `            custom int dchall:gridRow = ${it.z}`);
-    if (t.liq > 0){ const n = nearest(it, cdus); if (n) L.push(`            custom rel dchall:coolantSource = </DataHall/Equipment/${primName(n.a)}>`); }
-    if (t.kw > 0){ const n = nearest(it, rpps); if (n) L.push(`            custom rel dchall:powerFeed = </DataHall/Equipment/${primName(n.a)}>`); }
+      `            int dchall:gridColumn = ${it.x}`, `            int dchall:gridRow = ${it.z}`);
+    if (t.liq > 0){ const n = nearest(it, cdus); if (n) L.push(`            rel dchall:coolantSource = </DataHall/Equipment/${primName(n.a)}>`); }
+    if (t.kw > 0){ const n = nearest(it, rpps); if (n) L.push(`            rel dchall:powerFeed = </DataHall/Equipment/${primName(n.a)}>`); }
     L.push(`            double3 xformOp:translate = (${f(px)}, ${f(py)}, 0.0)`,
       '            uniform token[] xformOpOrder = ["xformOp:translate"]', '        }');
   });
@@ -88,13 +92,20 @@ datahall.usda 是 OpenUSD 文本层，Z 轴向上，单位米。
 /DataHall/Catalog/<id>     class 原型，带设备参数和简化几何
 /DataHall/Equipment/Rxx_Cyy 摆放的设备，instanceable，引用 Catalog 原型
 
-## 自定义属性（dchall: 命名空间，schema 0.1）
-powerKw、gpuCount、liquidFraction、liquidCoolingKw、airCoolingKw、
-overheadKw、distributionKw、fabricPorts、capexMusd、roadmap、heightM
+## 属性 schema（dchall: 命名空间，schema 0.2）
+属性由三个 codeless applied API schema 定义：
+DataHallAPI           /DataHall 上：utilityMw、gridColumns、gridRows、cellWidthM、cellDepthM
+DataHallEquipmentAPI  Catalog 原型上：displayName、category、powerKw、gpuCount、liquidCoolingKw、
+                      airCoolingKw、overheadKw、distributionKw、fabricPorts、capexMusd、roadmap、heightM；
+                      实例上：gridColumn、gridRow、powerFeed
+LiquidCooledAPI       液冷机柜原型上：liquidFraction；实例上：coolantSource
+
+没有加载 schema 插件时，文件照样能打开，属性值也都在，只是会被当成未注册的 API。
+要让 usdview 或 Omniverse 识别 schema，把项目仓库的 schema/ 目录加到 PXR_PLUGINPATH_NAME。
 
 ## 拓扑关系
-dchall:coolantSource → 为该机柜供液的 CDU
-dchall:powerFeed     → 为该机柜配电的 RPP
+dchall:coolantSource → 为该机柜供液的 CDU（LiquidCooledAPI）
+dchall:powerFeed     → 为该设备配电的 RPP（DataHallEquipmentAPI）
 
 ## 替换为高精度模型
 在更强的层里对 /DataHall/Catalog/<id> 写 over，把几何替换成厂商 SimReady 资产的引用，

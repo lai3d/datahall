@@ -13,10 +13,16 @@
   - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载 `.usda`
   - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
   - `src/ui.js`：右侧面板；`src/state.js`：共享状态；`src/layout.js`：预设与 localStorage；`src/grid.js`：网格常量
-  - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致
+  - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致，
+    并解析 `schema/generatedSchema.usda` 检查导出的每个 `dchall:` 属性都由应用的 schema 定义、类型一致（不需要 pxr）
+  - `scripts/update-sample.js`：`npm run sample`，导出格式有意变更后按样例原布局重新生成 `samples/datahall.usda`
 - `spec/catalog.json`：设备目录，**唯一数据源**
-- `samples/datahall.usda`：导出样例，已用 OpenUSD 26.08 验证，同时是导出回归测试的 golden 文件
-- `tools/validate_usd.py`：USD 校验脚本（`pip install usd-core`）
+- `schema/`：codeless applied API schema 插件
+  - `schema.usda`：源文件，只改这个
+  - `generatedSchema.usda`、`plugInfo.json`：`tools/gen_schema.sh` 生成，和源文件一起提交。
+    `plugInfo.json` 里的 `Root`/`ResourcePath`/`LibraryPath` 是手改的相对路径，重新生成会保留
+- `samples/datahall.usda`：导出样例，已用 OpenUSD 26.08 和 schema 校验，同时是导出回归测试的 golden 文件
+- `tools/validate_usd.py`：基于 schema 的 USD 校验，自动注册 `schema/` 插件；`tools/test_validate_usd.py` 是它的测试
 
 ## 运行
 
@@ -25,7 +31,13 @@ cd web && npm i
 npm run dev        # 开发服务器
 npm test           # vitest
 npm run build      # 产物在 web/dist，base 为相对路径，可部署到任意子路径
-pip install usd-core && python3 tools/validate_usd.py samples/datahall.usda
+
+python3 -m venv .venv && .venv/bin/pip install usd-core jinja2
+.venv/bin/python tools/validate_usd.py samples/datahall.usda
+.venv/bin/python -m unittest discover -s tools
+tools/gen_schema.sh             # 改了 schema/schema.usda 之后（默认用 .venv 的 python）
+tools/gen_schema.sh --validate  # 检查生成文件是否过期
+export PXR_PLUGINPATH_NAME=$PWD/schema  # 让 usdview、Omniverse 识别 schema
 ```
 
 ## 已定的设计决策
@@ -35,17 +47,22 @@ pip install usd-core && python3 tools/validate_usd.py samples/datahall.usda
 - **OpenUSD 约定**：Z 轴向上，metersPerUnit = 1，defaultPrim = `/DataHall`。
   - `/DataHall/Catalog/<id>`：`class` 原型，带参数和简化几何
   - `/DataHall/Equipment/Rxx_Cyy`：`instanceable` 实例，引用 Catalog 原型
-  - 参数用 `dchall:` 命名空间自定义属性；拓扑用 relationship：`dchall:coolantSource`→CDU，`dchall:powerFeed`→RPP
+  - 参数用 `dchall:` 命名空间属性，由 codeless applied API schema 定义（schema 0.2），不写 `custom`：
+    - `DataHallAPI`：应用在 `/DataHall` 上，市电和网格尺寸
+    - `DataHallEquipmentAPI`：应用在 Catalog 原型上，实例通过 reference 继承；设备参数、网格位置、`dchall:powerFeed`→RPP。
+      能力字段（液冷/风冷/配电/端口）都放在这里，不适用的写 0，没有再拆能力 API
+    - `LiquidCooledAPI`：只应用在 `liq > 0` 的原型上；`dchall:liquidFraction`、`dchall:coolantSource`→CDU
+  - 属性名和类型与 0.1 的自定义属性保持一致；没加载插件时文件照样能打开、属性值照样可读。0.1 的文件没有 `apiSchemas`，校验会要求重新导出
+  - schema 的 doc 用英文：usdGenSchema 会把第一句截成 `userDocBrief` 并补英文句点，中文句号会变成"。."
+  - 改属性的顺序：`schema/schema.usda` → `tools/gen_schema.sh` → `web/src/usd-export.js` → `npm run sample` → `validate_usd.py`
   - 替换高精度模型的方式：在更强的层对 Catalog 原型写 `over`
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
 ## 下一步（按优先级）
 
-1. 把 `dchall:` 自定义属性升级为 codeless applied API schema（`DataHallEquipmentAPI`、`LiquidCooledAPI`），
-   产出 `schema.usda` + `plugInfo.json`，validate 脚本改为基于 schema 校验。
-2. 对照 NVIDIA SimReady 规范核对 kind、单位、材质绑定要求（尚未逐条核对，不要假设已合规）。
-3. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
-4. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
+1. 对照 NVIDIA SimReady 规范核对 kind、单位、材质绑定要求（尚未逐条核对，不要假设已合规）。
+2. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
+3. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
 
 ## 数据可信度
 

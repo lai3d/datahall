@@ -1,0 +1,132 @@
+#usda 1.0
+(
+    """GPU Data Hall Builder 的 codeless applied API schema。
+
+    修改本文件后在仓库根目录运行 tools/gen_schema.sh，重新生成
+    generatedSchema.usda 和 plugInfo.json，三个文件一起提交。
+
+    属性名沿用 dchall: 命名空间，和 schema 0.1 的自定义属性同名同类型，
+    旧文件在加载本插件后照样可读。数值单位：功率 kW，长度 m，价格百万美元。
+    """
+    subLayers = [
+        @usd/schema.usda@
+    ]
+)
+
+over "GLOBAL" (
+    customData = {
+        string libraryName = "dataHall"
+        string libraryPath = "."
+        bool skipCodeGeneration = true
+    }
+)
+{
+}
+
+class "DataHallAPI" (
+    inherits = </APISchemaBase>
+    doc = """Hall-level parameters, applied to the default prim /DataHall.
+
+    Equipment sits on a grid of columns along +X and rows along -Y, centered
+    on the origin. Z is up and lengths are in meters.
+    """
+    customData = {
+        token apiSchemaType = "singleApply"
+    }
+)
+{
+    double dchall:utilityMw = 0 (
+        doc = "Utility feed capacity in MW. The hall cannot power on if total facility power exceeds it."
+    )
+    int dchall:gridColumns = 0 (
+        doc = "Number of grid columns along X."
+    )
+    int dchall:gridRows = 0 (
+        doc = "Number of grid rows along -Y."
+    )
+    double dchall:cellWidthM = 0 (
+        doc = "Cell width along X in meters."
+    )
+    double dchall:cellDepthM = 0 (
+        doc = "Cell depth along Y in meters."
+    )
+}
+
+class "DataHallEquipmentAPI" (
+    inherits = </APISchemaBase>
+    doc = """A piece of equipment placed on the hall grid: GPU rack, network or storage rack, CDU, in-row cooler or RPP.
+
+    Parameters are authored on the /DataHall/Catalog/<id> class prims, while
+    grid position and topology are authored on /DataHall/Equipment/Rxx_Cyy
+    instances. One unit can have several capabilities (a CDU both removes heat
+    and draws pump power), so all capability fields live here and stay 0 when
+    they do not apply.
+    """
+    customData = {
+        token apiSchemaType = "singleApply"
+    }
+)
+{
+    string dchall:displayName = "" (
+        doc = "Human-readable equipment name."
+    )
+    token dchall:category = "gpu" (
+        allowedTokens = ["gpu", "net", "fac"]
+        doc = "Equipment class: gpu for compute racks, net for network and storage, fac for power and cooling infrastructure."
+    )
+    double dchall:powerKw = 0 (
+        doc = "IT load in kW, counted against power distribution and cooling."
+    )
+    int dchall:gpuCount = 0 (
+        doc = "Number of GPUs, each consuming one back-end fabric port."
+    )
+    double dchall:liquidCoolingKw = 0 (
+        doc = "Liquid heat removal capacity in kW, provided by CDUs."
+    )
+    double dchall:airCoolingKw = 0 (
+        doc = "Air heat removal capacity in kW, provided by in-row coolers."
+    )
+    double dchall:overheadKw = 0 (
+        doc = "Infrastructure power draw in kW, such as pumps and fans, not counted as IT load."
+    )
+    double dchall:distributionKw = 0 (
+        doc = "Power distribution capacity in kW, provided by RPPs."
+    )
+    int dchall:fabricPorts = 0 (
+        doc = "Back-end fabric ports available to GPUs; a simplified model, not a real topology."
+    )
+    double dchall:capexMusd = 0 (
+        doc = "Estimated hardware cost in millions of USD, from press and supply-chain reports rather than official pricing."
+    )
+    bool dchall:roadmap = false (
+        doc = "True for roadmap products that have not shipped yet."
+    )
+    double dchall:heightM = 0 (
+        doc = "Rack height in meters."
+    )
+    int dchall:gridColumn = 0 (
+        doc = "Zero-based grid column, authored on the instance."
+    )
+    int dchall:gridRow = 0 (
+        doc = "Zero-based grid row, authored on the instance."
+    )
+    rel dchall:powerFeed (
+        doc = "The RPP feeding this equipment; at most one target, which must have dchall:distributionKw > 0."
+    )
+}
+
+class "LiquidCooledAPI" (
+    inherits = </APISchemaBase>
+    doc = """Direct-to-chip liquid-cooled equipment, applied together with DataHallEquipmentAPI."""
+    customData = {
+        token apiSchemaType = "singleApply"
+    }
+)
+{
+    double dchall:liquidFraction = 1 (
+        doc = "Fraction of IT load removed by liquid, in (0, 1]; the remainder is air-cooled."
+    )
+    rel dchall:coolantSource (
+        doc = "The CDU supplying coolant; at most one target, which must have dchall:liquidCoolingKw > 0."
+    )
+}

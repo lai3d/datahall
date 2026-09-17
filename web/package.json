@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sample": "node scripts/update-sample.js"
   },
   "dependencies": {
     "three": "0.128.0"
