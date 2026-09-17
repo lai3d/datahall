@@ -199,7 +199,7 @@ class UsdToUnityTest(unittest.TestCase):
         mats = {m["name"]: m["pbrMetallicRoughness"] for m in g["materials"]}
         self.assertEqual(sorted(mats), ["body", "front"])
         self.assertAlmostEqual(mats["body"]["roughnessFactor"], 0.55, places=5)
-        self.assertAlmostEqual(mats["front"]["baseColorFactor"][1], 0.7255, places=4)
+        self.assertAlmostEqual(mats["front"]["baseColorFactor"][1], 0.4851, places=4)                 # #76B900 的 G，换算成线性值
         prim = g["meshes"][g["nodes"][1]["mesh"]]["primitives"][0]
         self.assertEqual((g["accessors"][prim["attributes"]["POSITION"]]["count"], g["accessors"][prim["indices"]]["count"]), (24, 36))
 

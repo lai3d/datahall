@@ -111,7 +111,7 @@ class Xform "vr200" ( prepend apiSchemas = ["DataHallEquipmentAPI", "LiquidCoole
             def Shader "PreviewSurface"
             {
                 uniform token info:id = "UsdPreviewSurface"
-                color3f inputs:diffuseColor = (0.2039, 0.251, 0.2941)
+                color3f inputs:diffuseColor = (0.0343, 0.0513, 0.0704)
                 float inputs:roughness = 0.5
                 token outputs:surface
             }
