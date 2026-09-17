@@ -108,7 +108,9 @@ export function importUsda(text, CAT, GRID){
       if (Math.hypot(t[0] - ex, t[1] - ey) > 0.05) warn(tr('usdTranslate', {where, loc: loc(x, z)}));
     }
     seen.set(key, where);
-    list.push([id, x, z]);
+    const phase = valueOf(prim, 'dchall:phase');
+    if (phase !== undefined && !(Number.isInteger(phase) && phase >= 1)) warn(tr('usdPhase', {where, v: phase}));
+    list.push(Number.isInteger(phase) && phase > 1 ? [id, x, z, {phase}] : [id, x, z]);
     rels.push({where, entry: list.at(-1), targets: Object.fromEntries(Object.keys(FEEDS).map(f => [f, relTarget(prim, 'dchall:' + f)]))});
   }
 
@@ -124,9 +126,9 @@ export function importUsda(text, CAT, GRID){
       if (!src || src[0] !== FEEDS[field].type || !FEEDS[field].needs(CAT[entry[0]])){ warn(tr('usdFeedInvalid', {where, field, target: name})); continue; }
       const a = autoOf[i][field];
       if (a && a.x === src[1] && a.z === src[2]) continue;
-      const it = {feeds: entry[3]};
+      const it = {feeds: entry[3]?.feeds};
       setFeed(it, field, {x: src[1], z: src[2]});
-      entry[3] = it.feeds;
+      entry[3] = {...entry[3], feeds: it.feeds};
     }
   });
 

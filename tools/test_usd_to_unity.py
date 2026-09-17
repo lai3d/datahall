@@ -178,10 +178,10 @@ class UsdToUnityTest(unittest.TestCase):
         self.assertEqual(layout, web)
 
     @unittest.skipUnless(HAS_WEB, "web/node_modules not installed")
-    def test_manual_assignment_matches_web_export(self):
-        # 手动指定的供给设备（不是最近的那台）：pxr 转换器读文件里的关系，网页版导入后按手动指定重建，结果要一致
-        path = os.path.join(self.tmp, "manual.usda")
-        subprocess.run(["node", "scripts/manual-feeds-usda.js", path], cwd=WEB, check=True)
+    def test_manual_assignment_and_phase_match_web_export(self):
+        # 手动指定的供给设备（不是最近的那台）和部署阶段：pxr 转换器读文件里的关系和 dchall:phase，网页版导入后重建，结果要一致
+        path = os.path.join(self.tmp, "props.usda")
+        subprocess.run(["node", "scripts/layout-props-usda.js", path], cwd=WEB, check=True)
         layout, _ = self.convert(path)
         web = json.loads(subprocess.run(["node", "scripts/layout-from-usda.js", path, "--date", "2026-09-17"],
                                         cwd=WEB, check=True, capture_output=True, text=True).stdout)
@@ -189,6 +189,7 @@ class UsdToUnityTest(unittest.TestCase):
         self.assertEqual(layout, web)
         by_name = {e["name"]: e for e in layout["equipment"]}
         self.assertEqual((by_name["R04_C05"]["coolantSource"], by_name["R04_C12"]["powerFeed"]), ("R06_C06", "R06_C09"))
+        self.assertEqual((by_name["R04_C12"]["phase"], by_name["R06_C10"]["phase"], by_name["R04_C05"]["phase"]), (2, 3, 1))
         self.assertEqual(self.warnings, [])
 
     @unittest.skipUnless(HAS_WEB, "web/node_modules not installed")

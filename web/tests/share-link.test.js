@@ -51,6 +51,6 @@ describe('encodeLayout / decodeLayout', () => {
   });
 
   it('不支持的版本不载入', () => {
-    expect(decodeLayout('#layout=3,5,vr200:1.1', CAT, GRID)).toEqual({u: 2, list: [], warnings: ['分享链接的版本 3 不受支持，没有载入布局。']});
+    expect(decodeLayout('#layout=4,5,vr200:1.1', CAT, GRID)).toEqual({u: 2, list: [], warnings: ['分享链接的版本 4 不受支持，没有载入布局。']});
   });
 });

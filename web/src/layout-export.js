@@ -33,7 +33,7 @@ export function buildLayout(list, CAT, utility, g, meta){
     equipment: placed.map(it => {
       const {coolantSource, powerFeed} = links.get(it);
       return {
-        name: equipmentName(it), type: it.type, column: it.x, row: it.z,
+        name: equipmentName(it), type: it.type, column: it.x, row: it.z, phase: it.phase || 1,
         powerFeed: powerFeed ? equipmentName(powerFeed) : '',
         coolantSource: coolantSource ? equipmentName(coolantSource) : '',
       };

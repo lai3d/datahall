@@ -103,6 +103,11 @@ class "DataHallEquipmentAPI" (
             string userDocBrief = "Infrastructure power draw in kW, such as pumps and fans, not counted as IT load."
         }
     )
+    int dchall:phase = 1 (
+        customData = {
+            string userDocBrief = "Deployment phase, starting at 1; equipment in a phase is installed after all earlier phases."
+        }
+    )
     rel dchall:powerFeed (
         customData = {
             string userDocBrief = "The RPP feeding this equipment; at most one target, which must have dchall:distributionKw > 0."

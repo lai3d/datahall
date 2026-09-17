@@ -1,5 +1,6 @@
 import {CAT} from './catalog.js';
 import {GRID, keyOf, FEEDS} from './grid.js';
+import {phasesIn} from './growth.js';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.js';
 import {state, itemList, snapshot} from './state.js';
 import * as view from './scene.js';
@@ -12,7 +13,7 @@ import {buildLayout, layoutToText} from './layout-export.js';
 import {createSaver} from './download.js';
 import {encodeLayout, decodeLayout} from './share-link.js';
 import {DEFAULT_LANG, setLang, htmlLang, tr} from './i18n.js';
-import {lineCells, freeCells, sameLayout, createHistory} from './edit.js';
+import {lineCells, freeCells, sameLayout, createHistory, toItem} from './edit.js';
 import {canFail} from './redundancy.js';
 
 const $ = s => document.querySelector(s);
@@ -20,10 +21,11 @@ const $ = s => document.querySelector(s);
 // ---------- mutations ----------
 // 底层操作只改 state 和模型；用户的编辑都包在 edit() 里，布局真的变了才记进撤销历史
 const undoStack = createHistory();   // 不叫 history，避免遮住 window.history
-function place(type, x, z, feeds){
+// extra：{feeds?, phase?}，来自快照条目
+function place(type, x, z, extra = {}){
   const key = keyOf(x, z);
   if (state.items.has(key) || !CAT[type]) return;
-  const it = feeds ? {type, x, z, feeds: JSON.parse(JSON.stringify(feeds))} : {type, x, z};
+  const it = {...extra, type, x, z};
   view.addMesh(key, it);
   state.items.set(key, it);
 }
@@ -39,7 +41,7 @@ function clearAll(){
 }
 function replaceLayout(p){
   clearAll(); state.utility = p.u;
-  p.list.forEach(([t, x, z, feeds]) => place(t, x, z, feeds));
+  p.list.map(toItem).forEach(({type, x, z, ...extra}) => place(type, x, z, extra));
 }
 function edit(fn){
   const before = snapshot();
@@ -50,7 +52,7 @@ function edit(fn){
 }
 const removeItem = key => edit(() => remove(key));
 // 载入预设、导入文件、打开分享链接是换了一个机房，故障演练清空；撤销和重做保留（格子上的设施还在就保持故障）
-const loadLayout = p => edit(() => { state.failed.clear(); replaceLayout(p); });
+const loadLayout = p => edit(() => { state.failed.clear(); state.viewPhase = null; state.phase = 1; replaceLayout(p); });
 // 不进撤销历史：启动时载入、撤销和重做本身
 function showLayout(p){ replaceLayout(p); state.powered = false; state.rowAnchor = null; changed(); }
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
@@ -60,6 +62,10 @@ function select(key){ state.selected = key; state.assignFrom = null; view.setOut
 function changed(){
   for (const key of state.failed) if (!canFail(CAT[state.items.get(key)?.type])) state.failed.delete(key);
   if (state.assignFrom && !FEED_OF[state.items.get(state.assignFrom)?.type]) state.assignFrom = null;
+  // 阶段选择不超过“现有最大阶段 + 1”；查看的阶段不存在了就回到全部
+  const phases = phasesIn([...state.items.values()]), maxPhase = phases.at(-1) || 1;
+  state.phase = Math.min(state.phase, maxPhase + 1);
+  if (state.viewPhase !== null && state.viewPhase >= maxPhase) state.viewPhase = null;
   buildUI(); view.rebuildLinks(); view.setOutline(); refresh(); updateGhost();
   saveLayout(snapshot()); updateShareLink();
   $('#undo').disabled = !undoStack.canUndo;
@@ -135,6 +141,20 @@ function toggleFailed(key){
   view.rebuildLinks(); refresh();
 }
 function restoreAll(){ state.failed.clear(); view.rebuildLinks(); refresh(); }
+
+// ---------- growth plan ----------
+// 新放的设备进当前选的阶段；如果正在查看更早的阶段，切回全部，免得放下去就看不见
+function newProps(){
+  if (state.viewPhase !== null && state.phase > state.viewPhase) state.viewPhase = null;
+  return state.phase > 1 ? {phase: state.phase} : {};
+}
+function setItemPhase(key, phase){
+  const it = state.items.get(key);
+  if (!it) return;
+  edit(() => { if (phase > 1) it.phase = phase; else delete it.phase; });
+}
+// 查看状态不改布局：不进撤销历史，只重算
+function setView(fn){ fn(); view.rebuildLinks(); refresh(); buildUI(); }
 
 // ---------- manual supply assignment ----------
 // 供给设备类型 → 设备上的字段
@@ -240,13 +260,13 @@ function tap(e){
     if (!state.rowAnchor){ state.rowAnchor = c; state.selected = null; view.setOutline(); buildUI(); renderInfo(); updateGhost(); return; }
     const cells = freeCells(lineCells(state.rowAnchor, c), state.items);
     state.rowAnchor = null;
-    edit(() => cells.forEach(p => place(state.tool, p.x, p.z)));
+    edit(() => cells.forEach(p => place(state.tool, p.x, p.z, newProps())));
     return;
   }
   const key = view.pickItem(e);
   if (key){ select(key); return; }
   const c = view.pickCell(e);
-  if (c && state.tool && !state.items.has(keyOf(c.x, c.z))){ edit(() => place(state.tool, c.x, c.z)); return; }
+  if (c && state.tool && !state.items.has(keyOf(c.x, c.z))){ edit(() => place(state.tool, c.x, c.z, newProps())); return; }
   select(null);
 }
 
@@ -354,8 +374,12 @@ initUI({
   setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; buildUI(); updateGhost(); },
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
-  showAlerts: keys => { view.setAlerts(keys); view.setFailed(state.failed); },
+  showAlerts: keys => { view.setAlerts(keys); view.setDimmed(); },
   toggleFailed,
+  setPlacePhase: n => setView(() => { state.phase = n; if (state.viewPhase !== null && n > state.viewPhase) state.viewPhase = null; }),
+  setViewPhase: n => setView(() => { state.viewPhase = n; }),
+  setHeadroomType: type => setView(() => { state.headroomType = type; }),
+  setItemPhase,
   setFeedChoice,
   toggleAssignMode,
   restoreAll,
