@@ -59,6 +59,41 @@ namespace DataHall.Tests
         }
     }
 
+    public class LayoutFileTests
+    {
+        string dir;
+
+        [SetUp]
+        public void CreateDir() { dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "datahall-" + System.Guid.NewGuid()); Directory.CreateDirectory(dir); }
+
+        [TearDown]
+        public void RemoveDir() => Directory.Delete(dir, true);
+
+        string Write(string name, string text) { var p = System.IO.Path.Combine(dir, name); File.WriteAllText(p, text); return p; }
+
+        [Test]
+        public void ReadsValidLayout()
+        {
+            Assert.IsTrue(LayoutFile.TryRead(Write("layout.json", Repo.SampleLayout), out var layout, out var error), error);
+            Assert.AreEqual(17, layout.equipment.Count);
+            Assert.IsNull(error);
+        }
+
+        [Test]
+        public void ExplainsFailuresWithoutThrowing()
+        {
+            Assert.IsFalse(LayoutFile.TryRead(System.IO.Path.Combine(dir, "missing.json"), out var layout, out var error));
+            Assert.IsNull(layout);
+            Assert.AreEqual("找不到文件 missing.json。", error);
+
+            Assert.IsFalse(LayoutFile.TryRead(Write("datahall.usda", "#usda 1.0\n"), out _, out error));
+            Assert.That(error, Does.StartWith("datahall.usda 无法打开：不是有效的 JSON"));
+
+            Assert.IsFalse(LayoutFile.TryRead(Write("other.json", "{\"format\": \"other\"}"), out _, out error));
+            Assert.That(error, Does.Contain("不是机房布局文件"));
+        }
+    }
+
     public class CapacityModelTests
     {
         [System.Serializable]

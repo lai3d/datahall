@@ -36,3 +36,5 @@
 *.so filter=lfs diff=lfs merge=lfs -text
 *.dll filter=lfs diff=lfs merge=lfs -text
 *.a filter=lfs diff=lfs merge=lfs -text
+# macOS 插件 bundle 里的可执行文件没有扩展名
+unity/Assets/Plugins/macOS/*.bundle/Contents/MacOS/* filter=lfs diff=lfs merge=lfs -text

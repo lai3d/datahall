@@ -42,6 +42,8 @@
   - `Assets/DataHall/Editor`：`ProjectSetup`（URP、场景、播放器设置）、`BundleImporter`（导入布局包、生成 prefab 变体）、`BuildMac`
   - `Assets/DataHall/Generated`：导入生成的模型和设备库，由 `tools/unity_sync.sh` 更新；`Assets/DataHall/Prefabs`：模型的 prefab 变体，交互加在这里
   - `Assets/DataHall/Tests/EditMode`：EditMode 测试；`Fixtures/axis_probe.glb` 由 `tools/make_unity_fixtures.py` 生成
+  - `Native/DataHallNative.m` → `Assets/Plugins/macOS/DataHallNative.bundle`（`tools/build_native_mac.sh`，需要 Xcode）：
+    打开文件对话框（NSOpenPanel）和把文件拖进窗口；C# 封装 `Runtime/NativeMac.cs`，只在打包后的 macOS 程序里加载
 
 ## 运行
 
@@ -64,6 +66,8 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
 tools/unity_sync.sh [file.usda]   # 导入全部设备模型，再把 file.usda（默认 samples/datahall.usda）设为默认布局
 tools/unity_test.sh               # EditMode 测试
 tools/unity_build.sh              # 打包 build/DataHall.app 并跑 batchmode 冒烟断言；LAYOUT=path 换布局
+tools/unity_native_smoke.sh       # 原生插件冒烟（会弹出窗口几秒）：拖放、自动取消的对话框、打开失败保留机房
+tools/build_native_mac.sh         # 改了 unity/Native/DataHallNative.m 之后重新编译插件
 build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页导出的布局
 ```
 
@@ -95,11 +99,15 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
   - 设备几何来自 glb，导入后生成 prefab 变体；交互改变体，不改 `Generated/`。改了导出几何或颜色后跑 `tools/unity_sync.sh`
   - 颜色：USD 里写线性值（导出器把 sRGB 调色板换算后写入），glTF 同为线性；Unity 工程是线性色彩空间，IMGUI 贴图颜色要写 `.linear`
   - 打包后的程序默认 run in background，否则从终端启动时主循环暂停；`OpenScene(Single)` 会卸载未引用资产，之后要重新加载
+  - 程序内打开：面板按钮弹 NSOpenPanel（在 Update 里弹，不在 OnGUI 里），或把文件拖进窗口；打开失败保留当前机房并提示。
+    拖放是在 Unity 的 `PlayerWindowView` 类上添加拖放方法：NSView 自带默认实现，所以只检查 NSView 以下 Unity 自己的类，有实现就不接管。
+    系统拖拽手势和对话框点选无法自动化，冒烟测试用伪造的拖放对象调用真实视图的 `performDragOperation:`
+  - 重跑 `ProjectSetup` 会重建场景（fileID 变化）并可能改动 `UniversalRenderPipelineGlobalSettings.asset`，内容没变的话不要提交这些变动
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
 ## 下一步（按优先级）
 
-1. Unity 版后续：程序内打开文件（目前只能用 `-layout` 参数或 StreamingAssets）、通电动画和供电/冷却连线、
+1. Unity 版后续：通电动画和供电/冷却连线、
    托盘拆解等交互（做在 `Prefabs/` 的变体上）、真实 SimReady 高精度资产（方案 A5，见 `docs/unity-options.md`）。
    目标平台 macOS 桌面，VR 暂不做。Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
 
