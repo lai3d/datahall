@@ -6,12 +6,15 @@ import {state, itemList, snapshot} from './state.ts';
 import * as view from './scene.ts';
 import {initControls} from './controls.ts';
 import type {DragHandlers} from './controls.ts';
-import {initUI, buildUI, refresh, renderInfo, applyStaticText} from './ui.ts';
+import {mountUI} from './ui.tsx';
+import {notify} from './store.ts';
+import {hallModel} from './model.ts';
 import {PRESETS, saveLayout, restoreLayout} from './layout.ts';
 import {buildUsda} from './usd-export.ts';
 import {importUsda, UsdImportError} from './usd-import.ts';
 import {buildLayout, layoutToText} from './layout-export.ts';
 import {createSaver} from './download.ts';
+import type {Saver} from './download.ts';
 import {encodeLayout, decodeLayout} from './share-link.ts';
 import {DEFAULT_LANG, setLang, htmlLang, tr} from './i18n.ts';
 import {lineCells, freeCells, sameLayout, createHistory, toItem} from './edit.ts';
@@ -19,7 +22,8 @@ import {canFail} from './redundancy.ts';
 import {hasShareLink, initAnalytics} from './analytics.ts';
 import {$} from './dom.ts';
 import type {PlacedItem} from './state.ts';
-import type {Actions} from './ui.ts';
+import type {Actions} from './ui.tsx';
+import type {Notice} from './state.ts';
 import type {PresetName} from './layout.ts';
 import type {ExportMeta} from './usd-export.ts';
 import type {EntryProps, FeedField, Layout, Pos} from './types.ts';
@@ -64,7 +68,13 @@ function showLayout(p: Layout){ replaceLayout(p); state.powered = false; state.r
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
 function redo(){ if (drag) return; const p = undoStack.redo(snapshot()); if (p) showLayout(p); }
 
-function select(key: string | null){ state.selected = key; state.assignFrom = null; view.setOutline(); renderInfo(); }
+function select(key: string | null){ state.selected = key; state.assignFrom = null; view.setOutline(); notify(); }
+// Sync the 3D scene's alert caps and dimming with the current model, then re-render the panel
+function refresh(){
+  view.setAlerts(hallModel().alerts);
+  view.setDimmed();
+  notify();
+}
 function changed(){
   for (const key of state.failed){ const it = state.items.get(key); if (!it || !canFail(CAT[it.type])) state.failed.delete(key); }
   if (state.assignFrom && !feedOf(state.items.get(state.assignFrom))) state.assignFrom = null;
@@ -72,10 +82,11 @@ function changed(){
   const phases = phasesIn([...state.items.values()]), maxPhase = phases.at(-1) || 1;
   state.phase = Math.min(state.phase, maxPhase + 1);
   if (state.viewPhase !== null && state.viewPhase >= maxPhase) state.viewPhase = null;
-  buildUI(); view.rebuildLinks(); view.setOutline(); refresh(); updateGhost();
+  view.rebuildLinks(); view.setOutline(); updateGhost();
   saveLayout(snapshot()); updateShareLink();
-  $<HTMLButtonElement>('#undo').disabled = !undoStack.canUndo;
-  $<HTMLButtonElement>('#redo').disabled = !undoStack.canRedo;
+  state.ui.canUndo = undoStack.canUndo;
+  state.ui.canRedo = undoStack.canRedo;
+  refresh();
 }
 
 // ---------- placement preview ----------
@@ -162,7 +173,7 @@ function setItemPhase(key: string, phase: number){
   edit(() => { if (phase > 1) it.phase = phase; else delete it.phase; });
 }
 // View state does not change the layout: no undo entry, just recompute
-function setView(fn: () => void){ fn(); view.rebuildLinks(); refresh(); buildUI(); }
+function setView(fn: () => void){ fn(); view.rebuildLinks(); refresh(); }
 
 // ---------- manual supply assignment ----------
 // Supply equipment type → field on the device
@@ -178,7 +189,7 @@ function setFeedChoice(key: string, field: FeedField, value: string){
 // Assign mode: with a CDU / RPP selected, click a device to connect it; clicking one already manually connected to it reverts it to nearest
 function toggleAssignMode(key: string){
   state.assignFrom = state.assignFrom === key || !feedOf(state.items.get(key)) ? null : key;
-  renderInfo();
+  notify();
 }
 function assignTap(key: string){
   const src = state.assignFrom ? state.items.get(state.assignFrom) : undefined, it = state.items.get(key);
@@ -190,18 +201,13 @@ function assignTap(key: string){
 
 // ---------- keyboard ----------
 function escape(){
-  if (state.assignFrom){ state.assignFrom = null; renderInfo(); return; }
+  if (state.assignFrom){ state.assignFrom = null; notify(); return; }
   if (state.rowAnchor) state.rowAnchor = null;
   else if (state.tool) state.tool = null;
   else if (state.selected){ select(null); return; }
-  buildUI(); renderInfo(); updateGhost();
+  notify(); updateGhost();
 }
 function initKeyboard(){
-  const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-  $('#undo').title = mac ? '⌘Z' : 'Ctrl+Z';
-  $('#redo').title = mac ? '⇧⌘Z' : 'Ctrl+Y';
-  $('#undo').onclick = undo;
-  $('#redo').onclick = redo;
   window.addEventListener('keydown', e => {
     if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
     const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
@@ -218,8 +224,7 @@ function initKeyboard(){
 // Every change writes the layout into the URL hash; replaceState adds no history entry and does not fire hashchange.
 // Also reset the share section's message to the default hint; later load or copy results overwrite it
 function updateShareLink(){
-  $('#shareMsg').textContent = tr('shareHint');
-  $('#shareWarnings').replaceChildren();
+  state.ui.share = {text: null, warnings: []};
   const hash = encodeLayout(snapshot());
   try { history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search); } catch (e) {}   // May be disallowed in the claude.ai sandbox
 }
@@ -228,37 +233,31 @@ function updateShareLink(){
 function loadFromLink(record: boolean): boolean{
   const link = decodeLayout(location.hash, CAT, GRID);
   if (!link) return false;
-  const msg = $('#shareMsg'), list = $('#shareWarnings');
   if (!link.list.length && link.warnings.length){
-    showImportResult(msg, list, tr('shareNotLoaded'), link.warnings);
+    showNotice('share', tr('shareNotLoaded'), link.warnings);
     return false;
   }
   (record ? loadLayout : showLayout)(link);
-  showImportResult(msg, list, tr('shareLoaded', {n: link.list.length, u: link.u}), link.warnings);
+  showNotice('share', tr('shareLoaded', {n: link.list.length, u: link.u}), link.warnings);
   return true;
 }
 
-function initShare(){
-  const msg = $('#shareMsg'), list = $('#shareWarnings');
-  $('#shareCopy').onclick = async () => {
-    list.replaceChildren();
-    if (!state.items.size){ msg.textContent = tr('shareEmpty'); return; }
-    updateShareLink();
-    try {
-      await navigator.clipboard.writeText(location.href);
-      msg.textContent = tr('shareCopied', {n: state.items.size});
-    } catch (e) {
-      msg.textContent = tr('shareCopyFailed');
-    }
-  };
-  window.addEventListener('hashchange', () => loadFromLink(true));
+async function copyShareLink(){
+  if (!state.items.size){ showNotice('share', tr('shareEmpty')); return; }
+  updateShareLink();
+  try {
+    await navigator.clipboard.writeText(location.href);
+    showNotice('share', tr('shareCopied', {n: state.items.size}));
+  } catch (e) {
+    showNotice('share', tr('shareCopyFailed'));
+  }
 }
 
 function tap(e: PointerEvent){
   // Assign mode: clicking a device toggles its connection, clicking this supply device itself exits, clicking empty floor does nothing
   if (state.assignFrom){
     const key = view.pickItem(e);
-    if (key === state.assignFrom){ state.assignFrom = null; renderInfo(); }
+    if (key === state.assignFrom){ state.assignFrom = null; notify(); }
     else if (key) assignTap(key);
     return;
   }
@@ -266,7 +265,7 @@ function tap(e: PointerEvent){
   if (state.tool && state.placeMode === 'row'){
     const c = view.pickCell(e);
     if (!c) return;
-    if (!state.rowAnchor){ state.rowAnchor = c; state.selected = null; view.setOutline(); buildUI(); renderInfo(); updateGhost(); return; }
+    if (!state.rowAnchor){ state.rowAnchor = c; state.selected = null; view.setOutline(); notify(); updateGhost(); return; }
     const cells = freeCells(lineCells(state.rowAnchor, c), state.items);
     state.rowAnchor = null;
     const tool = state.tool;
@@ -282,68 +281,56 @@ function tap(e: PointerEvent){
 }
 
 // ---------- export ----------
-// Import replaces the current hall; at most MAX_WARNINGS warnings are listed
-const MAX_WARNINGS = 8;
-function showImportResult(msg: HTMLElement, list: HTMLElement, text: string, warnings: string[] = []){
-  msg.textContent = text;
-  const lines = warnings.slice(0, MAX_WARNINGS);
-  if (warnings.length > MAX_WARNINGS) lines.push(tr('moreMessages', {n: warnings.length - MAX_WARNINGS}));
-  // Warnings contain prim names from the file; write them with textContent, never as HTML
-  list.replaceChildren(...lines.map(txt => Object.assign(document.createElement('li'), {className: 'warn', textContent: txt})));
+// Status line and warnings under the share or OpenUSD section; the panel lists at most 8 warnings
+function showNotice(section: 'share' | 'usd', text: string | null, warnings: string[] = []){
+  state.ui[section] = {text, warnings} satisfies Notice;
+  notify();
 }
 
-function initImport(msg: HTMLElement){
-  const input = $<HTMLInputElement>('#usdFile'), list = $('#usdWarnings');
-  $('#usdImport').onclick = () => input.click();
-  input.onchange = async () => {
-    const file = input.files?.[0];
-    input.value = '';                                   // Allow selecting the same file again
-    if (!file) return;
-    try {
-      const result = importUsda(await file.text(), CAT, GRID);
-      loadLayout(result);
-      showImportResult(msg, list,
-        tr('importDone', {file: file.name, n: result.list.length, u: result.u}) + (result.skipped ? tr('importSkipped', {n: result.skipped}) : ''),
-        result.warnings);
-    } catch (e) {
-      if (!(e instanceof UsdImportError)) console.error(e);
-      showImportResult(msg, list, e instanceof UsdImportError ? tr('importFailed', {reason: e.message}) : tr('importReadError'));
-    }
-  };
+// Import replaces the current hall
+async function importUsdFile(file: File){
+  try {
+    const result = importUsda(await file.text(), CAT, GRID);
+    loadLayout(result);
+    showNotice('usd',
+      tr('importDone', {file: file.name, n: result.list.length, u: result.u}) + (result.skipped ? tr('importSkipped', {n: result.skipped}) : ''),
+      result.warnings);
+  } catch (e) {
+    if (!(e instanceof UsdImportError)) console.error(e);
+    showNotice('usd', e instanceof UsdImportError ? tr('importFailed', {reason: e.message}) : tr('importReadError'));
+  }
 }
 
-let exportHint = () => '';
+let saver: Saver | null = null;
+const exportHint = () => saver ? saver.hint() + tr('usdHint') : '';
 async function initExport(){
-  const saver = await createSaver();
-  const box = $('#usdBox'), msg = $('#usdMsg'), btn = $<HTMLButtonElement>('#usdExport');
-  exportHint = () => saver.hint() + tr('usdHint');
-  msg.textContent = exportHint();
-  box.hidden = false;
-  initImport(msg);
-  // Shared by both exports: the OpenUSD layer, and layout.json for the Unity version (format in spec/layout.schema.json)
-  const exportWith = (button: HTMLButtonElement, filename: string, build: (meta: ExportMeta) => string, done: () => string) => {
-    button.onclick = async () => {
-      $('#usdWarnings').innerHTML = '';
-      if (!state.items.size){ msg.textContent = tr('exportEmpty'); return; }
-      const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
-      const text = build({date});
-      button.disabled = true;
-      try {
-        await saver.save(filename, text);
-        msg.textContent = done();
-      } catch (e) {
-        const code = (e as {code?: string} | null)?.code;
-        if (code === 'declined') msg.textContent = tr('exportCancelled');
-        else if (code === 'rate_limited') msg.textContent = tr('exportBusy');
-        else msg.textContent = tr('exportFailed');
-      } finally { button.disabled = false; }
-    };
-  };
-  exportWith(btn, 'datahall.usda', meta => buildUsda(itemList(), CAT, state.utility, GRID, meta),
-    () => tr('exportUsdDone', {n: state.items.size}));
-  exportWith($<HTMLButtonElement>('#layoutExport'), 'layout.json', meta => layoutToText(buildLayout(itemList(), CAT, state.utility, GRID, meta)),
-    () => tr('exportLayoutDone', {n: state.items.size}));
+  saver = await createSaver();
+  state.ui.exportReady = true;
+  notify();
 }
+// Shared by both exports: the OpenUSD layer, and layout.json for the Unity version (format in spec/layout.schema.json)
+async function exportWith(filename: string, build: (meta: ExportMeta) => string, done: () => string){
+  if (!saver || state.ui.exporting) return;
+  if (!state.items.size){ showNotice('usd', tr('exportEmpty')); return; }
+  const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
+  const text = build({date});
+  state.ui.exporting = true;
+  showNotice('usd', state.ui.usd.text);
+  try {
+    await saver.save(filename, text);
+    showNotice('usd', done());
+  } catch (e) {
+    const code = (e as {code?: string} | null)?.code;
+    showNotice('usd', code === 'declined' ? tr('exportCancelled') : code === 'rate_limited' ? tr('exportBusy') : tr('exportFailed'));
+  } finally {
+    state.ui.exporting = false;
+    notify();
+  }
+}
+const exportUsd = () => exportWith('datahall.usda', meta => buildUsda(itemList(), CAT, state.utility, GRID, meta),
+  () => tr('exportUsdDone', {n: state.items.size}));
+const exportLayout = () => exportWith('layout.json', meta => layoutToText(buildLayout(itemList(), CAT, state.utility, GRID, meta)),
+  () => tr('exportLayoutDone', {n: state.items.size}));
 
 // ---------- language ----------
 // English by default; the choice is stored in localStorage. ?lang=zh selects directly (not written into the share link hash)
@@ -358,36 +345,34 @@ function applyLang(id: string, persist: boolean){
   setLang(id);
   if (persist) try { localStorage.setItem(LANG_KEY, id); } catch (e) {}
   document.documentElement.lang = htmlLang();
-  applyStaticText();
 }
 // Redraw panels after switching; replace the last result messages in the share and export sections with the default hint in the current language
 function switchLang(id: string){
   applyLang(id, true);
-  buildUI(); refresh(); updateShareLink();
-  $('#usdMsg').textContent = exportHint();
-  $('#usdWarnings').replaceChildren();
+  updateShareLink();
+  state.ui.usd = {text: null, warnings: []};
+  refresh();
 }
 
 // ---------- boot ----------
 // Before anything writes the current layout into the hash
 const openedFromShareLink = hasShareLink(location.hash);
 applyLang(initialLang(), false);
-const el = view.initScene($('#stage'));
-initControls(el, view.camera, {
+const stage = $('#stage');
+const el = view.initScene(stage);
+const controls = initControls(el, view.camera, {
   onTap: tap,
   onHover: e => { hoverCell = view.pickCell(e); updateGhost(); },
   onLeave: () => { hoverCell = null; updateGhost(); },
-  resetButton: $('#camReset'),
   drag: dragItem,
 });
 const actions: Actions = {
   removeItem,
   setUtility: u => edit(() => { state.utility = u; }),
-  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; state.rowAnchor = null; state.assignFrom = null; view.setOutline(); buildUI(); renderInfo(); updateGhost(); },
-  setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; buildUI(); updateGhost(); },
+  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; state.rowAnchor = null; state.assignFrom = null; view.setOutline(); notify(); updateGhost(); },
+  setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; notify(); updateGhost(); },
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
-  showAlerts: keys => { view.setAlerts(keys); view.setDimmed(); },
   toggleFailed,
   setPlacePhase: n => setView(() => { state.phase = n; if (state.viewPhase !== null && n > state.viewPhase) state.viewPhase = null; }),
   setViewPhase: n => setView(() => { state.viewPhase = n; }),
@@ -397,10 +382,18 @@ const actions: Actions = {
   toggleAssignMode,
   restoreAll,
   setLang: switchLang,
+  undo,
+  redo,
+  resetView: () => controls.resetView(),
+  copyShareLink: () => { void copyShareLink(); },
+  importUsdFile: file => { void importUsdFile(file); },
+  exportUsd: () => { void exportUsd(); },
+  exportLayout: () => { void exportLayout(); },
+  exportHint,
 };
-initUI(actions);
-initExport();
-initShare();
+mountUI(actions, stage, $('#panel'));
+void initExport();
+window.addEventListener('hashchange', () => loadFromLink(true));
 initKeyboard();
 
 const mq = window.matchMedia('(prefers-color-scheme: dark)');

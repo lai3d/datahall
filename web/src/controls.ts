@@ -14,11 +14,11 @@ export interface ControlHandlers {
   onTap(e: PointerEvent): void;
   onHover(e: PointerEvent): void;
   onLeave(): void;
-  resetButton: HTMLElement;
   drag: DragHandlers;
 }
 
-export function initControls(el: HTMLElement, camera: THREE.PerspectiveCamera, {onTap, onHover, onLeave, resetButton, drag}: ControlHandlers): void{
+// Returns resetView, which puts the camera back to its initial orbit
+export function initControls(el: HTMLElement, camera: THREE.PerspectiveCamera, {onTap, onHover, onLeave, drag}: ControlHandlers): {resetView(): void}{
   const orb = {theta: .75, phi: .95, r: 17, target: new THREE.Vector3(0, .8, 0)};
   function updCam(){
     const sp = Math.sin(orb.phi);
@@ -26,7 +26,6 @@ export function initControls(el: HTMLElement, camera: THREE.PerspectiveCamera, {
       orb.target.y + orb.r * Math.cos(orb.phi), orb.target.z + orb.r * sp * Math.cos(orb.theta));
     camera.lookAt(orb.target);
   }
-  resetButton.onclick = () => { orb.theta = .75; orb.phi = .95; orb.r = 17; updCam(); };
 
   const ptrs = new Map<number, {x: number; y: number}>();
   let down: {x: number; y: number; moved: boolean; dragging: boolean} | null = null, pinch0 = 0, r0 = 0;
@@ -71,4 +70,5 @@ export function initControls(el: HTMLElement, camera: THREE.PerspectiveCamera, {
   el.addEventListener('wheel', e => { e.preventDefault(); orb.r = clamp(orb.r * (1 + e.deltaY * .001), 5, 34); updCam(); }, {passive: false});
 
   updCam();
+  return {resetView(){ orb.theta = .75; orb.phi = .95; orb.r = 17; updCam(); }};
 }

@@ -5,6 +5,19 @@ import type {Item, Layout, Pos} from './types.ts';
 // Devices placed in the scene: computation fields plus the three model
 export interface PlacedItem extends Item {mesh: Group}
 
+// A status line with optional warnings under the share and OpenUSD sections. text null shows the section's default hint
+export interface Notice {text: string | null; warnings: string[]}
+
+// Panel-only state that is not part of the layout
+export interface UiState {
+  share: Notice;
+  usd: Notice;
+  exportReady: boolean;   // the download channel is ready (the OpenUSD section is shown)
+  exporting: boolean;     // a save is in progress; export buttons are disabled
+  canUndo: boolean;
+  canRedo: boolean;
+}
+
 export interface AppState {
   items: Map<string, PlacedItem>;
   utility: number;
@@ -19,6 +32,7 @@ export interface AppState {
   failed: Set<string>;
   powered: boolean;
   powerStart: number;
+  ui: UiState;
 }
 
 export const state: AppState = {
@@ -35,6 +49,7 @@ export const state: AppState = {
   failed: new Set(),  // Failure drill: keys of facilities marked failed. Not part of the layout, undo history or share links
   powered: false,
   powerStart: 0,
+  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false},
 };
 
 // All deep copies: snapshots go into undo history and localStorage and must not follow later state changes

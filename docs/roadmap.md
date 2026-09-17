@@ -24,7 +24,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Vercel Web Analytics | Without measurement there is no way to know whether anyone uses it | 0.5 h | Done, 2026-09-17 |
 | AMD racks in the catalog | Helios (72 MI455X) and an MI355X DLC rack as catalog entries only; the model is vendor-neutral and the comparison story needs a second vendor | 1 h | Done, 2026-09-17 |
 | Playwright smoke test in CI | The 3D view and panel had no automated tests; it is also the safety net for the React migration and tutorial mode | 2 h | Done, 2026-09-17 |
-| Migrate the panel to React | Tutorial mode, the "Learn more" panel, comparison cards and the collapsible mobile panel are all UI work; move the hand-written DOM panel to React first so that code is not rewritten twice. The 3D scene stays plain three.js | 2–3 h | Next up (decided 2026-09-17) |
+| Migrate the panel to React | Tutorial mode, the "Learn more" panel, comparison cards and the collapsible mobile panel are all UI work; move the hand-written DOM panel to React first so that code is not rewritten twice. The 3D scene stays plain three.js | 2–3 h | Done, 2026-09-17 |
 
 ## Next (mid-quarter, 1 to 2 months)
 
