@@ -6,10 +6,11 @@ import {importUsda} from '../src/usd-import.js';
 import {buildLayout, layoutToText} from '../src/layout-export.js';
 import {CAT} from '../src/catalog.js';
 import {GRID} from '../src/grid.js';
+import {toItems} from '../src/edit.js';
 
 const [file] = process.argv.slice(2);
 const arg = process.argv.indexOf('--date');
 const date = arg > 0 ? process.argv[arg + 1] : new Date().toISOString().slice(0, 10);
 const {u, list, warnings} = importUsda(readFileSync(file, 'utf8'), CAT, GRID);
 warnings.forEach(w => console.error('warning:', w));
-process.stdout.write(layoutToText(buildLayout(list.map(([type, x, z]) => ({type, x, z})), CAT, u, GRID, {date})));
+process.stdout.write(layoutToText(buildLayout(toItems(list), CAT, u, GRID, {date})));

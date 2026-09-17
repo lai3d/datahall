@@ -9,11 +9,14 @@ export function lineCells(a, b){
   return range(a.z, b.z).map(z => ({x: a.x, z}));
 }
 
+// 布局快照的 list（[[type, x, z, feeds?], ...]）→ 计算用的设备对象
+export const toItems = list => list.map(([type, x, z, feeds]) => feeds ? {type, x, z, feeds} : {type, x, z});
+
 // occupied：有 has(key) 的集合（state.items 或 Set）
 export const freeCells = (cells, occupied) => cells.filter(c => !occupied.has(keyOf(c.x, c.z)));
 
 // 布局 {u, list} 是否相同，与设备的先后顺序无关
-const canonical = p => JSON.stringify([p.u, p.list.map(i => i.join(':')).sort()]);
+const canonical = p => JSON.stringify([p.u, p.list.map(i => JSON.stringify(i)).sort()]);
 export const sameLayout = (a, b) => canonical(a) === canonical(b);
 
 // 撤销历史：保存编辑前的布局快照。record 清空重做栈；超过 limit 丢弃最早的

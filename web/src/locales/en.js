@@ -117,6 +117,12 @@ export default {
   noSupply: ({label}) => `no ${label} to connect`,
   supplyAt: ({label, loc}) => `${label} (${loc})`,
   remove: 'Remove device',
+  feedNearest: ({source}) => `Nearest: ${source}`,
+  feedNone: 'none',
+  rowManual: 'Manually connected',
+  assignStart: 'Assign devices',
+  assignDone: 'Done',
+  assignHint: ({label}) => `Click devices to connect them to this ${label}. Click one again to put it back on the nearest ${label}. Press Esc or Done when finished.`,
 
   // Share link
   shareHint: 'The URL in the address bar always matches the current hall. Send it to someone and they see the same layout.',
@@ -130,6 +136,7 @@ export default {
   linkType: ({type}) => `Device type ${type} in the share link is not in the current catalog. Skipped.`,
   linkCell: ({cell}) => `Position ${cell} in the share link is malformed. Skipped.`,
   linkOutside: ({name, loc}) => `${name} at ${loc} is outside the grid. Skipped.`,
+  linkFeed: ({loc}) => `The supply assignment for ${loc} in the share link is invalid. Using the nearest one.`,
   linkOverlap: ({name, loc}) => `${name} shares a cell with another device (${loc}). Skipped.`,
 
   // Import and export
@@ -163,6 +170,7 @@ export default {
   usdGridFromName: ({where, loc}) => `${where} has no dchall:gridColumn / gridRow. Placed at ${loc} based on its name.`,
   usdOutside: ({where, loc}) => `${where} at ${loc} is outside the grid. Not imported.`,
   usdOverlap: ({where, other, loc}) => `${where} shares a cell with ${other} (${loc}). Not imported.`,
+  usdFeedInvalid: ({where, field, target}) => `${where} has dchall:${field} pointing to ${target}, which was not imported as a matching supply. Using the nearest one.`,
   usdTranslate: ({where, loc}) => `${where} has an xformOp:translate that does not match ${loc}. Placed by dchall:gridColumn / gridRow.`,
 
   // usda-parser.js

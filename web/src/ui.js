@@ -2,7 +2,7 @@
 import {CATALOG, CAT} from './catalog.js';
 import {compute, fmt} from './sim.js';
 import {supplyLoads, supplyIssues} from './supply.js';
-import {keyOf} from './grid.js';
+import {keyOf, nearest, FEEDS} from './grid.js';
 import {canFail, singlePointsOfFailure} from './redundancy.js';
 import {state, itemList} from './state.js';
 import {LANGS, getLang, tr, loc, catName, catNote} from './i18n.js';
@@ -61,7 +61,7 @@ export function refresh(){
   const loads = supplyLoads(list, CAT);
   const perDevice = supplyIssues(loads, s);
   const blocking = s.blocking || perDevice.some(i => i.lvl === 'bad');
-  supplyByKey = new Map(list.map(it => [keyOf(it.x, it.z), {supply: loads.supplies.get(it), links: loads.links.get(it), loads}]));
+  supplyByKey = new Map(list.map(it => [keyOf(it.x, it.z), {item: it, supply: loads.supplies.get(it), links: loads.links.get(it), loads, active: list}]));
   const alerts = new Set([...loads.supplies].filter(([, v]) => v.overloaded).map(([it]) => keyOf(it.x, it.z)));
   loads.unconnected.forEach(u => alerts.add(keyOf(u.item.x, u.item.z)));
   actions.showAlerts(alerts);
@@ -126,12 +126,22 @@ function supplyRows(t, info){
     const text = `${fmt(loadKw)} / ${fmt(capacityKw)}`;
     rows.push([tr('rowLoad'), overloaded ? badText(text + tr('overloadedSuffix')) : text], [tr('rowConsumers'), tr('deviceCount', {n: consumers.length})]);
   }
+  // 设备：下拉框选择接哪台，第一项是就近（括号里是现在最近的那台）；手动指定的那台被拿掉（故障演练）时实际接的是就近
   const source = (field, label, row, needed) => {
     if (!needed) return;
     const s = info.links?.[field];
-    if (!s) { rows.push([tr(row), badText(tr('noSupply', {label}))]); return; }
-    const text = tr('supplyAt', {label, loc: loc(s.x, s.z)});
-    rows.push([tr(row), info.loads.supplies.get(s).overloaded ? badText(text + tr('overloadedSuffix')) : text]);
+    const all = [...state.items.values()].filter(i => i.type === FEEDS[field].type);
+    if (!all.length){ rows.push([tr(row), badText(tr('noSupply', {label}))]); return; }
+    const it = info.item, want = it.feeds?.[field];
+    const near = nearest(it, info.active.filter(i => i.type === FEEDS[field].type))?.a;
+    const loadOf = i => { const sup = info.loads.supplies.get(info.active.find(a => a.x === i.x && a.z === i.z)); return sup ? `${fmt(sup.loadKw)} / ${fmt(sup.capacityKw)}` : tr('statusFailed'); };
+    const options = [`<option value="auto">${tr('feedNearest', {source: near ? tr('supplyAt', {label, loc: loc(near.x, near.z)}) : tr('feedNone')})}</option>`,
+      ...all.sort((a, b) => Math.hypot(a.x - it.x, (a.z - it.z) * 2) - Math.hypot(b.x - it.x, (b.z - it.z) * 2)).map(i => {
+        const v = `${i.x},${i.z}`, chosen = want && want[0] === i.x && want[1] === i.z;
+        return `<option value="${v}"${chosen ? ' selected' : ''}>${tr('supplyAt', {label, loc: loc(i.x, i.z)})} · ${loadOf(i)}</option>`;
+      })];
+    const warn = s && info.loads.supplies.get(s).overloaded ? `<div>${badText(tr('supplyAt', {label, loc: loc(s.x, s.z)}) + tr('overloadedSuffix'))}</div>` : '';
+    rows.push([tr(row), `<select data-feed="${field}" aria-label="${tr(row)}">${options.join('')}</select>${warn}`]);
   };
   source('coolantSource', 'CDU', 'rowCoolantFrom', t.kw > 0 && t.liq > 0);
   source('powerFeed', 'RPP', 'rowPowerFrom', t.kw > 0);
@@ -153,13 +163,22 @@ export function renderInfo(){
   if (t.ports) rows.push([tr('rowPorts'), t.ports]);
   rows.push([tr('rowPrice'), '$' + t.cap + 'M']);
   const failable = !!it && canFail(t), failed = failable && state.failed.has(state.selected);
+  const supplyType = !!it && (it.type === 'cdu' || it.type === 'rpp'), assigning = supplyType && state.assignFrom === state.selected;
+  if (supplyType){
+    const field = it.type === 'cdu' ? 'coolantSource' : 'powerFeed';
+    const manual = [...state.items.values()].filter(i => i.feeds?.[field]?.[0] === it.x && i.feeds[field][1] === it.z).length;
+    if (manual) rows.push([tr('rowManual'), tr('deviceCount', {n: manual})]);
+  }
   if (failed) rows.push([tr('rowStatus'), badText(tr('statusFailed'))]);
   if (it) rows.push(...supplyRows(t, supplyByKey.get(keyOf(it.x, it.z))));
   const at = it ? tr('infoAt', {x: it.x + 1, z: it.z + 1, loc: loc(it.x, it.z)}) : tr('infoPlaceHint');
   box.innerHTML = `<strong>${catName(t)}</strong><span style="color:var(--muted)">${at}</span>
     <table>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+    ${assigning ? `<p class="assign-hint">${tr('assignHint', {label: it.type.toUpperCase()})}</p>` : ''}
     <p>${catNote(t)}</p>
-    ${it ? `<div class="row" style="margin-top:8px">${failable ? `<button type="button" id="failToggle" title="F" aria-keyshortcuts="F">${tr(failed ? 'drillRestore' : 'drillFail')}</button>` : ''}<button type="button" id="del">${tr('remove')}</button></div>` : ''}`;
+    ${it ? `<div class="row" style="margin-top:8px">${supplyType ? `<button type="button" id="assignToggle" aria-pressed="${assigning}">${tr(assigning ? 'assignDone' : 'assignStart')}</button>` : ''}${failable ? `<button type="button" id="failToggle" title="F" aria-keyshortcuts="F">${tr(failed ? 'drillRestore' : 'drillFail')}</button>` : ''}<button type="button" id="del">${tr('remove')}</button></div>` : ''}`;
   const d = $('#del'); if (d) d.onclick = () => actions.removeItem(state.selected);
   const f = $('#failToggle'); if (f) f.onclick = () => actions.toggleFailed(state.selected);
+  const a = $('#assignToggle'); if (a) a.onclick = () => actions.toggleAssignMode(state.selected);
+  box.querySelectorAll('select[data-feed]').forEach(sel => { sel.onchange = () => actions.setFeedChoice(state.selected, sel.dataset.feed, sel.value); });
 }

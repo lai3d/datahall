@@ -1,5 +1,6 @@
 import {CAT} from './catalog.js';
-import {GRID, keyOf} from './grid.js';
+import {GRID, keyOf, FEEDS} from './grid.js';
+import {setFeed, pruneFeeds, retargetFeeds} from './feeds.js';
 import {state, itemList, snapshot} from './state.js';
 import * as view from './scene.js';
 import {initControls} from './controls.js';
@@ -19,10 +20,10 @@ const $ = s => document.querySelector(s);
 // ---------- mutations ----------
 // 底层操作只改 state 和模型；用户的编辑都包在 edit() 里，布局真的变了才记进撤销历史
 const undoStack = createHistory();   // 不叫 history，避免遮住 window.history
-function place(type, x, z){
+function place(type, x, z, feeds){
   const key = keyOf(x, z);
   if (state.items.has(key) || !CAT[type]) return;
-  const it = {type, x, z};
+  const it = feeds ? {type, x, z, feeds: JSON.parse(JSON.stringify(feeds))} : {type, x, z};
   view.addMesh(key, it);
   state.items.set(key, it);
 }
@@ -38,11 +39,12 @@ function clearAll(){
 }
 function replaceLayout(p){
   clearAll(); state.utility = p.u;
-  p.list.forEach(([t, x, z]) => place(t, x, z));
+  p.list.forEach(([t, x, z, feeds]) => place(t, x, z, feeds));
 }
 function edit(fn){
   const before = snapshot();
   fn();
+  pruneFeeds(state.items, CAT);   // 删掉或换掉供给设备后，指向它的手动指定失效
   if (!sameLayout(before, snapshot())){ undoStack.record(before); state.powered = false; }
   changed();
 }
@@ -54,9 +56,10 @@ function showLayout(p){ replaceLayout(p); state.powered = false; state.rowAnchor
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
 function redo(){ if (drag) return; const p = undoStack.redo(snapshot()); if (p) showLayout(p); }
 
-function select(key){ state.selected = key; view.setOutline(); renderInfo(); }
+function select(key){ state.selected = key; state.assignFrom = null; view.setOutline(); renderInfo(); }
 function changed(){
   for (const key of state.failed) if (!canFail(CAT[state.items.get(key)?.type])) state.failed.delete(key);
+  if (state.assignFrom && !FEED_OF[state.items.get(state.assignFrom)?.type]) state.assignFrom = null;
   buildUI(); view.rebuildLinks(); view.setOutline(); refresh(); updateGhost();
   saveLayout(snapshot()); updateShareLink();
   $('#undo').disabled = !undoStack.canUndo;
@@ -97,8 +100,10 @@ const dragItem = {
     if (c.x < 0 || c.x >= GRID.GW || c.z < 0 || c.z >= GRID.GD || to === drag.key || state.items.has(to)) return;
     const it = state.items.get(drag.key);
     state.items.delete(drag.key);
+    retargetFeeds(state.items, it, c);   // 挪的是供给设备时，手动接到它的设备跟着
     it.x = c.x; it.z = c.z;
     state.items.set(to, it);
+    if (state.assignFrom === drag.key) state.assignFrom = to;
     if (state.failed.delete(drag.key)) state.failed.add(to);
     view.moveMesh(it, to);
     Object.assign(drag, {key: to, moved: true});
@@ -131,8 +136,32 @@ function toggleFailed(key){
 }
 function restoreAll(){ state.failed.clear(); view.rebuildLinks(); refresh(); }
 
+// ---------- manual supply assignment ----------
+// 供给设备类型 → 设备上的字段
+const FEED_OF = Object.fromEntries(Object.entries(FEEDS).map(([field, f]) => [f.type, field]));
+// 详情面板的下拉框：value 为 'auto'（就近）或 'x,z'
+function setFeedChoice(key, field, value){
+  const it = state.items.get(key);
+  if (!it) return;
+  const [x, z] = value === 'auto' ? [] : value.split(',').map(Number);
+  edit(() => setFeed(it, field, value === 'auto' ? null : {x, z}));
+}
+// 指定接入模式：选中一台 CDU / RPP 后点设备，接到它；已经手动接到它的再点一次恢复就近
+function toggleAssignMode(key){
+  state.assignFrom = state.assignFrom === key || !FEED_OF[state.items.get(key)?.type] ? null : key;
+  renderInfo();
+}
+function assignTap(key){
+  const src = state.items.get(state.assignFrom), it = state.items.get(key);
+  const field = FEED_OF[src.type];
+  if (!FEEDS[field].needs(CAT[it.type])) return;
+  const cur = it.feeds?.[field];
+  edit(() => setFeed(it, field, cur && cur[0] === src.x && cur[1] === src.z ? null : src));
+}
+
 // ---------- keyboard ----------
 function escape(){
+  if (state.assignFrom){ state.assignFrom = null; renderInfo(); return; }
   if (state.rowAnchor) state.rowAnchor = null;
   else if (state.tool) state.tool = null;
   else if (state.selected){ select(null); return; }
@@ -197,6 +226,13 @@ function initShare(){
 }
 
 function tap(e){
+  // 指定接入模式：点设备切换接入，点这台供给设备本身结束，点空地不做什么
+  if (state.assignFrom){
+    const key = view.pickItem(e);
+    if (key === state.assignFrom){ state.assignFrom = null; renderInfo(); }
+    else if (key) assignTap(key);
+    return;
+  }
   // 整排放置：第一下记住起点，第二下把直线上的空格都放上当前设备
   if (state.tool && state.placeMode === 'row'){
     const c = view.pickCell(e);
@@ -314,12 +350,14 @@ initControls(el, view.camera, {
 initUI({
   removeItem,
   setUtility: u => edit(() => { state.utility = u; }),
-  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; state.rowAnchor = null; view.setOutline(); buildUI(); renderInfo(); updateGhost(); },
+  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; state.rowAnchor = null; state.assignFrom = null; view.setOutline(); buildUI(); renderInfo(); updateGhost(); },
   setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; buildUI(); updateGhost(); },
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
   showAlerts: keys => { view.setAlerts(keys); view.setFailed(state.failed); },
   toggleFailed,
+  setFeedChoice,
+  toggleAssignMode,
   restoreAll,
   setLang: switchLang,
 });

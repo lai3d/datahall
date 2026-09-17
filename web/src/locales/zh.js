@@ -106,6 +106,12 @@ export default {
   noSupply: ({label}) => `没有可接的 ${label}`,
   supplyAt: ({label, loc}) => `${label}（${loc}）`,
   remove: '移除设备',
+  feedNearest: ({source}) => `就近：${source}`,
+  feedNone: '无',
+  rowManual: '手动接入',
+  assignStart: '指定接入设备',
+  assignDone: '完成',
+  assignHint: ({label}) => `点设备把它接到这台 ${label}，再点一次恢复就近。完成后按 Esc 或点“完成”。`,
 
   shareHint: '地址栏里的网址随时对应当前机房，发给别人就能看到同样的布局。',
   shareNotLoaded: '没有载入分享链接。',
@@ -118,6 +124,7 @@ export default {
   linkType: ({type}) => `分享链接里的设备类型 ${type} 不在当前目录里，已跳过。`,
   linkCell: ({cell}) => `分享链接里的位置 ${cell} 格式不对，已跳过。`,
   linkOutside: ({name, loc}) => `${name} 的位置（${loc}）超出网格，已跳过。`,
+  linkFeed: ({loc}) => `分享链接里${loc}的供给指定无效，改为就近。`,
   linkOverlap: ({name, loc}) => `${name} 和其他设备占用同一格（${loc}），已跳过。`,
 
   moreMessages: ({n}) => `另有 ${n} 条提示未列出。`,
@@ -149,6 +156,7 @@ export default {
   usdGridFromName: ({where, loc}) => `${where} 没有 dchall:gridColumn / gridRow，按名字放在${loc}。`,
   usdOutside: ({where, loc}) => `${where} 的位置（${loc}）超出网格，未导入。`,
   usdOverlap: ({where, other, loc}) => `${where} 和 ${other} 占用同一格（${loc}），未导入。`,
+  usdFeedInvalid: ({where, field, target}) => `${where} 的 dchall:${field} 指向 ${target}，它没有作为对应的供给设备导入，改为就近。`,
   usdTranslate: ({where, loc}) => `${where} 的 xformOp:translate 和${loc}的位置不一致，按 dchall:gridColumn / gridRow 放置。`,
 
   parseLine: ({line, msg}) => `第 ${line} 行：${msg}`,
