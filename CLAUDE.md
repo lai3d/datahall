@@ -33,6 +33,8 @@
 - `tools/validate_usd.py`：基于 schema 的 USD 校验，自动注册 `schema/` 插件；`tools/test_validate_usd.py` 是它的测试
 - `tools/simready_setup.sh` + `tools/simready_audit.py`：对照 NVIDIA SimReady Foundation（固定版本）和 OAV 默认规则核对，环境在 `.simready/`
 - `docs/simready-audit.md`：SimReady 核对报告；`docs/unity-options.md`：Unity 方案对比和决定
+- `.gitattributes`：Git LFS 规则，只放二进制资产（glb、usdc/usdz/usd、贴图、音视频、字体、原生库）；`.usda`、`.gltf`、JSON、Unity YAML 留在普通 git。
+  `tools/check_lfs.sh` 检查 LFS 文件是否已拉取，Unity 脚本启动时自动调用
 - `tools/usd_to_unity.py`：`.usda` → 布局包（`layout.json` + `assets/<id>.glb`），测试 `tools/test_usd_to_unity.py`
 - `unity/`：Unity 6000.6.1f1 + URP + glTFast 6.20.0 的 macOS 程序
   - `Assets/DataHall/Runtime`：`LayoutData`（解析校验）、`HallCoordinates`（USD (x, y, z) → Unity (-x, z, -y)）、
@@ -44,6 +46,7 @@
 ## 运行
 
 ```bash
+brew install git-lfs && git lfs install   # 仓库用 Git LFS 存二进制资产（规则见 .gitattributes），克隆前装好；已克隆的运行 git lfs pull
 cd web && npm i
 npm run dev        # 开发服务器
 npm test           # vitest

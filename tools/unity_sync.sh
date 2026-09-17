@@ -5,6 +5,7 @@
 # 用法：tools/unity_sync.sh [file.usda]；需要 .venv（usd-core）、web/node_modules 和 Unity 6000.6.1f1
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+"$root/tools/check_lfs.sh" || exit 1
 usd="${1:-$root/samples/datahall.usda}"
 unity="${UNITY:-/Applications/Unity/Hub/Editor/6000.6.1f1/Unity.app/Contents/MacOS/Unity}"
 py="$root/.venv/bin/python"
