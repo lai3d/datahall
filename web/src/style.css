@@ -129,6 +129,12 @@ dialog.method::backdrop{background:rgb(0 0 0 / .45)}
 .repair p{margin:4px 0}
 .repair-option{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .repair-option button{flex:none}
+.goal{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end;font-size:13px}
+.goal label{display:flex;flex-direction:column;gap:2px;color:var(--muted)}
+.goal label.wide{grid-column:1/-1}
+.goal label.check{flex-direction:row;align-items:center;gap:6px;color:var(--ink)}
+.goal select,.goal input[type=number]{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px;min-width:0}
+@media (max-width:899px){.goal select,.goal input[type=number]{font-size:16px}}
 .compare{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
 .cmp{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .cmp > i{width:6px;flex:none}

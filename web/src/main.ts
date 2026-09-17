@@ -3,6 +3,8 @@ import {GRID, keyOf, FEEDS} from './grid.ts';
 import {phasesIn, MAX_PHASE} from './growth.ts';
 import {cleanInputs} from './energy.ts';
 import {planRepair} from './repair.ts';
+import {generateLayout} from './goal.ts';
+import type {Goal} from './goal.ts';
 import type {EnergyInputs} from './energy.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
 import {state, itemList, snapshot} from './state.ts';
@@ -132,6 +134,7 @@ function changed(){
   if (state.viewPhase !== null && state.viewPhase >= maxPhase) state.viewPhase = null;
   view.rebuildLinks(); view.setOutline(); updateGhost();
   saveLayout(snapshot()); updateShareLink();
+  state.ui.goal = null;
   state.ui.canUndo = undoStack.canUndo;
   state.ui.canRedo = undoStack.canRedo;
   refresh();
@@ -214,6 +217,19 @@ function restoreAll(){ state.failed.clear(); view.rebuildLinks(); refresh(); }
 function newProps(){
   if (state.viewPhase !== null && state.phase > state.viewPhase) state.viewPhase = null;
   return state.phase > 1 ? {phase: state.phase} : {};
+}
+// Replace the hall with a layout generated from a goal (goal.ts), as one undo entry like loading a preset.
+// The summary is set after the edit, because every change clears it
+function generateGoal(goal: Goal){
+  const r = generateLayout(goal, CAT, GRID);
+  const found = !!r && r.racks > 0;
+  if (r && found){
+    loadLayout({u: goal.utility, list: r.list.map(i => [i.type, i.x, i.z])});
+    r.list.forEach(i => view.popMesh(state.items.get(keyOf(i.x, i.z))));
+  }
+  const support = (['rpp', 'cdu', 'crah', 'ib'] as const).map(t => [t, r ? r.list.filter(i => i.type === t).length : 0] as [string, number]).filter(([, n]) => n > 0);
+  state.ui.goal = {type: goal.type, asked: goal.gpus, racks: r?.racks ?? 0, gpus: r?.gpus ?? 0, limit: r?.limit ?? null, maxRacks: r?.maxRacks ?? 0, utility: goal.utility, support, found};
+  notify();
 }
 // Apply one repair option (repair.ts), recomputed from the current hall so a stale panel cannot apply an outdated plan.
 // One undo entry; new units pop up so the change is visible in 3D
@@ -474,6 +490,7 @@ const actions: Actions = {
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
   setEnergy,
   applyRepair,
+  generateGoal,
   openMethod: section => { state.ui.method = section; notify(); },
   closeMethod: () => { state.ui.method = null; notify(); },
   setItemPhase,

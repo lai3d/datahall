@@ -10,6 +10,7 @@ import {fmt, PUE_FACTORS, UTILITY_OPTIONS} from './sim.ts';
 import {compareRacks} from './compare.ts';
 import {addCounts, planRepair} from './repair.ts';
 import type {RepairOption, SupportType} from './repair.ts';
+import type {Goal} from './goal.ts';
 import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
 import {scaleRefs} from './scale.ts';
@@ -46,6 +47,7 @@ export interface Actions {
   setHeadroomType(type: string): void;
   setEnergy(change: Partial<EnergyInputs>): void;
   applyRepair(index: number): void;
+  generateGoal(goal: Goal): void;
   openMethod(section: MethodSection): void;
   closeMethod(): void;
   setItemPhase(key: string, phase: number): void;
@@ -106,6 +108,7 @@ function App({stage}: {stage: HTMLElement}){
       <Compare model={model} />
       <Drill model={model} />
       <Presets />
+      <GoalForm />
       <Share notice={state.ui.share} />
       <Usd notice={state.ui.usd} />
       <p className="foot">{tr('foot')}</p>
@@ -378,9 +381,9 @@ function Capacity({model}: {model: HallModel}){
 // How to fix a hall that cannot power on (repair.ts): each option as one sentence with an Apply button. Hidden during the tutorial,
 // which teaches adding the units by hand. Planning runs only when the calculated devices or the feed change
 const SUPPORT_TEXT: Record<SupportType, 'repairRpp' | 'repairCdu' | 'repairCrah' | 'repairIb'> = {rpp: 'repairRpp', cdu: 'repairCdu', crah: 'repairCrah', ib: 'repairIb'};
+// Intl's Chinese list puts no space between 和 and a number; this app spaces numbers and Latin text in Chinese
+const list = (parts: string[]) => new Intl.ListFormat(getLang() === 'zh' ? 'zh' : 'en-GB', {type: 'conjunction'}).format(parts).replace(/和(?=[0-9A-Za-z])/g, '和 ');
 function repairSentence(o: RepairOption): string{
-  // Intl's Chinese list puts no space between 和 and a number; this app spaces numbers and Latin text in Chinese
-  const list = (parts: string[]) => new Intl.ListFormat(getLang() === 'zh' ? 'zh' : 'en-GB', {type: 'conjunction'}).format(parts).replace(/和(?=[0-9A-Za-z])/g, '和 ');
   const steps: string[] = [];
   if (o.utility !== null) steps.push(tr('repairUtility', {u: o.utility}));
   if (o.remove.length) steps.push(tr('repairRemove', {n: o.remove.length, name: catName(CAT[o.remove[0].type])}));
@@ -719,6 +722,48 @@ function Tutorial({model, version}: {model: HallModel; version: number}){
 }
 
 const PRESET_BUTTONS = [['empty', 'presetEmpty'], ['gb200', 'presetGb200'], ['gb200n1', 'presetGb200n1'], ['rubin', 'presetRubin']] as const;
+// Generate a starting layout from a goal (goal.ts). The form fields are a draft kept in the component; generating replaces the hall
+const GOAL_LIMIT_TEXT = {utility: 'goalLimitUtility', floor: 'goalLimitFloor', layout: 'goalLimitLayout', n1: 'goalLimitN1'} as const;
+function GoalForm(){
+  const [type, setType] = useState('vr200');
+  const [gpus, setGpus] = useState('576');
+  const [utility, setUtility] = useState(state.utility);
+  const [n1, setN1] = useState(false);
+  const g = state.ui.goal;
+  const asked = Math.round(Number(gpus));
+  let message: string | null = null;
+  if (g && !g.found) message = tr('goalNone');
+  else if (g){
+    const support = list(g.support.map(([t, n]) => tr(SUPPORT_TEXT[t as SupportType], {n})));
+    message = tr('goalDone', {racks: g.racks, name: catName(CAT[g.type]), gpus: g.gpus.toLocaleString(), support});
+    if (g.limit) message = tr('goalWithLimit', {done: message, limit: tr(GOAL_LIMIT_TEXT[g.limit], {asked: g.asked.toLocaleString(), u: g.utility, max: g.maxRacks})});
+  }
+  return (
+    <>
+      <h2>{tr('hGoal')}</h2>
+      <p className="sub">{tr('goalIntro')}</p>
+      <form className="goal" id="goal" onSubmit={e => { e.preventDefault(); if (asked > 0) actions.generateGoal({type, gpus: asked, utility, n1}); }}>
+        <label className="wide"><span>{tr('goalType')}</span>
+          <select id="goalType" value={type} onChange={e => setType(e.target.value)}>
+            {CATALOG.filter(t => t.gpus).map(t => <option key={t.id} value={t.id}>{catName(t)}</option>)}
+          </select>
+        </label>
+        <label><span>{tr('goalGpus')}</span>
+          <input id="goalGpus" type="number" inputMode="numeric" min={1} max={100000} step={1} value={gpus} onChange={e => setGpus(e.target.value)} />
+        </label>
+        <label><span>{tr('goalUtility')}</span>
+          <select id="goalUtility" value={utility} onChange={e => setUtility(Number(e.target.value))}>
+            {UTILITY_OPTIONS.map(u => <option key={u} value={u}>{u} MW</option>)}
+          </select>
+        </label>
+        <label className="check"><input id="goalN1" type="checkbox" checked={n1} onChange={e => setN1(e.target.checked)} /><span>{tr('goalN1')}</span></label>
+        <button type="submit" id="goalGenerate" disabled={!(asked > 0)}>{tr('goalGenerate')}</button>
+      </form>
+      {message && <p className="sub" id="goalMsg" style={{marginTop: 6}}>{message}</p>}
+    </>
+  );
+}
+
 function Presets(){
   return (
     <>
