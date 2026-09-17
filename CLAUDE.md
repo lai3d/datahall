@@ -20,6 +20,7 @@
   - `src/usda-parser.js`：usda 文本的精简解析器（prim、属性、元数据、值），不做组合
   - `src/usd-import.js`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
   - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
+  - `src/edit.js`：编辑用的纯函数（整排放置的格子、布局比较、撤销历史）
   - `src/ui.js`：右侧面板；`src/state.js`：共享状态；`src/layout.js`：预设与 localStorage；`src/grid.js`：网格常量
   - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致，
     并解析 `schema/generatedSchema.usda` 检查导出的每个 `dchall:` 属性都由应用的 schema 定义、类型一致（不需要 pxr）
@@ -118,15 +119,22 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
     拖放是在 Unity 的 `PlayerWindowView` 类上添加拖放方法：NSView 自带默认实现，所以只检查 NSView 以下 Unity 自己的类，有实现就不接管。
     系统拖拽手势和对话框点选无法自动化，冒烟测试用伪造的拖放对象调用真实视图的 `performDragOperation:`
   - 重跑 `ProjectSetup` 会重建场景（fileID 变化）并可能改动 `UniversalRenderPipelineGlobalSettings.asset`，内容没变的话不要提交这些变动
+- **编辑**：所有改布局的操作都经过 `main.js` 的 `edit()`，布局真的变了才记一条撤销历史（最多 100 条），
+  包括放置、删除、整排放置、拖动、改市电、载入预设、导入文件、打开分享链接；启动时的载入和撤销、重做本身不记。
+  - 拖动：按下的位置有设备就移动设备，否则旋转视角。按设备侧面时指针下的地板是后面的格子，所以按指针移动的格数挪，不是挪到指针下的格子；
+    经过的空格立即生效（连线和容量检查跟着变），占用的格子跳过，松手记一条历史；第二根手指落下取消这次拖动
+  - 整排放置：选“整排”后点第一格、再点最后一格，沿格子数差得多的方向（相等时沿排）填满空格；触屏没有悬停，只预览第一格
+  - 快捷键：⌘Z / Ctrl+Z 撤销，⇧⌘Z / Ctrl+Y 重做，Delete / Backspace 删除选中设备，Esc 依次取消整排起点、当前设备、选中
+  - 开发服务器下 `window.__datahall` 暴露 `state`、`cellToScreen`、`visibleGhosts`、`renderOnce`，给浏览器自动化用（生产构建没有）。
+    自动化浏览器窗口在后台时 requestAnimationFrame 会暂停：画面和相机矩阵不更新，先调 `renderOnce()`，截图用 canvas 的 `toDataURL`
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
 ## 下一步（按优先级）
 
 当前以网页版为主（2026-09-17 决定），Unity 版暂停。
 
-1. 编辑体验：拖动移动设备、撤销和重做、整排放置。
-2. three.js 从 r128 升级到新版（色彩管理、画质）。
-3. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
+1. three.js 从 r128 升级到新版（色彩管理、画质）。
+2. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
    Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
 
 ## 数据可信度

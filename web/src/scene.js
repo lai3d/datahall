@@ -1,7 +1,7 @@
 // three.js 场景：地板网格、设备模型、管线连线、选中框、放置预览、拾取、渲染循环
 import * as THREE from 'three';
 import {CAT} from './catalog.js';
-import {GRID, clamp, keyOf} from './grid.js';
+import {GRID, clamp} from './grid.js';
 import {supplyLoads} from './supply.js';
 import {state} from './state.js';
 
@@ -10,7 +10,8 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 const col = n => new THREE.Color(css(n));
 
 export let camera;
-let renderer, scene, itemRoot, floor, gridLines, linkObj, ghost, outline;
+let renderer, scene, itemRoot, floor, gridLines, linkObj, outline;
+const ghosts = [];   // 放置预览，整排放置时每格一个
 const ray = new THREE.Raycaster();
 
 const cellPos = (x, z) => new THREE.Vector3((x - (GW - 1) / 2) * CX, 0, (z - (GD - 1) / 2) * CZ);
@@ -91,6 +92,11 @@ export function addMesh(key, it){
   it.mesh = makeMesh(key, it);
   itemRoot.add(it.mesh);
 }
+// 拖动移动：设备已经在 state 里换了位置和 key，这里只挪模型
+export function moveMesh(it, key){
+  it.mesh.position.copy(cellPos(it.x, it.z));
+  it.mesh.traverse(o => o.userData.key = key);
+}
 export function removeMesh(it){
   itemRoot.remove(it.mesh);
   it.mesh.traverse(o => { o.geometry && o.geometry.dispose(); });
@@ -138,27 +144,31 @@ export function setOutline(){
   scene.add(outline);
 }
 
-export function setGhost(cell){
-  if (!ghost){
-    ghost = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, 1, CZ * .94),
+export const visibleGhosts = () => ghosts.filter(g => g.visible).map(g => ({x: +g.position.x.toFixed(2), z: +g.position.z.toFixed(2)}));
+// cells：要预览的空格子；type：设备类型，为空时隐藏全部预览
+export function setGhost(cells, type){
+  if (!type) cells = [];
+  while (ghosts.length < cells.length){
+    const g = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, 1, CZ * .94),
       new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: .25, depthWrite: false}));
-    scene.add(ghost);
+    scene.add(g); ghosts.push(g);
   }
-  const show = state.tool && cell && !state.items.has(keyOf(cell.x, cell.z));
-  ghost.visible = !!show;
-  if (!show) return;
-  const h = CAT[state.tool].h;
-  ghost.scale.y = h;
-  ghost.material.color = col(CAT[state.tool].c);
-  ghost.position.copy(cellPos(cell.x, cell.z)).setY(h / 2);
+  ghosts.forEach((g, i) => {
+    const c = cells[i];
+    g.visible = !!c;
+    if (!c) return;
+    const h = CAT[type].h;
+    g.scale.y = h;
+    g.material.color = col(CAT[type].c);
+    g.position.copy(cellPos(c.x, c.z)).setY(h / 2);
+  });
 }
-export function hideGhost(){ if (ghost) ghost.visible = false; }
 
 // 配色切换：地板和所有设备按新的 CSS 变量重建
 export function retheme(){
   buildHall();
   state.items.forEach((it, key) => { removeMesh(it); addMesh(key, it); });
-  if (ghost){ scene.remove(ghost); ghost = null; }
+  ghosts.splice(0).forEach(g => { scene.remove(g); g.geometry.dispose(); });
   rebuildLinks(); setOutline();
 }
 
@@ -171,12 +181,21 @@ export function pickItem(e){
   const hit = ray.intersectObjects(itemRoot.children, true)[0];
   return hit ? hit.object.userData.key : null;
 }
+// 格子中心在页面上的坐标（clientX/Y），y 是离地高度
+export function cellToScreen(x, z, y = 0){
+  const v = cellPos(x, z).setY(y).project(camera);
+  const r = renderer.domElement.getBoundingClientRect();
+  return {x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height};
+}
 export function pickCell(e){
   ray.setFromCamera(ndc(e), camera);
   const hit = ray.intersectObject(floor)[0]; if (!hit) return null;
   const x = Math.round(hit.point.x / CX + (GW - 1) / 2), z = Math.round(hit.point.z / CZ + (GD - 1) / 2);
   return x >= 0 && x < GW && z >= 0 && z < GD ? {x, z} : null;
 }
+
+// 立即画一帧：浏览器自动化时窗口在后台，requestAnimationFrame 可能暂停
+export function renderOnce(){ camera.updateMatrixWorld(); renderer.render(scene, camera); }
 
 export function startLoop(){
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
