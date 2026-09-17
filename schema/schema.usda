@@ -1,12 +1,13 @@
 #usda 1.0
 (
-    """GPU Data Hall Builder 的 codeless applied API schema。
+    """Codeless applied API schemas for GPU Data Hall Builder.
 
-    修改本文件后在仓库根目录运行 tools/gen_schema.sh，重新生成
-    generatedSchema.usda 和 plugInfo.json，三个文件一起提交。
+    After editing this file, run tools/gen_schema.sh from the repo root to
+    regenerate generatedSchema.usda and plugInfo.json, and commit all three.
 
-    属性名沿用 dchall: 命名空间，和 schema 0.1 的自定义属性同名同类型，
-    旧文件在加载本插件后照样可读。数值单位：功率 kW，长度 m，价格百万美元。
+    Attribute names keep the dchall: namespace with the same names and types
+    as the schema 0.1 custom attributes, so old files stay readable with this
+    plugin loaded. Units: power in kW, length in m, prices in millions of USD.
     """
     subLayers = [
         @usd/schema.usda@

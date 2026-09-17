@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 编译 unity/Native/DataHallNative.m 为 Unity macOS 插件：unity/Assets/Plugins/macOS/DataHallNative.bundle（arm64 + x86_64）
-# 需要 Xcode 命令行工具。产物提交进仓库（二进制走 Git LFS），没有 Xcode 的机器不需要重新编译。
+# Compile unity/Native/DataHallNative.m into the Unity macOS plugin unity/Assets/Plugins/macOS/DataHallNative.bundle (arm64 + x86_64)
+# Requires the Xcode command line tools. The output is committed (binaries via Git LFS), so machines without Xcode need not rebuild it.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 bundle="$root/unity/Assets/Plugins/macOS/DataHallNative.bundle"

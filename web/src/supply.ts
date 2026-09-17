@@ -1,6 +1,6 @@
-// 按设备的容量检查：每台 CDU、RPP 按拓扑（grid.ts 的 supplyLinks，就近分配）分到的负载和自身容量比较。
-// sim.ts 的 compute() 只看全机房总量，总量够时某一台仍可能超载。纯函数，不依赖 DOM。
-// 只在网页版使用：compute() 是和 Unity 共用的契约（spec/capacity-cases.json），这里不改它。
+// Per-device capacity check: each CDU and RPP compares the load assigned to it by topology (supplyLinks in grid.ts, nearest assignment) with its own capacity.
+// compute() in sim.ts only checks hall-wide totals; a single unit can still be overloaded when totals are sufficient. Pure functions, no DOM dependency.
+// Web-only: compute() is a contract shared with Unity (spec/capacity-cases.json), so it is not changed here.
 import {supplyLinks} from './grid.ts';
 import {fmt} from './sim.ts';
 import {tr, loc} from './i18n.ts';
@@ -16,7 +16,7 @@ export interface Loads<T extends Item = Item> {
   unconnected: {item: T; needs: SupplyKind}[];
 }
 
-// 每种供给设备：从哪个拓扑字段找消费者、消费者的负载、自身容量字段、提示用的名称
+// Per supply type: which topology field finds its consumers, the consumer load, its own capacity field, and the name used in messages
 const KINDS: Record<SupplyKind, {link: FeedField; load: (t: CatalogItem) => number; capacity: 'liqCool' | 'dist'; label: string; message: 'overloadCdu' | 'overloadRpp'}> = {
   cdu: {link: 'coolantSource', load: t => (t.kw || 0) * (t.liq || 0), capacity: 'liqCool', label: 'CDU', message: 'overloadCdu'},
   rpp: {link: 'powerFeed', load: t => t.kw || 0, capacity: 'dist', label: 'RPP', message: 'overloadRpp'},
@@ -25,10 +25,10 @@ const KIND_IDS = Object.keys(KINDS) as SupplyKind[];
 const isSupplyKind = (type: string): type is SupplyKind => type in KINDS;
 const MAX_LISTED = 3;
 
-// list：[{type, x, z}]。返回
-//   supplies：Map(供给设备 → {kind, loadKw, capacityKw, consumers, overloaded})
-//   links：Map(设备 → {coolantSource, powerFeed})
-//   unconnected：需要液冷或供电、但机房里没有对应供给设备的设备 [{item, needs: 'cdu' | 'rpp'}]
+// list: [{type, x, z}]. Returns
+//   supplies: Map(supply device → {kind, loadKw, capacityKw, consumers, overloaded})
+//   links: Map(device → {coolantSource, powerFeed})
+//   unconnected: devices that need liquid cooling or power but have no matching supply equipment in the hall [{item, needs: 'cdu' | 'rpp'}]
 export function supplyLoads<T extends Item>(list: T[], CAT: Catalog): Loads<T>{
   const placed = list.filter(i => CAT[i.type]);
   const links = supplyLinks(placed, CAT);
@@ -53,8 +53,8 @@ export function supplyLoads<T extends Item>(list: T[], CAT: Catalog): Loads<T>{
   return {supplies, links, unconnected};
 }
 
-// 需要报告的超载设备 [[item, supply], ...]，按排、列排序。某种资源的全机房总量已经不够时
-// （compute 里已有“配电不足”“液冷不足”），这种设备不再逐台列出，避免重复
+// Overloaded devices to report [[item, supply], ...], sorted by row then column. When the hall-wide total for a resource is already insufficient
+// (compute already reports "not enough distribution" / "not enough liquid cooling"), those devices are not listed individually, to avoid duplicates
 export function reportedOverloads<T extends Item>(loads: Loads<T>, totals: Totals, kind: SupplyKind): [T, Supply<T>][]{
   const globalShort: Record<SupplyKind, boolean> = {cdu: totals.liqHeat > totals.liqCap, rpp: totals.it > totals.dist};
   if (globalShort[kind]) return [];

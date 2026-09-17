@@ -1,5 +1,5 @@
-// 生成一份目录里每种设备各一台的 .usda，供 tools/unity_sync.sh 为 Unity 转换全部设备模型
-// 用法：node scripts/all-types-usda.ts <out.usda>
+// Generates a .usda with one device of each catalog type, so tools/unity_sync.sh can convert every device model for Unity
+// Usage: node scripts/all-types-usda.ts <out.usda>
 import {writeFileSync} from 'node:fs';
 import {buildUsda} from '../src/usd-export.ts';
 import {CAT, CATALOG} from '../src/catalog.ts';

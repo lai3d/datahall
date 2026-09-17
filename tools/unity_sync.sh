@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 更新 Unity 工程里生成的内容（都提交进仓库）：
-#   1. 目录里每种设备各一台 → 转换并导入全部设备模型（网页上能摆的设备在 Unity 里都有模型）
-#   2. samples/datahall.usda（或参数指定的 .usda）→ 作为程序默认打开的 layout.json
-# 用法：tools/unity_sync.sh [file.usda]；需要 .venv（usd-core）、web/node_modules 和 Unity 6000.6.1f1
+# Update the generated content in the Unity project (all of it is committed):
+#   1. One of each catalog equipment type → convert and import all equipment models (every type placeable on the web has a model in Unity)
+#   2. samples/datahall.usda (or the .usda given as an argument) → the layout.json the app opens by default
+# Usage: tools/unity_sync.sh [file.usda]; requires .venv (usd-core), web/node_modules and Unity 6000.6.1f1
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 "$root/tools/check_lfs.sh" || exit 1

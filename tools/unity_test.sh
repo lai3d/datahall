@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 运行 Unity EditMode 测试，结果写到 build/unity-editmode.xml，打印汇总和失败详情
+# Run the Unity EditMode tests, write results to build/unity-editmode.xml, print a summary and failure details
 set -uo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 "$root/tools/check_lfs.sh" || exit 1

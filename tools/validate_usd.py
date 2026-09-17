@@ -23,7 +23,7 @@ LIQUID_API = "LiquidCooledAPI"
 OUR_APIS = (HALL_API, EQUIPMENT_API, LIQUID_API)
 NAMESPACE = "dchall:"
 
-# 必须显式写出的属性：schema 默认值对它们没有意义
+# Attributes that must be authored explicitly: the schema defaults are meaningless for them
 REQUIRED = {
     HALL_API: ("dchall:utilityMw", "dchall:gridColumns", "dchall:gridRows",
                "dchall:cellWidthM", "dchall:cellDepthM"),
@@ -32,7 +32,7 @@ REQUIRED = {
 }
 NON_NEGATIVE = ("dchall:powerKw", "dchall:gpuCount", "dchall:liquidCoolingKw", "dchall:airCoolingKw",
                 "dchall:overheadKw", "dchall:distributionKw", "dchall:fabricPorts", "dchall:capexMusd")
-# 拓扑关系 → 目标设备必须具备的能力
+# Topology relationship → capability the target equipment must have
 TOPOLOGY = {
     "dchall:powerFeed": "dchall:distributionKw",
     "dchall:coolantSource": "dchall:liquidCoolingKw",
@@ -102,7 +102,7 @@ def check_schema_conformance(prim, errors):
         if not pdef:
             errors.append(f"{where}: {name} is not defined by any applied schema")
             continue
-        # UsdAttribute.GetTypeName() 返回 schema 定义的类型，要看 spec 才能发现写错的类型
+        # UsdAttribute.GetTypeName() returns the type defined by the schema; only the spec reveals a wrongly authored type
         for spec in prop.GetPropertyStack(Usd.TimeCode.Default()):
             if isinstance(spec, Sdf.AttributeSpec) != pdef.IsAttribute():
                 errors.append(f"{where}: {name} authored as the wrong property kind ({spec.path})")

@@ -9,7 +9,7 @@ namespace DataHall.Tests
 {
     static class Repo
     {
-        // unity/ 工程的上一级是仓库根目录
+        // The parent of the unity/ project is the repo root
         public static string Path(string relative) => System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "..", relative));
         public static string SampleLayout => File.ReadAllText(System.IO.Path.Combine(Application.dataPath, "StreamingAssets", "layout.json"));
     }
@@ -172,7 +172,7 @@ namespace DataHall.Tests
         [Test]
         public void CellCenterMatchesUsdExportTranslate()
         {
-            // samples/datahall.usda 里 R04_C04 的 xformOp:translate = (-2.7, 1.8, 0)
+            // In samples/datahall.usda, R04_C04 has xformOp:translate = (-2.7, 1.8, 0)
             var grid = new LayoutGrid { columns = 16, rows = 10, cellWidthM = 0.6f, cellDepthM = 1.2f };
             Assert.That(Vector3.Distance(HallCoordinates.UsdToUnity(new Vector3(-2.7f, 1.8f, 0)), HallCoordinates.CellCenter(grid, 3, 3)), Is.LessThan(1e-4f));
         }
@@ -207,8 +207,8 @@ namespace DataHall.Tests
             var front = vr.GetComponentsInChildren<Renderer>().Single(r => r.name == "Front").bounds;
             Assert.AreEqual(0f, body.min.y, 1e-3f);
             Assert.AreEqual(2.3f, body.max.y, 1e-3f);
-            Assert.AreEqual(1.128f, body.size.z, 1e-3f);                       // 深 1.2 × 0.94 沿 Z
-            Assert.Greater(front.center.z - vr.transform.position.z, 0.5f);      // 正面朝 +Z
+            Assert.AreEqual(1.128f, body.size.z, 1e-3f);                       // depth 1.2 × 0.94 along Z
+            Assert.Greater(front.center.z - vr.transform.position.z, 0.5f);      // front faces +Z
         }
 
         [Test]
@@ -227,7 +227,7 @@ namespace DataHall.Tests
         [Test]
         public void HallSceneReferencesLibraryAndBaseMaterial()
         {
-            // 打包后的程序只能通过场景引用拿到设备库，引用丢了就全是占位方块
+            // A built app can only reach the equipment library through the scene reference; if it is lost, everything becomes placeholder boxes
             var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(Editor.ProjectSetup.ScenePath, UnityEditor.SceneManagement.OpenSceneMode.Single);
             var app = Object.FindFirstObjectByType<HallApp>();
             Assert.IsNotNull(app);
@@ -246,7 +246,7 @@ namespace DataHall.Tests
         [Test]
         public void EveryCatalogTypeHasPrefabVariantOfItsModel()
         {
-            // 以 spec/catalog.json 为准：网页上能摆的每种设备在 Unity 里都要有模型，否则会退回占位方块
+            // spec/catalog.json is authoritative: every type placeable on the web needs a model in Unity, otherwise it falls back to a placeholder box
             var catalog = JsonUtility.FromJson<CatalogFile>(File.ReadAllText(Repo.Path("spec/catalog.json")));
             var library = AssetDatabase.LoadAssetAtPath<EquipmentLibrary>(Editor.BundleImporter.LibraryPath);
             Assert.AreEqual(10, catalog.items.Count);

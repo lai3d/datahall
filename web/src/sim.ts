@@ -1,9 +1,9 @@
-// 容量模型：配电、液冷、风冷、后端网络、市电，任一不满足不能通电
+// Capacity model: distribution, liquid cooling, air cooling, backend network, utility; if any one falls short, power-on is blocked
 import {tr} from './i18n.ts';
 import type {Catalog, Item} from './types.ts';
 
 export interface Issue {lvl: 'bad' | 'warn' | 'ok'; txt: string}
-// compute 的结果。字段名和 spec/capacity-cases.json 的 expected 对应（见 scripts/capacity-cases.ts）
+// Result of compute. Field names match expected in spec/capacity-cases.json (see scripts/capacity-cases.ts)
 export interface Totals {
   it: number; gpus: number; liqHeat: number; airHeat: number; liqCap: number; airCap: number;
   dist: number; ports: number; ovh: number; capex: number; future: boolean; dense: boolean;
@@ -24,7 +24,7 @@ export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
     if (t.future) s.future = true;
     if (i.type === 'dgx') s.dense = true;
   }
-  // 教学用简化 PUE：液冷热量 ×0.08、风冷热量 ×0.30 的制冷耗电，加 IT×0.05 的配电损耗
+  // Simplified teaching PUE: cooling power of liquid heat ×0.08 and air heat ×0.30, plus distribution losses of IT×0.05
   const chiller = s.liqHeat * .08 + s.airHeat * .30;
   const losses = s.it * .05;
   s.facility = s.it + s.ovh + chiller + losses;

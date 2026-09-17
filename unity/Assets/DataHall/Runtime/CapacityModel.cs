@@ -5,12 +5,12 @@ using System.Linq;
 
 namespace DataHall
 {
-    // 容量模型，逐行移植自 web/src/sim.ts。结果和提示文案必须与网页版一致，
-    // 由 spec/capacity-cases.json 核对（CapacityModelTests）。
+    // Capacity model, ported line by line from web/src/sim.ts. Results and issue messages must match the web version,
+    // checked against spec/capacity-cases.json (CapacityModelTests).
     [Serializable]
     public class CapacityIssue
     {
-        public string level;   // bad 或 warn
+        public string level;   // bad or warn
         public string text;
     }
 
@@ -24,7 +24,7 @@ namespace DataHall
 
     public static class CapacityModel
     {
-        // 和 JS 的 fmt 一致：>= 1000 kW 显示两位小数的 MW，否则四舍五入到整数 kW
+        // Same as fmt in JS: >= 1000 kW shows MW with two decimals, otherwise rounds to whole kW
         public static string Format(double kw) => kw >= 1000
             ? (kw / 1000).ToString("F2", CultureInfo.InvariantCulture) + " MW"
             : Math.Floor(kw + 0.5).ToString(CultureInfo.InvariantCulture) + " kW";
@@ -50,7 +50,7 @@ namespace DataHall
                 if (t.roadmap) future = true;
                 if (e.type == "dgx") dense = true;
             }
-            // 教学用简化 PUE：液冷热量 ×0.08、风冷热量 ×0.30 的制冷耗电，加 IT×0.05 的配电损耗
+            // Simplified teaching PUE: cooling power of liquid heat ×0.08 and air heat ×0.30, plus IT×0.05 distribution loss
             double chiller = s.liquidHeatKw * .08 + s.airHeatKw * .30;
             double losses = s.itKw * .05;
             s.facilityKw = s.itKw + s.overheadKw + chiller + losses;

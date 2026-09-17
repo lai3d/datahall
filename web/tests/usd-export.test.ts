@@ -22,7 +22,7 @@ function parseSchema(src: string): Record<string, Record<string, string>>{
   return out;
 }
 
-// 导出层 → 每个 prim 的路径、应用的 schema（含引用原型上的）和写出的 dchall: 属性
+// Exported layer → each prim's path, applied schemas (including those on referenced prototypes) and written dchall: attributes
 interface LayerPrim {
   name: string; type: string | null; kind: string | null; apis: string[]; ref: string | null;
   props: Record<string, {type: string; custom: boolean}>; path?: string; parent?: LayerPrim | null; allApis?: string[];
@@ -59,13 +59,13 @@ function parseLayer(src: string){
 }
 
 describe('buildUsda', () => {
-  it('重新生成的样例与 samples/datahall.usda 逐字节一致', () => {
+  it('regenerated sample is byte-identical to samples/datahall.usda', () => {
     const {list, utility, date} = parseSampleLayout(SAMPLE);
     expect(list.length).toBe(17);
     expect(buildUsda(list, CAT, utility, GRID, {date: date!})).toBe(SAMPLE);
   });
 
-  it('关系目标都指向存在的设备 prim', () => {
+  it('relationship targets all point to existing equipment prims', () => {
     const {list, utility} = parseSampleLayout(SAMPLE);
     const out = buildUsda(list, CAT, utility, GRID, META);
     const defined = new Set([...out.matchAll(/def Xform "(R\d\d_C\d\d)"/g)].map(m => m[1]));
@@ -74,32 +74,32 @@ describe('buildUsda', () => {
     targets.forEach(t => expect(defined).toContain(t));
   });
 
-  it('空机房也能导出合法的层头和空 Scope', () => {
+  it('empty hall still exports a valid layer header and an empty Scope', () => {
     const out = buildUsda([], CAT, 2, GRID, META);
     expect(out).toMatch(/^#usda 1\.0\n/);
     expect(out).toContain('defaultPrim = "DataHall"');
     expect(out).toContain('def Scope "Equipment" (\n        kind = "group"\n    )\n    {\n    }');
   });
 
-  it('忽略目录里不存在的设备类型', () => {
+  it('ignores device types not in the catalog', () => {
     const out = buildUsda([{type: 'nope', x: 0, z: 0}], CAT, 2, GRID, META);
     expect(out).not.toContain('nope');
   });
 });
 
-describe('导出与 schema 一致', () => {
+describe('export matches the schema', () => {
   const schema = parseSchema(GENERATED_SCHEMA);
-  // 目录里每种设备各放一台，覆盖所有原型
+  // One of each catalog device, covering every prototype
   const everyType = CATALOG.map((t, i) => ({type: t.id, x: i, z: 0}));
   const prims = parseLayer(buildUsda(everyType, CAT, 5, GRID, META));
 
-  it('schema 解析出三个 API', () => {
+  it('schema parses into three APIs', () => {
     expect(Object.keys(schema).sort()).toEqual(['DataHallAPI', 'DataHallEquipmentAPI', 'LiquidCooledAPI']);
     expect(schema.DataHallEquipmentAPI['dchall:powerKw']).toBe('double');
     expect(schema.LiquidCooledAPI['dchall:coolantSource']).toBe('rel');
   });
 
-  it('每个 dchall: 属性都由应用的 schema 定义，类型一致，且不是 custom', () => {
+  it('every dchall: attribute is defined by an applied schema with a matching type and is not custom', () => {
     const checked = prims.filter(p => Object.keys(p.props).length);
     expect(checked.length).toBe(1 + CATALOG.length * 2);
     for (const p of checked){
@@ -111,19 +111,19 @@ describe('导出与 schema 一致', () => {
     }
   });
 
-  it('LiquidCooledAPI 只应用在液冷设备上', () => {
+  it('LiquidCooledAPI is applied only to liquid-cooled devices', () => {
     const liquid = prims.filter(p => p.path.startsWith('/DataHall/Catalog/') && p.apis.includes('LiquidCooledAPI')).map(p => p.name);
     expect(liquid.sort()).toEqual(CATALOG.filter(t => (t.liq || 0) > 0).map(t => t.id).sort());
   });
 });
 
-describe('SimReady 约定（docs/simready-audit.md）', () => {
+describe('SimReady conventions (docs/simready-audit.md)', () => {
   const everyType = CATALOG.map((t, i) => ({type: t.id, x: i, z: 0}));
   const out = buildUsda(everyType, CAT, 5, GRID, META);
   const prims = parseLayer(out);
 
-  // SR.001 的官方校验器（2026.06.0）不会真正报错，这里按规范原文检查
-  it('立方体网格每个面按右手定则朝外，且与写入的法线一致', () => {
+  // The official SR.001 validator (2026.06.0) never actually fails, so check against the spec text here
+  it('each cube mesh face points outward by the right-hand rule and matches the written normals', () => {
     type V3 = number[];
     const arr = (name: string) => JSON.parse('[' + out.match(new RegExp(`${name} = \\[([^\\]]*)\\]`))![1].replace(/\(/g, '[').replace(/\)/g, ']') + ']');
     const points = arr('point3f\\[\\] points'), idx = arr('int\\[\\] faceVertexIndices'), normals = arr('normal3f\\[\\] normals');
@@ -140,20 +140,20 @@ describe('SimReady 约定（docs/simready-audit.md）', () => {
     }
   });
 
-  it('customLayerData 带 SR.001 要求的元数据', () => {
+  it('customLayerData carries the metadata SR.001 requires', () => {
     const head = out.slice(0, out.indexOf('\n)\n'));
     ['asset_name', 'asset_type', 'source_file'].forEach(k => expect(head).toMatch(new RegExp(`string ${k} = "[^"]+"`)));
     expect(head).toContain('string usd_date_generated = "2026-09-17"');
     expect(head).toContain('dictionary SimReady_Metadata = {');
   });
 
-  it('缺少或格式错误的生成日期直接报错', () => {
-    // @ts-expect-error 缺少 meta，运行时也要报错
+  it('throws on a missing or malformed generation date', () => {
+    // @ts-expect-error missing meta must also throw at runtime
     expect(() => buildUsda([], CAT, 2, GRID)).toThrow(/meta.date/);
     expect(() => buildUsda([], CAT, 2, GRID, {date: '2026/09/17'})).toThrow(/meta.date/);
   });
 
-  it('每个几何都绑定材质，目标是 UsdPreviewSurface 材质，且在同一原型或 /DataHall/Looks 内', () => {
+  it('every geometry binds a UsdPreviewSurface material within the same prototype or /DataHall/Looks', () => {
     const byPath: Record<string, LayerPrim> = Object.fromEntries(prims.map(p => [p.path, p]));
     const gprims = prims.filter(p => p.type === 'Mesh');
     expect(prims.filter(p => ['Cube', 'Sphere', 'Cylinder', 'Cone', 'Capsule'].includes(p.type || ''))).toEqual([]);
@@ -169,12 +169,12 @@ describe('SimReady 约定（docs/simready-audit.md）', () => {
     }
   });
 
-  it('模型层级连续：model 的祖先都是 group 或 assembly', () => {
+  it('model hierarchy is continuous: ancestors of a model are group or assembly', () => {
     const models = prims.filter(p => ['component', 'group', 'assembly'].includes(p.kind || ''));
     expect(models.filter(p => p.kind === 'component').length).toBe(CATALOG.length);
     for (const p of models){
       for (let a: LayerPrim | null | undefined = p.parent; a; a = a.parent){
-        expect(['group', 'assembly'], `${p.path} 的祖先 ${a.path}`).toContain(a.kind);
+        expect(['group', 'assembly'], `ancestor ${a.path} of ${p.path}`).toContain(a.kind);
       }
     }
   });

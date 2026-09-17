@@ -18,7 +18,7 @@
   --warn:#E8C547;--bad:#F2766B;--ok:#8BC34A;
 }
 *{box-sizing:border-box}
-/* .row、.h2row 等设了 display 的元素，hidden 属性也要生效 */
+/* Elements with display set, such as .row and .h2row, must still honor the hidden attribute */
 [hidden]{display:none !important}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.4;

@@ -1,15 +1,15 @@
-// 取 index.html 里一定存在的元素；找不到说明页面和代码对不上，直接报错
+// Get an element that must exist in index.html; if it is missing, the page and code are out of sync, so throw
 export function $<T extends HTMLElement = HTMLElement>(selector: string): T{
   const el = document.querySelector<T>(selector);
   if (!el) throw new Error(`element not found: ${selector}`);
   return el;
 }
 
-// 面板每次状态变化都整块重画。直接写 innerHTML 会把键盘焦点丢到 body、关掉正开着的下拉框，
-// 所以：内容没变就不写；变了的话，重画前焦点在这块区域里，重画后把焦点还给对应的控件
-// 记下上次写入的内容和写入后的第一个子节点；别处改过这块区域（第一个子节点变了）就不算“没变”
+// Panels are fully redrawn on every state change. Writing innerHTML directly drops keyboard focus to body and closes any open dropdown,
+// so: skip the write if the content is unchanged; if it changed and focus was inside this region, give focus back to the matching control after the redraw
+// Remember the last written content and the first child node after writing; if something else changed the region (first child differs), it does not count as "unchanged"
 const rendered = new WeakMap<HTMLElement, {html: string; first: ChildNode | null}>();
-// 按这些属性认出重画前后的“同一个”控件
+// Attributes used to recognize the "same" control before and after a redraw
 const KEY_ATTRS = ['id', 'data-u', 'data-t', 'data-mode', 'data-lang', 'data-phase', 'data-feed', 'data-preset'];
 const FOCUSABLE = 'button, select, input, textarea, a[href], [tabindex]';
 
@@ -21,7 +21,7 @@ function focusTarget(root: HTMLElement, active: HTMLElement): (next: HTMLElement
       return next => next.querySelector<HTMLElement>(selector);
     }
   }
-  // 没有可识别的属性：按区域里第几个可聚焦控件找
+  // No identifying attribute: match by index among the focusable controls in the region
   const index = [...root.querySelectorAll(FOCUSABLE)].indexOf(active);
   return next => index < 0 ? null : next.querySelectorAll<HTMLElement>(FOCUSABLE)[index] ?? null;
 }

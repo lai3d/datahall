@@ -1,4 +1,4 @@
-// 增长规划：设备按部署阶段（phase，从 1 开始）分批上线，逐阶段累计检查容量，并估算还能加多少台机柜。纯函数，不依赖 DOM。
+// Growth planning: devices come online in batches by deployment phase (phase, starting at 1); capacity is checked cumulatively per phase, and remaining rack headroom is estimated. Pure functions, no DOM dependency.
 import {compute} from './sim.ts';
 import {blockingReasons} from './redundancy.ts';
 import type {Reason, ReasonKind} from './redundancy.ts';
@@ -12,10 +12,10 @@ export interface PhaseResult {
 
 export const phaseOf = (it: {phase?: number}): number => it.phase || 1;
 
-// 布局里出现过的阶段，升序；空布局返回 []
+// Phases present in the layout, ascending; an empty layout returns []
 export const phasesIn = (items: {phase?: number}[]): number[] => [...new Set(items.map(phaseOf))].sort((a, b) => a - b);
 
-// 五项容量的利用率（需求 / 容量）。容量为 0 且有需求时记为 Infinity，都为 0 时记为 0
+// Utilization of the five capacities (demand / capacity). Zero capacity with demand counts as Infinity; both zero counts as 0
 export function utilization(s: Totals, utility: number): Record<ReasonKind, number>{
   const ratio = (need: number, cap: number): number => cap > 0 ? need / cap : need > 0 ? Infinity : 0;
   return {
@@ -27,8 +27,8 @@ export function utilization(s: Totals, utility: number): Record<ReasonKind, numb
   };
 }
 
-// 逐阶段累计：第 p 阶段包含阶段 ≤ p 的全部设备。
-// 返回 [{phase, count, gpus, itKw, facilityKw, util, tightest: {kind, ratio}, reasons}]
+// Cumulative per phase: phase p includes all devices with phase ≤ p.
+// Returns [{phase, count, gpus, itKw, facilityKw, util, tightest: {kind, ratio}, reasons}]
 export function growthPlan(items: Item[], CAT: Catalog, utility: number): PhaseResult[]{
   return phasesIn(items).map(phase => {
     const upTo = items.filter(it => phaseOf(it) <= phase);
@@ -40,13 +40,13 @@ export function growthPlan(items: Item[], CAT: Catalog, utility: number): PhaseR
   });
 }
 
-// 在现有设备基础上还能加几台 type 类型的机柜，以及先用完的是哪一项。
-// 只看全机房总量（配电、液冷、风冷、网络端口、市电），不看地板空位和逐台 CDU / RPP 的就近分配。
-// 已经超了的项返回 0 台。type 不消耗任何一项时 limit 为 null、count 为 Infinity
+// How many more racks of type fit on top of the existing devices, and which constraint runs out first.
+// Only hall-wide totals are considered (distribution, liquid cooling, air cooling, network ports, utility), not free floor cells or per-CDU / RPP nearest assignment.
+// Constraints already exceeded give 0 racks. If type consumes none of them, limit is null and count is Infinity
 export function headroom(items: Item[], CAT: Catalog, utility: number, type: string): {limit: ReasonKind | null; count: number}{
   const s = compute(items, CAT, utility), t = CAT[type];
   const kw = t.kw || 0, liq = t.liq || 0;
-  // 每加一台的需求增量，和 sim.ts 的 PUE 公式一致：IT + 自耗 + 液冷热量×0.08 + 风冷热量×0.30 + IT×0.05
+  // Demand added per rack, matching the PUE formula in sim.ts: IT + overhead + liquid heat×0.08 + air heat×0.30 + IT×0.05
   const need: Record<ReasonKind, number> = {
     dist: kw,
     liquid: kw * liq,

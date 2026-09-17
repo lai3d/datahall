@@ -1,100 +1,100 @@
-# SimReady 规范核对
+# SimReady compliance audit
 
-核对日期 2026-09-17，对象是 `samples/datahall.usda`（schema 0.2，17 台设备）。下面“结论”到“建议修复顺序”记录的是修复前的状态，修复后的结果见文末“修复结果”。
+Audit date 2026-09-17, target `samples/datahall.usda` (schema 0.2, 17 devices). The sections from "Conclusion" through "Recommended fix order" record the state before the fixes; results after the fixes are in "Fix results" at the end.
 
-## 结论
+## Conclusion
 
-- **单位：合规。** Z 轴向上、metersPerUnit = 1，UN.001–UN.007 全部通过。设备原型的原点在底面中心，和 SimReady 的 VG.025 以及 AIF 资产指南一致。
-- **kind：SimReady 规范没有要求，但 NVIDIA 通用校验器不通过。** `/DataHall/Equipment` 没写 kind，17 个 `component` 实例因此脱离了模型层级。把这个 Scope 设为 `group` 后 0 个问题。
-- **材质绑定：不合规。** 导出只写了 `displayColor`，没有任何 Material。在每个 Catalog 原型内部放 UsdPreviewSurface 材质并绑定、地板绑定 `/DataHall/Looks` 后，VM.MAT.001 通过。
-- **对照最接近的官方 profile（Prop-Robotics-Neutral 2.1.0）：** 按上面两处修改、再补齐元数据（见“其他失败项”）后，还剩三类失败。
-  - 几何用的是 `Cube` 而不是 `Mesh`（VG.MESH.001）。
-  - 目录结构按单个资产打包的要求（NP.005）。
-  - 物理和抓取 feature（FET003–005），对机房布局文件不适用。
-- **CLAUDE.md 里“对 Catalog 原型写 `over` 替换高精度模型”的做法：直接用会出错。** 按 AIF 约定建模的机柜正面朝 +X，引用进来会转错 90°；嵌套的 `component` 还会破坏 kind 层级。要多一层带旋转的子 Xform，并把 kind 降为 `subcomponent`，见下文“替换高精度模型”。
+- **Units: compliant.** Z-up, metersPerUnit = 1, UN.001–UN.007 all pass. Equipment prototype origins are at the bottom center, consistent with SimReady VG.025 and the AIF asset guidelines.
+- **kind: not required by the SimReady spec, but fails NVIDIA's general validator.** `/DataHall/Equipment` has no kind, so the 17 `component` instances fall outside the model hierarchy. Setting this Scope to `group` yields 0 issues.
+- **Material binding: non-compliant.** The export writes only `displayColor` and no Material at all. With UsdPreviewSurface materials placed and bound inside each Catalog prototype, and the floor bound to `/DataHall/Looks`, VM.MAT.001 passes.
+- **Against the closest official profile (Prop-Robotics-Neutral 2.1.0):** after the two changes above plus completing the metadata (see "Other failures"), three categories of failures remain.
+  - Geometry uses `Cube` instead of `Mesh` (VG.MESH.001).
+  - Directory structure required for single-asset packaging (NP.005).
+  - Physics and grasping features (FET003–005), which do not apply to a hall layout file.
+- **The CLAUDE.md approach of "writing `over` on Catalog prototypes to swap in high-fidelity models" breaks if used directly.** A rack modeled per the AIF convention faces +X, so referencing it in rotates it 90° wrong; a nested `component` also breaks the kind hierarchy. An extra child Xform with a rotation is needed, with kind lowered to `subcomponent`; see "Swapping in high-fidelity models" below.
 
-SimReady 目前的 profile 都是面向机器人仿真的单个资产（道具、机器人本体），没有面向数据中心布局或 AI Factory 的 profile。所以本报告的“合规”指：适用的 requirement 逐条通过，外加 Omniverse Asset Validator（OAV）默认规则 0 个问题，而不是某个 profile 整体通过。
+All current SimReady profiles target single assets for robotics simulation (props, robot bodies); there is no profile for data center layouts or AI Factory. So "compliant" in this report means: each applicable requirement passes individually, plus 0 issues under the Omniverse Asset Validator (OAV) default rules, rather than passing a whole profile.
 
-## 依据
+## References
 
-| 来源 | 版本 | 用途 |
+| Source | Version | Purpose |
 |---|---|---|
-| [NVIDIA/simready-foundation](https://github.com/NVIDIA/simready-foundation) | `0ed0dfb`（2026-08-03，规范版本 2026.06.0） | requirement 原文、feature 与 profile 定义、校验规则 |
-| `simready-validate` / `usd-validation-nvidia` / `usd-profiles-nvidia` | 2026.6.5 / 1.22.0 / 1.22.0 | 官方校验器，含 OAV 默认规则 |
-| `usd-core` | 26.8 | 同导出样例的验证版本 |
-| [NVIDIA-Omniverse/aif-pipeline-samples](https://github.com/NVIDIA-Omniverse/aif-pipeline-samples) | `4103896`（2026-03-13） | AI Factory 设备资产指南：单位、朝向、kind、元数据、连接点 |
-| [Omniverse asset-requirements 1.1.6](https://docs.omniverse.nvidia.com/kit/docs/asset-requirements/1.1.6/capabilities/hierarchy/capability-hierarchy.html) | 1.1.6 | AIF 指南引用的旧版 hierarchy 规范，用来确认 kind 没有 requirement |
+| [NVIDIA/simready-foundation](https://github.com/NVIDIA/simready-foundation) | `0ed0dfb` (2026-08-03, spec version 2026.06.0) | Requirement text, feature and profile definitions, validation rules |
+| `simready-validate` / `usd-validation-nvidia` / `usd-profiles-nvidia` | 2026.6.5 / 1.22.0 / 1.22.0 | Official validator, including OAV default rules |
+| `usd-core` | 26.8 | Same version used to validate the export sample |
+| [NVIDIA-Omniverse/aif-pipeline-samples](https://github.com/NVIDIA-Omniverse/aif-pipeline-samples) | `4103896` (2026-03-13) | AI Factory equipment asset guidelines: units, orientation, kind, metadata, connection points |
+| [Omniverse asset-requirements 1.1.6](https://docs.omniverse.nvidia.com/kit/docs/asset-requirements/1.1.6/capabilities/hierarchy/capability-hierarchy.html) | 1.1.6 | Older hierarchy spec cited by the AIF guidelines, used to confirm kind has no requirement |
 
-## 复现
+## Reproduce
 
 ```bash
-tools/simready_setup.sh                                          # 拉取固定版本规范，建 Python 3.12 venv 到 .simready/
+tools/simready_setup.sh                                          # fetch the pinned spec version, create a Python 3.12 venv in .simready/
 .simready/venv/bin/python tools/simready_audit.py samples/datahall.usda
 ```
 
-脚本跑三遍：
-1. 逐条 requirement 各做成一个 feature 单独跑，避免一条失败挡住其他条目。
-2. 原样跑 Prop-Robotics-Neutral 2.1.0。
-3. 跑 `usd-validation-nvidia` 注册的全部 49 条 OAV 规则。
+The script runs three passes:
+1. Each requirement is wrapped in its own feature and run separately, so one failure does not block the others.
+2. Prop-Robotics-Neutral 2.1.0 as is.
+3. All 49 OAV rules registered by `usd-validation-nvidia`.
 
-`tools/validate_usd.py` 仍然是项目自己的 schema 校验，两者互不替代。
+`tools/validate_usd.py` remains the project's own schema validation; the two do not replace each other.
 
 ## kind
 
-**规范原文：** SimReady Foundation 2026.06.0 和 asset-requirements 1.1.6 的 hierarchy 能力都没有关于 kind 的 requirement，kind 只出现在示例代码里（根 prim 写 `kind = "component"`）。
+**Spec text:** the hierarchy capability in both SimReady Foundation 2026.06.0 and asset-requirements 1.1.6 has no requirement about kind; kind appears only in example code (the root prim has `kind = "component"`).
 
-**对 kind 有要求的地方有两处：**
-- **OAV `KindChecker`（Basic 类别，不属于任何 SimReady profile）：**
-  - model 的 kind 必须已注册；
-  - model 层级的根只能是 assembly、component 或 group；
-  - 非根 model 的所有祖先都必须是 group 类 kind（group 或 assembly）。
-- **AIF 资产指南：** 要求“Set Kind on the root prim”，工作流清单里也有“Set kind metadata”一项。
+**Two places do impose requirements on kind:**
+- **OAV `KindChecker` (Basic category, not part of any SimReady profile):**
+  - a model's kind must be registered;
+  - the root of a model hierarchy can only be assembly, component or group;
+  - all ancestors of a non-root model must be group-type kinds (group or assembly).
+- **AIF asset guidelines:** require "Set Kind on the root prim", and the workflow checklist includes "Set kind metadata".
 
-**现状：**
+**Current state:**
 
-| prim | kind | 结果 |
+| prim | kind | Result |
 |---|---|---|
-| `/DataHall` | assembly | 通过 |
-| `/DataHall/Floor`、`/DataHall/Catalog` | 无 | 不是 model，不检查 |
-| `/DataHall/Catalog/<id>` | 无 | `class`，默认遍历不到 |
-| `/DataHall/Equipment` | **无** | 中断了模型层级 |
-| `/DataHall/Equipment/Rxx_Cyy` | component | **17 个失败**：`Model prims can only be parented under ('assembly', 'group') prims` |
+| `/DataHall` | assembly | Pass |
+| `/DataHall/Floor`, `/DataHall/Catalog` | none | Not a model, not checked |
+| `/DataHall/Catalog/<id>` | none | `class`, not reached by default traversal |
+| `/DataHall/Equipment` | **none** | Breaks the model hierarchy |
+| `/DataHall/Equipment/Rxx_Cyy` | component | **17 failures**: `Model prims can only be parented under ('assembly', 'group') prims` |
 
-**修改：** `def Scope "Equipment" (kind = "group")`。在样例副本上验证过，OAV 的 49 条规则 0 个问题，`tools/validate_usd.py` 也通过。
+**Change:** `def Scope "Equipment" (kind = "group")`. Verified on a copy of the sample: 0 issues across the 49 OAV rules, and `tools/validate_usd.py` also passes.
 
-## 单位
+## Units
 
-| requirement | 内容 | 结果 |
+| requirement | Content | Result |
 |---|---|---|
-| UN.001 / UN.006 | 写出 upAxis，且为 Z | 通过 |
-| UN.002 / UN.007 | 写出 metersPerUnit，且为 1.0 | 通过 |
-| UN.003 | 有物理时写 kilogramsPerUnit | 通过（没有物理，不适用） |
-| UN.004 | 单位不同的引用要有校正变换 | 通过（没有外部引用） |
-| UN.005 | 有时间采样时写 timeCodesPerSecond | 通过（没有时间采样） |
-| VG.025 / VG.026 | 原点、枢轴在底面中心 | 通过。原型的 Body 平移到 z = h/2，原点落在地面 |
+| UN.001 / UN.006 | upAxis authored, and is Z | Pass |
+| UN.002 / UN.007 | metersPerUnit authored, and is 1.0 | Pass |
+| UN.003 | kilogramsPerUnit authored when physics is present | Pass (no physics, not applicable) |
+| UN.004 | References with different units need a corrective transform | Pass (no external references) |
+| UN.005 | timeCodesPerSecond authored when time samples are present | Pass (no time samples) |
+| VG.025 / VG.026 | Origin and pivot at bottom center | Pass. The prototype's Body is translated to z = h/2, putting the origin on the floor |
 
-**`dchall:` 属性的单位不属于 SimReady 的检查范围，但和 AIF 元数据约定不一样：**
-- AIF 的 `aif:core:*` 和 `aif:spec:*` 标称使用 SI 单位，功率在规格表里用 W 或 kW。
-- 设备外形尺寸（`aif:core:height`、`width`、`depth`）用 mm。
-- 我们的 `dchall:heightM` 用 m，功率用 kW，价格用百万美元。
+**Units of `dchall:` attributes are outside SimReady's checks, but differ from the AIF metadata conventions:**
+- AIF `aif:core:*` and `aif:spec:*` nominally use SI units; power in the spec sheets is in W or kW.
+- Equipment dimensions (`aif:core:height`, `width`, `depth`) are in mm.
+- Our `dchall:heightM` is in m, power in kW, price in millions of USD.
 
-以后如果要和 AIF 元数据互通，需要一层显式换算，不能直接复用属性名。
+Interoperating with AIF metadata later would need an explicit conversion layer; the attribute names cannot simply be reused.
 
-## 材质绑定
+## Material binding
 
-**相关 requirement：**
-- **VM.MAT.001：** 每个可渲染的 GPrim 必须能算出绑定的材质，默认材质不算。
-- **VM.BIND.001：** 绑定目标不能跨出 payload 的作用域。
-- **VM.PS.001：** UsdPreviewSurface 的输入必须符合规范。
-- **VM.BIND.002：** shader 输入类型必须正确。
+**Relevant requirements:**
+- **VM.MAT.001:** every renderable GPrim must resolve to a bound material; the default material does not count.
+- **VM.BIND.001:** binding targets must not leave the payload's scope.
+- **VM.PS.001:** UsdPreviewSurface inputs must conform to the spec.
+- **VM.BIND.002:** shader input types must be correct.
 
-**feature 的归属不太对称：**
-- Prop-Robotics-Neutral 用的是 `FET006_BASE_MDL`：VM.BIND.001/002、VM.MAT.001、VM.MDL.*、VM.TEX.*。
-- `FET006_BASE_USDPREVIEW` 只有 VM.BIND.001 和 VM.PS.001，**不含 VM.MAT.001**。
+**Feature membership is not quite symmetric:**
+- Prop-Robotics-Neutral uses `FET006_BASE_MDL`: VM.BIND.001/002, VM.MAT.001, VM.MDL.*, VM.TEX.*.
+- `FET006_BASE_USDPREVIEW` contains only VM.BIND.001 and VM.PS.001, **not VM.MAT.001**.
 
-**现状：** 35 个 GPrim 都没有材质（1 个地板，加 17 台设备 × Body/Front），VM.MAT.001 失败。VM.BIND.* 和 VM.PS.001 显示通过，只是因为文件里根本没有材质，属于空通过。
+**Current state:** none of the 35 GPrims has a material (1 floor, plus 17 devices × Body/Front), so VM.MAT.001 fails. VM.BIND.* and VM.PS.001 show as passing only because the file has no materials at all, which is a vacuous pass.
 
-**验证过的修改：**
+**Verified change:**
 
 ```usda
 class Xform "vr200" ( prepend apiSchemas = ["DataHallEquipmentAPI", "LiquidCooledAPI"] )
@@ -120,33 +120,33 @@ class Xform "vr200" ( prepend apiSchemas = ["DataHallEquipmentAPI", "LiquidCoole
 }
 ```
 
-- **材质放在原型内部：** 实例是 instanceable 的，原型里的绑定关系会随 reference 映射到每个实例自己的 `Looks` 下，符合 VM.BIND.001 的封装要求。
-- **地板：** 绑定 `/DataHall/Looks/floor`。
-- **`Looks` 必须定义成 `Scope`：** 不带类型的 `def "Looks"` 会触发 OAV 的 `TypeChecker`。
-- **结果：** VM.MAT.001、VM.PS.001、VM.BIND.001/002 全部通过，`FET006_BASE_MDL` 整体通过。
-- **MDL 的问题：** 当前校验器下 UsdPreviewSurface 也能让 MDL 版 feature 通过，但 Prop-Robotics-Neutral 编写指南原文要求 MDL 材质，AIF 指南提到的也是 OmniPBR。给 Omniverse RTX 用时，应该在更强的层把材质替换成 MDL，网页导出保留 UsdPreviewSurface 以保证通用性。
+- **Materials live inside the prototype:** instances are instanceable, so the prototype's binding relationships are mapped through the reference to each instance's own `Looks`, satisfying the encapsulation requirement of VM.BIND.001.
+- **Floor:** bound to `/DataHall/Looks/floor`.
+- **`Looks` must be defined as a `Scope`:** an untyped `def "Looks"` triggers OAV's `TypeChecker`.
+- **Result:** VM.MAT.001, VM.PS.001 and VM.BIND.001/002 all pass, and `FET006_BASE_MDL` passes as a whole.
+- **The MDL issue:** under the current validator, UsdPreviewSurface also lets the MDL feature pass, but the Prop-Robotics-Neutral authoring guide explicitly requires MDL materials, and the AIF guidelines mention OmniPBR. For Omniverse RTX, materials should be replaced with MDL in a stronger layer, while the web export keeps UsdPreviewSurface for portability.
 
-## 替换高精度模型
+## Swapping in high-fidelity models
 
-**AIF 资产指南对设备资产的约定：**
-- 单位米、+Z 向上；
-- **正面朝 +X**；
-- 原点在底面安装点；
-- 根 prim 设置 kind。
+**AIF asset guideline conventions for equipment assets:**
+- units in meters, +Z up;
+- **front faces +X**;
+- origin at the bottom mounting point;
+- kind set on the root prim.
 
-**本项目导出的朝向约定不同：** 机柜宽 0.6 m 沿 X，深 1.2 m 沿 Y，**正面朝 -Y**（Front 面板在 y = -0.576）。
+**This project's export uses a different orientation:** rack width 0.6 m along X, depth 1.2 m along Y, **front faces -Y** (Front panel at y = -0.576).
 
-**实验方法：** 构造一个按 AIF 约定建模的机柜资产（`kind = "component"`，深 1.2 m 沿 X，正面标记在 +X），用两种写法替换 `vr200`：
+**Experiment:** build a rack asset modeled per the AIF convention (`kind = "component"`, depth 1.2 m along X, front marker at +X) and replace `vr200` in two ways:
 
-| 写法 | R04_C04 世界包围盒 X × Y | 正面标记相对原点 | OAV |
+| Approach | R04_C04 world bounding box X × Y | Front marker relative to origin | OAV |
 |---|---|---|---|
-| A：对原型直接 `over "vr200" (prepend references = @rack.usd@)` | **1.22 × 0.60**，占两个格子 | **(+0.61, 0)**，朝 +X | 0 个问题 |
-| B：原型下新建子 Xform，引用资产并 `rotateXYZ = (0, 0, -90)`，`kind = "subcomponent"` | 0.60 × 1.22 | (0, -0.61)，朝 -Y | 0 个问题 |
-| C：同 B，但不改 kind | 0.60 × 1.22 | (0, -0.61) | **10 个 KindChecker 失败**（component 嵌套在 component 下） |
+| A: `over "vr200" (prepend references = @rack.usd@)` directly on the prototype | **1.22 × 0.60**, spans two cells | **(+0.61, 0)**, facing +X | 0 issues |
+| B: new child Xform under the prototype that references the asset, with `rotateXYZ = (0, 0, -90)` and `kind = "subcomponent"` | 0.60 × 1.22 | (0, -0.61), facing -Y | 0 issues |
+| C: same as B, but kind unchanged | 0.60 × 1.22 | (0, -0.61) | **10 KindChecker failures** (component nested under component) |
 
-**写法 A 的另一个问题：** 旋转不能写在资产根 prim 上。实例自己写了 `xformOpOrder = ["xformOp:translate"]`，是更强的意见，会整体覆盖掉引用资产根上的变换。
+**Another problem with approach A:** the rotation cannot be authored on the asset's root prim. The instance authors its own `xformOpOrder = ["xformOp:translate"]`, which is a stronger opinion and completely overrides the transform on the referenced asset's root.
 
-**推荐写法 B：**
+**Recommended approach B:**
 
 ```usda
 over "DataHall"
@@ -174,72 +174,72 @@ over "DataHall"
 }
 ```
 
-usda 要求每个 prim 的 `{` 另起一行，不能把多层 `over` 压缩写在同一行，否则 USD 报 `Expected }`。`tools/test_usd_to_unity.py` 用这段做回归测试。
+usda requires each prim's `{` on its own line; multiple `over` levels cannot be compressed onto one line, or USD reports `Expected }`. `tools/test_usd_to_unity.py` uses this snippet as a regression test.
 
-上面这段就是在实验里验证过的写法（只写 rotateXYZ，结果和写法 B 相同）。
+The snippet above is the form verified in the experiment (authoring only rotateXYZ gives the same result as approach B).
 
-## 其他失败项
+## Other failures
 
-| requirement | 所属 feature | 失败原因 | 建议 |
+| requirement | Feature | Reason for failure | Recommendation |
 |---|---|---|---|
-| VG.MESH.001 | FET001 Minimal | 几何用 `Cube`，要求非细分 `Mesh` | 导出 8 顶点盒子 Mesh，带 normals 和 extent。改动在 `buildUsda` 的 `cube()` 一处 |
-| NP.006 | FET000 Core | `customLayerData` 里没有 `simready_metadata` | 和 SR.001 一起补 |
-| SR.001 | FET000 Core | **校验器误报通过。** 规则函数把错误放进返回列表，但没调用 `_AddFailedCheck`，永远不会失败。按原文，我们缺 `asset_name`、`asset_type`、`source_file`、`usd_date_generated`、`SimReady_Metadata` | 在 `customLayerData` 里补齐。已验证补齐后 NP.006 通过 |
-| NP.005 | FET000 Core | 要求 `<asset>/<中间目录>/<含 asset 名的文件>.usd` 的目录结构 | 针对单个资产打包。浏览器下载的单文件做不到，发布资产包时再处理 |
-| HI.002 | 不在任何 profile | Cube 的父 Xform 没有 rotate，地板的父节点 `/DataHall` 没有 translate；而且一个 Xform 下只能有一个 GPrim | 可选。给 Body、Front、Floor 各包一层带 translate 和 rotateXYZ 的 Xform（未验证） |
-| NP.001 | 不在任何 profile | 校验器只认 camelCase 和 snake_case，`DataHall`、`Body`、`Rxx_Cyy`，连 Omniverse 常用的 `Looks`、`PreviewSurface` 都判失败 | 不改。改名会破坏 defaultPrim 和已发布的路径约定 |
-| SL.001 | FET011 语义标签，不在 Prop 系列 profile | 几何没有 `SemanticsLabelsAPI` 和 wikidata qcode | 可选。要做合成数据或感知训练时再加 |
-| FET003–FET005 | Prop-Robotics-Neutral | 没有刚体、碰撞体和抓取向量 | 不适用于机房布局文件 |
+| VG.MESH.001 | FET001 Minimal | Geometry uses `Cube`; a non-subdivided `Mesh` is required | Export an 8-vertex box Mesh with normals and extent. The change is in one place, `cube()` in `buildUsda` |
+| NP.006 | FET000 Core | No `simready_metadata` in `customLayerData` | Add together with SR.001 |
+| SR.001 | FET000 Core | **Validator falsely reports a pass.** The rule function puts errors into the returned list but never calls `_AddFailedCheck`, so it can never fail. Per the spec text, we are missing `asset_name`, `asset_type`, `source_file`, `usd_date_generated`, `SimReady_Metadata` | Add them in `customLayerData`. Verified that NP.006 passes once they are added |
+| NP.005 | FET000 Core | Requires a `<asset>/<intermediate dir>/<file containing the asset name>.usd` directory structure | Aimed at single-asset packaging. Not achievable for a single file downloaded from the browser; handle when publishing an asset package |
+| HI.002 | Not in any profile | The Cube's parent Xform has no rotate, the floor's parent `/DataHall` has no translate; also only one GPrim is allowed under an Xform | Optional. Wrap Body, Front and Floor each in an Xform with translate and rotateXYZ (unverified) |
+| NP.001 | Not in any profile | The validator only accepts camelCase and snake_case; `DataHall`, `Body`, `Rxx_Cyy`, and even `Looks` and `PreviewSurface`, common in Omniverse, are flagged as failures | Won't change. Renaming would break defaultPrim and the published path conventions |
+| SL.001 | FET011 semantic labels, not in the Prop profile family | Geometry has no `SemanticsLabelsAPI` or wikidata qcode | Optional. Add when doing synthetic data or perception training |
+| FET003–FET005 | Prop-Robotics-Neutral | No rigid bodies, colliders or grasp vectors | Not applicable to a hall layout file |
 
-## 顺带发现
+## Incidental findings
 
-aif-pipeline-samples 的 GB300 NVL72 元数据模板带有参考值：
-- 铭牌功率 136 kW；
-- MaxP AC（EDPP1）142 kW，MaxP DC（TDP）136 kW；
-- 液冷热捕获比 87%（液冷 116 kW、风冷 19.3 kW）。
+The GB300 NVL72 metadata template in aif-pipeline-samples includes reference values:
+- nameplate power 136 kW;
+- MaxP AC (EDPP1) 142 kW, MaxP DC (TDP) 136 kW;
+- liquid heat capture ratio 87% (liquid 116 kW, air 19.3 kW).
 
-`spec/catalog.json` 目前是 `kw: 140`、`liq: 0.85`。这份模板是 NVIDIA 仓库里的样例数据，不是正式规格书。要采用的话，按 CLAUDE.md 的数据可信度规则，在 note 里写明来源。
+`spec/catalog.json` currently has `kw: 140`, `liq: 0.85`. The template is sample data in an NVIDIA repository, not an official spec sheet. If adopted, cite the source in the note per the data reliability rules in CLAUDE.md.
 
-## 建议修复顺序
+## Recommended fix order
 
-1. `Equipment` 加 `kind = "group"`（一行，OAV 清零）。
-2. 原型内 `Looks` + UsdPreviewSurface，地板绑定 `/DataHall/Looks/floor`；颜色沿用现有 PALETTE。
-3. `customLayerData` 补 SR.001 字段和 `SimReady_Metadata`。
-4. `Cube` 改为 `Mesh`。
-5. 把“替换高精度模型”的写法 B 写进 CLAUDE.md 和导出 README；HI.002 视需要再做。
+1. Add `kind = "group"` to `Equipment` (one line, clears OAV).
+2. `Looks` + UsdPreviewSurface inside prototypes, floor bound to `/DataHall/Looks/floor`; colors reuse the existing PALETTE.
+3. Add the SR.001 fields and `SimReady_Metadata` to `customLayerData`.
+4. Change `Cube` to `Mesh`.
+5. Document approach B from "Swapping in high-fidelity models" in CLAUDE.md and the export README; do HI.002 as needed.
 
-第 1–3 步不影响 `dchall:` schema，`tools/validate_usd.py` 不用改。第 4–5 步会改变 golden 样例的几何结构。每一步之后都应该运行 `npm run sample`、`tools/validate_usd.py` 和 `tools/simready_audit.py`。
+Steps 1–3 do not affect the `dchall:` schema, so `tools/validate_usd.py` needs no changes. Steps 4–5 change the geometry structure of the golden sample. After each step, run `npm run sample`, `tools/validate_usd.py` and `tools/simready_audit.py`.
 
-## 修复结果
+## Fix results
 
-2026-09-17 按上面的顺序修复了第 1–5 步，每一步单独提交，每一步之后都重新生成样例并运行全部检查。HI.002 没有处理。
+On 2026-09-17, steps 1–5 were fixed in the order above, each in its own commit, with the sample regenerated and all checks rerun after every step. HI.002 was not addressed.
 
-| 项目 | 修复前 | 修复后 |
+| Item | Before | After |
 |---|---|---|
-| 逐条 requirement | 31/38 通过 | 39/43 通过（新增 VG.008、VG.014、VG.027–029，有了 Mesh 之后才有实际检查意义） |
-| OAV 49 条规则 | 17 个问题（KindChecker） | 0 个问题 |
-| Prop-Robotics-Neutral 2.1.0：FET000 Core | 失败（NP.005、NP.006） | 失败（仅 NP.005） |
-| FET001 Minimal | 失败（VG.MESH.001） | **通过** |
-| FET006 Materials（MDL 版） | 失败（VM.MAT.001） | **通过** |
-| FET003–005 物理与抓取 | 失败 | 失败（不适用） |
+| Per-requirement checks | 31/38 pass | 39/43 pass (adds VG.008, VG.014, VG.027–029, which only check anything meaningful once there is a Mesh) |
+| 49 OAV rules | 17 issues (KindChecker) | 0 issues |
+| Prop-Robotics-Neutral 2.1.0: FET000 Core | Fail (NP.005, NP.006) | Fail (NP.005 only) |
+| FET001 Minimal | Fail (VG.MESH.001) | **Pass** |
+| FET006 Materials (MDL variant) | Fail (VM.MAT.001) | **Pass** |
+| FET003–005 physics and grasping | Fail | Fail (not applicable) |
 
-**剩余失败，都是报告里预期不修的：**
-- **HI.002：** 不在任何 profile。
-- **NP.001：** 命名规则连 `Looks`、`PreviewSurface` 都判失败。
-- **NP.005：** 按单个资产打包的目录结构，浏览器导出的单文件做不到。
-- **SL.001：** 语义标签，需要时再做。
+**Remaining failures, all expected not to be fixed per this report:**
+- **HI.002:** not in any profile.
+- **NP.001:** the naming rule flags even `Looks` and `PreviewSurface`.
+- **NP.005:** single-asset packaging directory structure, not achievable for a single file exported from the browser.
+- **SL.001:** semantic labels, to be done when needed.
 
-**实现要点：**
-- **Mesh：** 所有几何共用一个 8 顶点、6 个四边面的单位立方体，法线 faceVarying，`subdivisionScheme = "none"`，仍用 translate/scale 定位，世界包围盒与 Cube 版一致。
-- **材质：** 每个原型的 `Looks` 下有 `body`、`front` 两个 UsdPreviewSurface 材质，参数对应网页 three.js（机柜粗糙度 0.55、金属度 0.35），`displayColor` 保留为备用颜色。
-- **元数据：** `buildUsda` 新增必填参数 `meta.date`；网页导出传当天日期，`npm run sample` 沿用样例原日期。
+**Implementation notes:**
+- **Mesh:** all geometry shares one unit cube with 8 vertices and 6 quad faces, faceVarying normals, `subdivisionScheme = "none"`, still positioned via translate/scale; world bounding boxes match the Cube version.
+- **Materials:** each prototype's `Looks` has two UsdPreviewSurface materials, `body` and `front`, with parameters matching the web three.js scene (rack roughness 0.55, metalness 0.35); `displayColor` is kept as a fallback color.
+- **Metadata:** `buildUsda` gains a required parameter `meta.date`; the web export passes the current date, and `npm run sample` keeps the sample's original date.
 
-**测试补充：**
+**Added tests:**
 
-web 测试按规范原文检查以下几项，不依赖 `.simready` 环境：
-- 模型层级连续；
-- 每个 Mesh 都绑定了同一原型或 `/DataHall/Looks` 内的材质；
-- SR.001 字段齐全；
-- 立方体每个面朝外，且与法线一致。
+The web tests check the following against the spec text, without depending on the `.simready` environment:
+- the model hierarchy is continuous;
+- every Mesh is bound to a material in the same prototype or in `/DataHall/Looks`;
+- the SR.001 fields are complete;
+- each cube face points outward and agrees with its normal.
 
-**关于网格检查：** 故意把一个面的绕序反过来，SimReady 的 VG.007/008/014/027–029 都没有报错，只有 OAV 的 `ManifoldChecker` 给出 35 条警告。所以绕序靠 web 测试兜底。
+**About mesh checks:** deliberately reversing the winding order of one face produced no errors from SimReady's VG.007/008/014/027–029; only OAV's `ManifoldChecker` reported 35 warnings. So winding order is safeguarded by the web tests.

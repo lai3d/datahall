@@ -1,11 +1,11 @@
-// layout.json：给 Unity 版的机房布局交换格式，定义见 spec/layout.schema.json。纯函数，不依赖 DOM。
-// 同样的内容也由 tools/usd_to_unity.py 从 .usda 生成，两边必须一致（tools/test_usd_to_unity.py 会比对）。
-// 结构刻意保持扁平、不用字典，方便 Unity 的 JsonUtility 直接反序列化。
+// layout.json: the hall layout exchange format for the Unity version, defined in spec/layout.schema.json. Pure function, no DOM dependency.
+// The same content is also generated from .usda by tools/usd_to_unity.py; both must match (tools/test_usd_to_unity.py compares them).
+// The structure is deliberately flat with no dictionaries, so Unity's JsonUtility can deserialize it directly.
 import {equipmentName, supplyLinks} from './grid.ts';
 import type {ExportMeta} from './usd-export.ts';
 import type {Catalog, CatalogItem, Grid, Item} from './types.ts';
 
-// spec/layout.schema.json 的结构
+// Structure of spec/layout.schema.json
 export interface LayoutCatalogEntry {
   id: string; name: string; category: string; powerKw: number; gpuCount: number; liquidFraction: number;
   liquidCoolingKw: number; airCoolingKw: number; overheadKw: number; distributionKw: number; fabricPorts: number;
@@ -31,7 +31,7 @@ export function catalogEntry(id: string, t: CatalogItem): LayoutCatalogEntry{
   };
 }
 
-// list: [{type, x, z}]；meta.date：生成日期 YYYY-MM-DD
+// list: [{type, x, z}]; meta.date: generation date YYYY-MM-DD
 export function buildLayout(list: Item[], CAT: Catalog, utility: number, g: Grid, meta: ExportMeta): LayoutJson{
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta?.date || '')) throw new Error('buildLayout: meta.date must be YYYY-MM-DD');
   const placed = list.filter(i => CAT[i.type]);

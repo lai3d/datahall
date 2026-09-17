@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DataHall
 {
-    // 挂在每台摆放好的设备上，保存 layout.json 里的信息，供选中查看
+    // Attached to each placed piece of equipment; holds its layout.json data for inspection when selected
     public class EquipmentInfo : MonoBehaviour
     {
         public PlacedEquipment placement;

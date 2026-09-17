@@ -1,8 +1,8 @@
-// 简体中文文案。键必须和 en.ts 一致（tests/i18n.test.ts 检查）。函数值只接收一个变量对象。
-// spec/capacity-cases.json 里的问题文本由这里生成，Unity 的 C# 容量模型和它逐字比对，改容量问题的措辞要同步改 C#
+// Simplified Chinese messages. Keys must match en.ts (checked by tests/i18n.test.ts). Function values take a single variables object.
+// Issue text in spec/capacity-cases.json is generated from here and compared verbatim by the Unity C# capacity model; when rewording capacity issues, update the C# too
 import type en from './en.ts';
 
-// 类型取自 en.ts：键和每条文案的变量都必须一致
+// Types come from en.ts: keys and each message's variables must match
 const zh: typeof en = {
   loc: ({x, z}) => `第 ${x} 列第 ${z} 排`,
   listSep: '，',

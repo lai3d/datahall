@@ -9,28 +9,28 @@ import type {Item, Layout} from '../src/types.ts';
 const at = (type: string, x: number, z: number, phase?: number): Item => phase ? {type, x, z, phase} : {type, x, z};
 
 describe('growthPlan', () => {
-  // 第 1 阶段：4 柜 GB200 和设施；第 2 阶段再加 4 柜，液冷不够
+  // Phase 1: 4 GB200 racks and facilities; phase 2 adds 4 more racks and liquid cooling runs short
   const items = [
     ...[0, 1, 2, 3].map(x => at('gb200', x, 3)), at('cdu', 0, 5), at('rpp', 1, 5), at('ib', 2, 5), at('crah', 3, 5),
     ...[4, 5, 6, 7].map(x => at('gb200', x, 3, 2)),
   ];
 
-  it('阶段升序，缺省为 1', () => {
+  it('phases in ascending order, defaulting to 1', () => {
     expect(phasesIn(items)).toEqual([1, 2]);
     expect(phasesIn([])).toEqual([]);
   });
 
-  it('逐阶段累计，找出最紧的一项和不满足的原因', () => {
+  it('accumulates per phase, finds the tightest constraint and the reasons for failures', () => {
     const [p1, p2] = growthPlan(items, CAT, 2);
     expect([p1.phase, p1.count, p1.gpus, p1.reasons]).toEqual([1, 8, 288, []]);
-    expect(p1.tightest).toEqual({kind: 'network', ratio: 1});   // 288 颗 GPU 正好占满一台 IB 的 288 个端口
+    expect(p1.tightest).toEqual({kind: 'network', ratio: 1});   // 288 GPUs exactly fill one IB switch's 288 ports
     expect(p1.util.liquid).toBeCloseTo(425 / 800);
     expect([p2.phase, p2.count, p2.gpus]).toEqual([2, 12, 576]);
     expect(p2.reasons.map(r => r.kind)).toEqual(['dist', 'liquid', 'air', 'network']);
     expect(p2.tightest).toEqual({kind: 'network', ratio: 2});
   });
 
-  it('没有阶段信息的预设只有一个阶段，结果和 compute 一致', () => {
+  it('a preset without phase info has one phase matching compute', () => {
     const p = PRESETS.rubin;
     const plan = growthPlan(toItems(p.list), CAT, p.u);
     expect(plan.length).toBe(1);
@@ -38,7 +38,7 @@ describe('growthPlan', () => {
     expect(plan[0].reasons).toEqual([]);
   });
 
-  it('容量为 0 的项记为 Infinity', () => {
+  it('constraints with zero capacity are recorded as Infinity', () => {
     const u = utilization(compute([at('vr200', 0, 0)], CAT, 2), 2);
     expect(u.dist).toBe(Infinity);
     expect(utilization(compute([], CAT, 2), 2).dist).toBe(0);
@@ -46,7 +46,7 @@ describe('growthPlan', () => {
 });
 
 describe('headroom', () => {
-  it('算出的台数加上去仍满足总量，再多一台就不满足（每种 GPU 机柜、每个预设）', () => {
+  it('adding the computed count still fits, one more does not (every GPU rack type, every preset)', () => {
     const gpuTypes = CATALOG.filter(t => t.gpus).map(t => t.id);
     for (const p of [PRESETS.gb200, PRESETS.gb200n1, PRESETS.rubin]){
       const base = toItems(p.list);
@@ -60,17 +60,17 @@ describe('headroom', () => {
     }
   });
 
-  it('已经超了的项返回 0 台', () => {
+  it('returns 0 units for constraints already exceeded', () => {
     expect(headroom([at('vr200', 0, 0)], CAT, 2, 'vr200')).toEqual({limit: 'dist', count: 0});
   });
 });
 
-describe('分享链接里的阶段', async () => {
+describe('phases in share links', async () => {
   const {encodeLayout, decodeLayout} = await import('../src/share-link.ts');
   const {sameLayout} = await import('../src/edit.ts');
   const {GRID} = await import('../src/grid.ts');
 
-  it('有阶段时用版本 3，解码还原；阶段 1 不写', () => {
+  it('uses version 3 with phases and decodes them back; phase 1 is not written', () => {
     const p: Layout = {u: 5, list: [['vr200', 0, 3], ['vr200', 1, 3, {phase: 2}], ['cdu', 0, 5, {phase: 3}], ['vr200', 2, 3, {phase: 2, feeds: {coolantSource: [0, 5]}}]]};
     const hash = encodeLayout(p);
     expect(hash).toBe('layout=3,5,vr200:0.3-1.3-2.3,cdu:0.5,@c:2.3_0.5,@2:1.3-2.3,@3:0.5');
@@ -80,7 +80,7 @@ describe('分享链接里的阶段', async () => {
     expect(sameLayout(back, p)).toBe(true);
   });
 
-  it('版本 2 里的 @2 不认；无效的阶段和位置提示', () => {
+  it('@2 is not recognized in version 2; invalid phases and positions warn', () => {
     expect(decodeLayout('#layout=2,5,vr200:0.3,@2:0.3', CAT, GRID)!.warnings.length).toBe(1);
     const r = decodeLayout('#layout=3,5,vr200:0.3,@1:0.3,@2:9.9-0.3', CAT, GRID)!;
     expect(r.list).toEqual([['vr200', 0, 3, {phase: 2}]]);
@@ -88,7 +88,7 @@ describe('分享链接里的阶段', async () => {
   });
 });
 
-describe('阶段贯穿 USD 和 layout.json', async () => {
+describe('phases across USD and layout.json', async () => {
   const {buildUsda} = await import('../src/usd-export.ts');
   const {importUsda} = await import('../src/usd-import.ts');
   const {buildLayout} = await import('../src/layout-export.ts');
@@ -97,7 +97,7 @@ describe('阶段贯穿 USD 和 layout.json', async () => {
   const {propsItems} = await import('../scripts/layout-props-usda.ts');
   const items = propsItems();
 
-  it('USD 只给阶段大于 1 的实例写 dchall:phase，导入后还原阶段和手动指定', () => {
+  it('USD writes dchall:phase only for instances above phase 1; import restores phases and manual assignments', () => {
     const usda = buildUsda(items, CAT, 2, GRID, {date: '2026-09-17'});
     expect(usda.match(/int dchall:phase = \d+/g)).toEqual(['int dchall:phase = 2', 'int dchall:phase = 2', 'int dchall:phase = 3']);
     const back = importUsda(usda, CAT, GRID);
@@ -105,14 +105,14 @@ describe('阶段贯穿 USD 和 layout.json', async () => {
     expect(sameLayout(back, {u: 2, list: items.map(toEntry)})).toBe(true);
   });
 
-  it('无效的 dchall:phase 提示并按 1 处理', () => {
+  it('invalid dchall:phase warns and is treated as 1', () => {
     const usda = buildUsda(items, CAT, 2, GRID, {date: '2026-09-17'}).replace('int dchall:phase = 3', 'int dchall:phase = 0');
     const back = importUsda(usda, CAT, GRID);
     expect(back.warnings.length).toBe(1);
     expect(back.list.find(e => e[1] === 9 && e[2] === 5)).toEqual(['rpp', 9, 5]);
   });
 
-  it('layout.json 每台设备都有 phase', () => {
+  it('every device in layout.json has a phase', () => {
     const eq = buildLayout(items, CAT, 2, GRID, {date: '2026-09-17'}).equipment;
     expect(eq.map(e => e.phase).sort()).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 3]);
   });

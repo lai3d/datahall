@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# 原生插件冒烟测试（会弹出程序窗口几秒）：文件拖放、文件对话框、打开失败时保留机房。
-# 先运行 tools/unity_build.sh。系统拖拽手势和在对话框里点选文件无法自动化，需要人工试一次。
+# Native plugin smoke test (the app window pops up for a few seconds): file drag and drop, file dialog, keeping the hall when opening fails.
+# Run tools/unity_build.sh first. The system drag gesture and picking a file in the dialog cannot be automated; try them by hand once.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 app="$root/build/DataHall.app"

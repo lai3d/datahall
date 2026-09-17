@@ -1,7 +1,7 @@
-# Git LFS：只放二进制资产。文本格式（.usda、.gltf、JSON、Unity 的 YAML 资产）保留在普通 git 里，方便 diff 和合并。
-# 新成员需要先装 git-lfs（brew install git-lfs && git lfs install），再克隆或 git lfs pull。
+# Git LFS: binary assets only. Text formats (.usda, .gltf, JSON, Unity YAML assets) stay in regular git for easy diffs and merges.
+# Newcomers must install git-lfs first (brew install git-lfs && git lfs install), then clone or git lfs pull.
 
-# 3D 模型和二进制 USD（SimReady 资产通常是 .usd/.usdc）
+# 3D models and binary USD (SimReady assets are usually .usd/.usdc)
 *.glb filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 *.fbx filter=lfs diff=lfs merge=lfs -text
@@ -9,7 +9,7 @@
 *.usdz filter=lfs diff=lfs merge=lfs -text
 *.usd filter=lfs diff=lfs merge=lfs -text
 
-# 贴图
+# Textures
 *.png filter=lfs diff=lfs merge=lfs -text
 *.jpg filter=lfs diff=lfs merge=lfs -text
 *.jpeg filter=lfs diff=lfs merge=lfs -text
@@ -22,7 +22,7 @@
 *.ktx2 filter=lfs diff=lfs merge=lfs -text
 *.dds filter=lfs diff=lfs merge=lfs -text
 
-# 音视频和字体
+# Audio, video and fonts
 *.wav filter=lfs diff=lfs merge=lfs -text
 *.mp3 filter=lfs diff=lfs merge=lfs -text
 *.ogg filter=lfs diff=lfs merge=lfs -text
@@ -31,10 +31,10 @@
 *.ttf filter=lfs diff=lfs merge=lfs -text
 *.otf filter=lfs diff=lfs merge=lfs -text
 
-# 原生插件
+# Native plugins
 *.dylib filter=lfs diff=lfs merge=lfs -text
 *.so filter=lfs diff=lfs merge=lfs -text
 *.dll filter=lfs diff=lfs merge=lfs -text
 *.a filter=lfs diff=lfs merge=lfs -text
-# macOS 插件 bundle 里的可执行文件没有扩展名
+# Executables inside macOS plugin bundles have no extension
 unity/Assets/Plugins/macOS/*.bundle/Contents/MacOS/* filter=lfs diff=lfs merge=lfs -text

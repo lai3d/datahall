@@ -1,9 +1,9 @@
-// 轨道相机和指针输入：单指拖动旋转，双指或滚轮缩放，没有移动的单击交给 onTap。
-// 按下的位置有设备时（drag.start 返回 true），拖动交给 drag 移动设备，不旋转；第二根手指落下时取消移动
+// Orbit camera and pointer input: one-finger drag rotates, two fingers or the wheel zoom, a click without movement goes to onTap.
+// If there is a device under the press (drag.start returns true), the drag moves the device instead of rotating; a second finger landing cancels the move
 import * as THREE from 'three';
 import {clamp} from './grid.ts';
 
-// 拖动设备：start 在按下时调用，返回按下的位置有没有设备
+// Device dragging: start is called on press and returns whether there is a device at the pressed position
 export interface DragHandlers {
   start(e: PointerEvent): boolean;
   move(e: PointerEvent): void;

@@ -7,12 +7,12 @@ using UnityEngine;
 
 namespace DataHall
 {
-    // 程序入口：读 layout.json，搭建机房，显示容量检查和选中设备的参数。
-    // 命令行参数：
-    //   -layout <path>          打开指定的 layout.json（默认 StreamingAssets/layout.json）
-    //   -smokeTestOut <path>    搭建完成后把统计结果写成 JSON 并退出，用于自动化冒烟测试
-    //   -screenshot <path>      渲染几帧后截图并退出
-    //   -nativeSmokeOut <path>  （需要窗口，不能 batchmode）检查原生插件：拖放 -nativeSmokeLayout 指定的文件、自动取消的文件对话框、打开失败时保留当前机房
+    // App entry point: reads layout.json, builds the hall, shows the capacity check and the selected equipment's parameters.
+    // Command line arguments:
+    //   -layout <path>          open the given layout.json (default StreamingAssets/layout.json)
+    //   -smokeTestOut <path>    after building, write stats as JSON and exit, for automated smoke tests
+    //   -screenshot <path>      render a few frames, take a screenshot and exit
+    //   -nativeSmokeOut <path>  (needs a window, not batchmode) check the native plugin: drop the file given by -nativeSmokeLayout, an auto-cancelled file dialog, keeping the current hall when opening fails
     public class HallApp : MonoBehaviour
     {
         public EquipmentLibrary library;
@@ -24,8 +24,8 @@ namespace DataHall
         GameObject hall;
         EquipmentInfo selected;
         string source;
-        string error;                 // 没有任何机房可显示时的错误
-        string notice;                // 打开新文件失败时的提示，当前机房保留
+        string error;                 // error when there is no hall to show at all
+        string notice;                // notice when opening a new file fails; the current hall is kept
         bool openRequested;
         bool dropReady;
         int dropAttempts;
@@ -47,7 +47,7 @@ namespace DataHall
             if (nativeSmoke != null) StartCoroutine(NativeSmoke(nativeSmoke));
         }
 
-        // 打开 layout.json。失败时如果已经有机房在显示，保留它并提示原因
+        // Open layout.json. On failure, if a hall is already showing, keep it and show the reason
         public bool Open(string path)
         {
             if (!LayoutFile.TryRead(path, out var next, out var reason))
@@ -71,11 +71,11 @@ namespace DataHall
 
         System.Collections.IEnumerator NativeSmoke(string outPath)
         {
-            for (int i = 0; i < 10; i++) yield return null;             // 等窗口创建、拖放注册
+            for (int i = 0; i < 10; i++) yield return null;             // wait for the window to be created and drop registration
             var dropLayout = Argument("-nativeSmokeLayout");
             Debug.Log("DataHall: content view " + NativeMac.DescribeContentView());
             var accepted = dropLayout != null && NativeMac.TestDrop(dropLayout);
-            for (int i = 0; i < 3; i++) yield return null;              // Update 里取出拖放的文件并打开
+            for (int i = 0; i < 3; i++) yield return null;              // Update picks up the dropped file and opens it
             var afterDrop = (source: Path.GetFileName(source), equipment: layout?.equipment.Count ?? -1);
             var dialog = NativeMac.OpenFile("冒烟测试", "json", 0.5);
             var missingKept = !Open("/nonexistent/layout.json") && layout != null && layout.equipment.Count == afterDrop.equipment && notice != null;
@@ -124,7 +124,8 @@ namespace DataHall
 
         void Update()
         {
-            // 窗口创建后才能注册拖放，前几帧可能返回 0，重试一阵；启用后每 2 秒重新注册，切换全屏重建窗口时也能继续拖放
+            // Drop can only be registered once the window exists, so the first frames may return 0; retry for a while. Once enabled,
+            // re-register every 2 seconds so drop keeps working when toggling fullscreen recreates the window
             if (!dropReady && dropAttempts < 300)
             {
                 dropResult = NativeMac.EnableFileDrop();
@@ -143,7 +144,7 @@ namespace DataHall
             }
             var dropped = dropReady ? NativeMac.PollDroppedFile() : null;
             if (dropped != null) Open(dropped);
-            // 模态对话框不在 OnGUI 里弹，避免打断 IMGUI 的布局事件
+            // Show the modal dialog outside OnGUI so it does not break IMGUI layout events
             if (openRequested)
             {
                 openRequested = false;
@@ -152,7 +153,7 @@ namespace DataHall
             }
 
             if (hall == null || !Input.GetMouseButtonUp(0) || (orbit && orbit.Dragged)) return;
-            if (Input.mousePosition.x > Screen.width - 380) return;        // 点在右侧面板上
+            if (Input.mousePosition.x > Screen.width - 380) return;        // click is on the right-hand panel
             var cam = Camera.main;
             if (cam && Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out var hit, 200f))
                 selected = hit.collider.GetComponentInParent<EquipmentInfo>();
@@ -201,7 +202,7 @@ namespace DataHall
         void EnsureStyles()
         {
             if (panel != null) return;
-            // 线性色彩空间下 IMGUI 把贴图数值当线性值显示，所以写入面板色（sRGB #16202A）的线性值
+            // In linear color space IMGUI displays texture values as linear, so write the linear value of the panel color (sRGB #16202A)
             Texture2D Solid(Color srgb)
             {
                 var t = new Texture2D(1, 1);
@@ -216,7 +217,7 @@ namespace DataHall
             bad = new GUIStyle(body) { normal = { textColor = new Color(0.95f, 0.46f, 0.42f) } };
             warn = new GUIStyle(body) { normal = { textColor = new Color(0.91f, 0.77f, 0.28f) } };
             ok = new GUIStyle(body) { normal = { textColor = new Color(0.55f, 0.76f, 0.29f) } };
-            // 按钮：冷却液青色描边感的深色底，和网页版按钮一致的浅色文字
+            // Buttons: dark fill with a coolant-cyan outline feel, light text matching the web version's buttons
             button = new GUIStyle(GUI.skin.button)
             {
                 fontSize = 14,

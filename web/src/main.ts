@@ -24,9 +24,9 @@ import type {ExportMeta} from './usd-export.ts';
 import type {EntryProps, FeedField, Layout, Pos} from './types.ts';
 
 // ---------- mutations ----------
-// 底层操作只改 state 和模型；用户的编辑都包在 edit() 里，布局真的变了才记进撤销历史
-const undoStack = createHistory();   // 不叫 history，避免遮住 window.history
-// extra：{feeds?, phase?}，来自快照条目
+// Low-level operations only touch state and models; user edits are wrapped in edit(), and recorded in undo history only if the layout actually changed
+const undoStack = createHistory();   // Not named history, to avoid shadowing window.history
+// extra: {feeds?, phase?}, from the snapshot entry
 function place(type: string, x: number, z: number, extra: EntryProps = {}){
   const key = keyOf(x, z);
   if (state.items.has(key) || !CAT[type]) return;
@@ -51,14 +51,14 @@ function replaceLayout(p: Layout){
 function edit(fn: () => void){
   const before = snapshot();
   fn();
-  pruneFeeds(state.items, CAT);   // 删掉或换掉供给设备后，指向它的手动指定失效
+  pruneFeeds(state.items, CAT);   // After supply equipment is deleted or replaced, manual assignments pointing at it become invalid
   if (!sameLayout(before, snapshot())){ undoStack.record(before); state.powered = false; }
   changed();
 }
 const removeItem = (key: string) => edit(() => remove(key));
-// 载入预设、导入文件、打开分享链接是换了一个机房，故障演练清空；撤销和重做保留（格子上的设施还在就保持故障）
+// Loading a preset, importing a file or opening a share link swaps in a different hall, so the failure drill is cleared; undo and redo keep it (facilities still in their cells stay failed)
 const loadLayout = (p: Layout) => edit(() => { state.failed.clear(); state.viewPhase = null; state.phase = 1; replaceLayout(p); });
-// 不进撤销历史：启动时载入、撤销和重做本身
+// Not recorded in undo history: loading at startup, and undo/redo themselves
 function showLayout(p: Layout){ replaceLayout(p); state.powered = false; state.rowAnchor = null; changed(); }
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
 function redo(){ if (drag) return; const p = undoStack.redo(snapshot()); if (p) showLayout(p); }
@@ -67,7 +67,7 @@ function select(key: string | null){ state.selected = key; state.assignFrom = nu
 function changed(){
   for (const key of state.failed){ const it = state.items.get(key); if (!it || !canFail(CAT[it.type])) state.failed.delete(key); }
   if (state.assignFrom && !feedOf(state.items.get(state.assignFrom))) state.assignFrom = null;
-  // 阶段选择不超过“现有最大阶段 + 1”；查看的阶段不存在了就回到全部
+  // Phase selection is capped at "current max phase + 1"; if the viewed phase no longer exists, go back to all
   const phases = phasesIn([...state.items.values()]), maxPhase = phases.at(-1) || 1;
   state.phase = Math.min(state.phase, maxPhase + 1);
   if (state.viewPhase !== null && state.viewPhase >= maxPhase) state.viewPhase = null;
@@ -78,7 +78,7 @@ function changed(){
 }
 
 // ---------- placement preview ----------
-// 单个放置预览鼠标下的空格；整排放置点过第一格后，预览从第一格到鼠标（触屏没有悬停，只显示第一格）
+// Single placement previews the empty cell under the mouse; in row placement, once the first cell is clicked, the preview spans from it to the mouse (touch has no hover, so only the first cell shows)
 let hoverCell: Pos | null = null;
 function updateGhost(){
   let cells: Pos[] = [];
@@ -91,8 +91,8 @@ function updateGhost(){
 }
 
 // ---------- drag to move ----------
-// 拖到空格就立即挪过去（连线和容量检查跟着更新），占用的格子不动；松手时整个拖动记一条撤销历史。
-// 按住设备侧面时指针下的地板是后面的格子，所以按指针移动了几格来挪，而不是挪到指针下的格子
+// Dragging onto an empty cell moves the device immediately (links and capacity checks update), occupied cells are skipped; on release the whole drag becomes one undo entry.
+// When grabbing a device by its side, the floor under the pointer is a cell behind it, so move by how many cells the pointer moved rather than to the cell under the pointer
 let drag: {key: string; before: Layout; moved: boolean; origin: Pos; grab: Pos} | null = null;
 const dragItem: DragHandlers = {
   start(e){
@@ -113,7 +113,7 @@ const dragItem: DragHandlers = {
     const it = state.items.get(drag.key);
     if (!it) return;
     state.items.delete(drag.key);
-    retargetFeeds(state.items, it, c);   // 挪的是供给设备时，手动接到它的设备跟着
+    retargetFeeds(state.items, it, c);   // When moving supply equipment, devices manually connected to it follow
     it.x = c.x; it.z = c.z;
     state.items.set(to, it);
     if (state.assignFrom === drag.key) state.assignFrom = to;
@@ -140,7 +140,7 @@ const dragItem: DragHandlers = {
 };
 
 // ---------- failure drill ----------
-// 标记故障不改布局：不进撤销历史，不断电，只重算连线和容量检查
+// Marking failures does not change the layout: no undo entry, no power-off, just recompute links and capacity checks
 function toggleFailed(key: string){
   const it = state.items.get(key);
   if (!it || !canFail(CAT[it.type])) return;
@@ -150,7 +150,7 @@ function toggleFailed(key: string){
 function restoreAll(){ state.failed.clear(); view.rebuildLinks(); refresh(); }
 
 // ---------- growth plan ----------
-// 新放的设备进当前选的阶段；如果正在查看更早的阶段，切回全部，免得放下去就看不见
+// New devices go into the selected phase; if an earlier phase is being viewed, switch back to all so the placed device does not disappear
 function newProps(){
   if (state.viewPhase !== null && state.phase > state.viewPhase) state.viewPhase = null;
   return state.phase > 1 ? {phase: state.phase} : {};
@@ -160,21 +160,21 @@ function setItemPhase(key: string, phase: number){
   if (!it) return;
   edit(() => { if (phase > 1) it.phase = phase; else delete it.phase; });
 }
-// 查看状态不改布局：不进撤销历史，只重算
+// View state does not change the layout: no undo entry, just recompute
 function setView(fn: () => void){ fn(); view.rebuildLinks(); refresh(); buildUI(); }
 
 // ---------- manual supply assignment ----------
-// 供给设备类型 → 设备上的字段
+// Supply equipment type → field on the device
 const feedOf = (it: {type: string} | undefined): FeedField | null =>
   it?.type === FEEDS.coolantSource.type ? 'coolantSource' : it?.type === FEEDS.powerFeed.type ? 'powerFeed' : null;
-// 详情面板的下拉框：value 为 'auto'（就近）或 'x,z'
+// Detail panel dropdown: value is 'auto' (nearest) or 'x,z'
 function setFeedChoice(key: string, field: FeedField, value: string){
   const it = state.items.get(key);
   if (!it) return;
   const [x, z] = value.split(',').map(Number);
   edit(() => setFeed(it, field, value === 'auto' ? null : {x, z}));
 }
-// 指定接入模式：选中一台 CDU / RPP 后点设备，接到它；已经手动接到它的再点一次恢复就近
+// Assign mode: with a CDU / RPP selected, click a device to connect it; clicking one already manually connected to it reverts it to nearest
 function toggleAssignMode(key: string){
   state.assignFrom = state.assignFrom === key || !feedOf(state.items.get(key)) ? null : key;
   renderInfo();
@@ -214,16 +214,16 @@ function initKeyboard(){
 }
 
 // ---------- share link ----------
-// 每次改动都把布局写进地址栏的 hash；replaceState 不产生历史记录，也不会触发 hashchange。
-// 同时把分享区的提示恢复为默认说明，之后的载入结果或复制结果会覆盖它
+// Every change writes the layout into the URL hash; replaceState adds no history entry and does not fire hashchange.
+// Also reset the share section's message to the default hint; later load or copy results overwrite it
 function updateShareLink(){
   $('#shareMsg').textContent = tr('shareHint');
   $('#shareWarnings').replaceChildren();
   const hash = encodeLayout(snapshot());
-  try { history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search); } catch (e) {}   // claude.ai 沙箱里可能不允许
+  try { history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search); } catch (e) {}   // May be disallowed in the claude.ai sandbox
 }
 
-// 打开或粘贴带布局的链接时载入。返回是否载入了链接里的布局。record：是否记进撤销历史（启动时不记）
+// Load when a link with a layout is opened or pasted. Returns whether the link's layout was loaded. record: whether to add to undo history (not at startup)
 function loadFromLink(record: boolean): boolean{
   const link = decodeLayout(location.hash, CAT, GRID);
   if (!link) return false;
@@ -254,14 +254,14 @@ function initShare(){
 }
 
 function tap(e: PointerEvent){
-  // 指定接入模式：点设备切换接入，点这台供给设备本身结束，点空地不做什么
+  // Assign mode: clicking a device toggles its connection, clicking this supply device itself exits, clicking empty floor does nothing
   if (state.assignFrom){
     const key = view.pickItem(e);
     if (key === state.assignFrom){ state.assignFrom = null; renderInfo(); }
     else if (key) assignTap(key);
     return;
   }
-  // 整排放置：第一下记住起点，第二下把直线上的空格都放上当前设备
+  // Row placement: the first click sets the start, the second fills empty cells along the line with the current device
   if (state.tool && state.placeMode === 'row'){
     const c = view.pickCell(e);
     if (!c) return;
@@ -281,13 +281,13 @@ function tap(e: PointerEvent){
 }
 
 // ---------- export ----------
-// 导入会替换当前机房；警告最多列出 MAX_WARNINGS 条
+// Import replaces the current hall; at most MAX_WARNINGS warnings are listed
 const MAX_WARNINGS = 8;
 function showImportResult(msg: HTMLElement, list: HTMLElement, text: string, warnings: string[] = []){
   msg.textContent = text;
   const lines = warnings.slice(0, MAX_WARNINGS);
   if (warnings.length > MAX_WARNINGS) lines.push(tr('moreMessages', {n: warnings.length - MAX_WARNINGS}));
-  // 提示里有文件中的 prim 名，用 textContent 写入，不当成 HTML
+  // Warnings contain prim names from the file; write them with textContent, never as HTML
   list.replaceChildren(...lines.map(txt => Object.assign(document.createElement('li'), {className: 'warn', textContent: txt})));
 }
 
@@ -296,7 +296,7 @@ function initImport(msg: HTMLElement){
   $('#usdImport').onclick = () => input.click();
   input.onchange = async () => {
     const file = input.files?.[0];
-    input.value = '';                                   // 允许再次选择同一个文件
+    input.value = '';                                   // Allow selecting the same file again
     if (!file) return;
     try {
       const result = importUsda(await file.text(), CAT, GRID);
@@ -319,7 +319,7 @@ async function initExport(){
   msg.textContent = exportHint();
   box.hidden = false;
   initImport(msg);
-  // 两种导出共用：OpenUSD 层，以及给 Unity 版用的 layout.json（格式见 spec/layout.schema.json）
+  // Shared by both exports: the OpenUSD layer, and layout.json for the Unity version (format in spec/layout.schema.json)
   const exportWith = (button: HTMLButtonElement, filename: string, build: (meta: ExportMeta) => string, done: () => string) => {
     button.onclick = async () => {
       $('#usdWarnings').innerHTML = '';
@@ -345,7 +345,7 @@ async function initExport(){
 }
 
 // ---------- language ----------
-// 默认英文；选择记在 localStorage。?lang=zh 可以直接指定（不写入分享链接的 hash）
+// English by default; the choice is stored in localStorage. ?lang=zh selects directly (not written into the share link hash)
 const LANG_KEY = 'datahall.lang';
 function initialLang(): string{
   const fromQuery = new URLSearchParams(location.search).get('lang');
@@ -359,7 +359,7 @@ function applyLang(id: string, persist: boolean){
   document.documentElement.lang = htmlLang();
   applyStaticText();
 }
-// 切换后重画面板；分享区和导出区的上一条结果提示换成当前语言的默认说明
+// Redraw panels after switching; replace the last result messages in the share and export sections with the default hint in the current language
 function switchLang(id: string){
   applyLang(id, true);
   buildUI(); refresh(); updateShareLink();
@@ -404,6 +404,6 @@ const mq = window.matchMedia('(prefers-color-scheme: dark)');
 mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
 
 if (!loadFromLink(false)) showLayout(restoreLayout() || PRESETS.gb200);
-// 开发服务器下给浏览器自动化测试用
+// For browser automation tests on the dev server
 if (import.meta.env.DEV) (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce};
 view.startLoop();

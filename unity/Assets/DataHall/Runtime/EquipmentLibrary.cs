@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace DataHall
 {
-    // 设备类型 id → prefab。由编辑器菜单 DataHall/导入布局包 生成和更新；
-    // prefab 是 glb 模型的变体，交互（托盘、碰撞体、高亮）加在变体上，重新导入几何时不会丢
+    // Equipment type id → prefab. Created and updated by the editor menu DataHall/Import Layout Bundle;
+    // prefabs are variants of the glb models, and interaction (trays, colliders, highlight) is added on the variants so it survives geometry reimports
     [CreateAssetMenu(menuName = "DataHall/Equipment Library")]
     public class EquipmentLibrary : ScriptableObject
     {

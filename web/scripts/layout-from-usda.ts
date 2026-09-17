@@ -1,6 +1,6 @@
-// 用网页版的导入和导出逻辑，把 .usda 转成 layout.json 输出到 stdout。
-// tools/test_usd_to_unity.py 用它和 pxr 转换器的结果做对照。
-// 用法：node scripts/layout-from-usda.ts <file.usda> [--date YYYY-MM-DD]
+// Converts .usda to layout.json on stdout using the web version's import and export logic.
+// tools/test_usd_to_unity.py uses it to cross-check the output of the pxr converter.
+// Usage: node scripts/layout-from-usda.ts <file.usda> [--date YYYY-MM-DD]
 import {readFileSync} from 'node:fs';
 import {importUsda} from '../src/usd-import.ts';
 import {buildLayout, layoutToText} from '../src/layout-export.ts';

@@ -1,11 +1,11 @@
-// 两条下载通道：
-// - 在 claude.ai artifact 里：window.claude 的 downloads 能力，扩展名有白名单，所以打成 zip
-// - 独立部署：Blob + <a download> 直接下载文件
+// Two download paths:
+// - Inside a claude.ai artifact: the downloads capability of window.claude; file extensions are allowlisted, so we pack a zip
+// - Standalone deployment: Blob + <a download> saves the file directly
 import {zipStore} from './zip.ts';
 import {USD_README} from './usd-export.ts';
 import {tr} from './i18n.ts';
 
-// claude.ai artifact 注入的 window.claude，独立部署时没有
+// window.claude injected by the claude.ai artifact; absent in standalone deployments
 interface ClaudeDownloads {save(file: {filename: string; data: Blob}): Promise<unknown>}
 declare global {
   interface Window {claude?: {use(capability: 'downloads'): Promise<ClaudeDownloads>}}
@@ -31,7 +31,7 @@ export async function createSaver(): Promise<Saver>{
 }
 
 export function downloadText(filename: string, text: string): void{
-  // octet-stream 避免浏览器按 text/plain 给文件名追加 .txt
+  // octet-stream stops browsers from treating it as text/plain and appending .txt to the file name
   const url = URL.createObjectURL(new Blob([text], {type: 'application/octet-stream'}));
   const a = document.createElement('a');
   a.href = url; a.download = filename; a.style.display = 'none';

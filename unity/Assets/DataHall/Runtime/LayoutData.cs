@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DataHall
 {
-    // layout.json 的数据结构，定义见仓库 spec/layout.schema.json。字段名和 JSON 一致，供 JsonUtility 反序列化。
+    // Data structures for layout.json, defined in spec/layout.schema.json. Field names match the JSON for JsonUtility deserialization.
     [Serializable]
     public class LayoutGrid
     {
@@ -66,7 +66,7 @@ namespace DataHall
 
         public CatalogEntry Find(string id) => catalog.Find(c => c.id == id);
 
-        // 解析并校验。结构不对直接报错，不做部分导入：layout.json 由工具生成，出错说明文件本身有问题
+        // Parse and validate. Structural errors fail outright with no partial import: layout.json is tool-generated, so an error means the file itself is broken
         public static LayoutData Parse(string json)
         {
             LayoutData data;

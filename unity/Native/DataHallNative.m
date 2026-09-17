@@ -1,6 +1,6 @@
-// DataHallNative：Unity macOS 程序用的原生功能，打开文件对话框和把文件拖进窗口。
-// 构建：tools/build_native_mac.sh → unity/Assets/Plugins/macOS/DataHallNative.bundle（arm64 + x86_64）
-// C# 侧见 unity/Assets/DataHall/Runtime/NativeMac.cs。所有函数都在主线程调用（Unity 在 macOS 上的主循环就是 AppKit 主线程）。
+// DataHallNative: native features for the Unity macOS app, an open-file dialog and dropping files onto the window.
+// Build: tools/build_native_mac.sh → unity/Assets/Plugins/macOS/DataHallNative.bundle (arm64 + x86_64)
+// C# side: unity/Assets/DataHall/Runtime/NativeMac.cs. All functions are called on the main thread (Unity's main loop on macOS is the AppKit main thread).
 #import <Cocoa/Cocoa.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <objc/message.h>
@@ -14,8 +14,8 @@ void DataHallNative_Free(char *p) { free(p); }
 
 static char *CopyPath(NSString *path) { return path ? strdup(path.fileSystemRepresentation) : NULL; }
 
-// 模态文件对话框。extension 为空时不限类型；autoCancelSeconds > 0 时到时自动取消（冒烟测试用）。
-// 返回选中文件的路径（用 DataHallNative_Free 释放），取消返回 NULL
+// Modal file dialog. An empty extension allows any type; autoCancelSeconds > 0 cancels automatically after that time (for smoke tests).
+// Returns the selected file's path (free with DataHallNative_Free), or NULL if cancelled
 char *DataHallNative_OpenFile(const char *message, const char *extension, double autoCancelSeconds) {
     @autoreleasepool {
         NSOpenPanel *panel = [NSOpenPanel openPanel];
@@ -37,7 +37,7 @@ char *DataHallNative_OpenFile(const char *message, const char *extension, double
     }
 }
 
-// ---------- 拖放 ----------
+// ---------- Drag and drop ----------
 
 static NSURL *FileURL(id<NSDraggingInfo> info) {
     NSArray<NSURL *> *urls = [info.draggingPasteboard readObjectsForClasses:@[NSURL.class]
@@ -61,7 +61,7 @@ static NSView *ContentView(void) {
     return window.contentView;
 }
 
-// sel 是否由 cls 到 NSView 之间（不含 NSView）的类自己实现。NSView 本身带有拖放方法的默认实现，不算
+// Whether sel is implemented by a class between cls and NSView (excluding NSView). NSView's own default drag-and-drop implementations do not count
 static IMP OwnImplementation(Class cls, SEL sel) {
     for (Class c = cls; c && c != NSView.class; c = class_getSuperclass(c)) {
         unsigned int n = 0;
@@ -74,8 +74,8 @@ static IMP OwnImplementation(Class cls, SEL sel) {
     return NULL;
 }
 
-// 给 Unity 窗口的内容视图注册文件拖放。Unity 自己的视图类没有实现拖放方法时，才在视图类上添加我们的实现（覆盖 NSView 的默认实现），
-// Unity 已有实现则不接管。返回 1 已启用，0 窗口还没创建（稍后重试），-1 Unity 视图已有自己的拖放实现
+// Register file drops on the Unity window's content view. Only when Unity's own view classes do not implement the drag methods do we add ours to the view class (overriding NSView's defaults);
+// if Unity already implements them we do not take over. Returns 1 enabled, 0 window not created yet (retry later), -1 Unity's view has its own drag-and-drop implementation
 int DataHallNative_EnableFileDrop(void) {
     @autoreleasepool {
         NSView *view = ContentView();
@@ -96,14 +96,14 @@ int DataHallNative_EnableFileDrop(void) {
     }
 }
 
-// 取出最近拖进来的文件路径（用 DataHallNative_Free 释放），没有返回 NULL
+// Takes the most recently dropped file path (free with DataHallNative_Free), or NULL if none
 char *DataHallNative_PollDroppedFile(void) {
     NSString *path = droppedPath;
     droppedPath = nil;
     return CopyPath(path);
 }
 
-// ---------- 测试钩子 ----------
+// ---------- Test hooks ----------
 
 @interface DHFakeDraggingInfo : NSObject
 @property (nonatomic, strong) NSPasteboard *draggingPasteboard;
@@ -111,8 +111,8 @@ char *DataHallNative_PollDroppedFile(void) {
 @implementation DHFakeDraggingInfo
 @end
 
-// 冒烟测试：用装有 path 文件 URL 的剪贴板，调用真实内容视图上的 performDragOperation:，
-// 走一遍和真实拖放相同的代码（系统拖拽手势本身除外）。返回 1 视图接受了拖放
+// Smoke test: call performDragOperation: on the real content view with a pasteboard holding the file URL for path,
+// running the same code as a real drop (except the system drag gesture itself). Returns 1 if the view accepted the drop
 int DataHallNative_TestDrop(const char *path) {
     @autoreleasepool {
         NSView *view = ContentView();
@@ -128,7 +128,7 @@ int DataHallNative_TestDrop(const char *path) {
     }
 }
 
-// 诊断：内容视图的类继承链、各拖放方法由哪个类实现、已注册的拖放类型、窗口类
+// Diagnostics: the content view's class chain, which class implements each drag method, registered drag types, window class
 char *DataHallNative_DescribeContentView(void) {
     @autoreleasepool {
         NSView *view = ContentView();

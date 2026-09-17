@@ -1,12 +1,12 @@
-// 界面语言：默认英文，支持简体中文。纯模块，不依赖 DOM；页面上的切换和持久化在 main.ts。
-// 容量问题、导入提示等文本在生成时按当前语言输出，所以 sim.ts、supply.ts 这些纯函数也从这里取文案。
+// UI language: English by default, Simplified Chinese supported. Pure module, no DOM dependency; the on-page switch and persistence live in main.ts.
+// Capacity issues, import warnings and similar text are produced in the current language, so pure functions like sim.ts and supply.ts also get their copy from here.
 import en from './locales/en.ts';
 import zh from './locales/zh.ts';
 import type {CatalogItem} from './types.ts';
 
 export type Messages = typeof en;
 export type MessageKey = keyof Messages;
-// 某条文案需要的变量；纯文本文案没有变量
+// Variables a message needs; plain-text messages have none
 type VarsOf<K extends MessageKey> = Messages[K] extends (vars: infer V) => string ? V : never;
 type TrArgs<K extends MessageKey> = Messages[K] extends string ? [] : [vars: VarsOf<K>];
 
@@ -21,17 +21,17 @@ export const getLang = (): Lang => lang;
 export function setLang(id: string): Lang{ if (isLang(id)) lang = id; return lang; }
 export const htmlLang = (): string => LANGS.find(l => l.id === lang)!.html;
 
-// tr('issueDist', {need, cap})；变量都是已格式化好的文本或数字。键和变量在编译期检查
+// tr('issueDist', {need, cap}); variables are pre-formatted text or numbers. Keys and variables are checked at compile time
 export function tr<K extends MessageKey>(key: K, ...args: TrArgs<K>): string{
   const m: unknown = MESSAGES[lang][key];
   if (m === undefined) throw new Error(`missing message "${String(key)}" for ${lang}`);
   return typeof m === 'function' ? m(args[0]) : m as string;
 }
 
-// 位置文本，x、z 从 0 开始
+// Location text, x and z start at 0
 export const loc = (x: number, z: number): string => tr('loc', {x: x + 1, z: z + 1});
 
-// 设备目录的名称和说明：catalog.json 里 name、note 是中文原文（导出的 USD、layout.json 沿用），
-// 其他语言写在 i18n.<lang> 下，缺的字段回退到原文
+// Catalog names and notes: name and note in catalog.json are the Chinese originals (kept in exported USD and layout.json);
+// other languages go under i18n.<lang>, and missing fields fall back to the original
 export const catName = (t: CatalogItem): string => t.i18n?.[lang]?.name ?? t.name;
 export const catNote = (t: CatalogItem): string => t.i18n?.[lang]?.note ?? t.note;

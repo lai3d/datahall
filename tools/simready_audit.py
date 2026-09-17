@@ -25,7 +25,8 @@ SCHEMA_DIR = os.path.abspath(os.path.join(ROOT, "schema"))
 SPECS = os.path.abspath(os.path.join(ROOT, ".simready", "simready-foundation", "nv_core", "sr_specs", "docs"))
 PROFILE, PROFILE_VERSION = "Prop-Robotics-Neutral", "2.1.0"
 
-# 核对范围：单位、层级、命名与元数据、几何、材质、语义标签。物理、抓取、关节、打包不适用于机房布局文件
+# Audit scope: units, hierarchy, naming and metadata, geometry, materials, semantic labels. Physics, grasping, joints
+# and packaging do not apply to a data hall layout file
 REQUIREMENTS = """
 UN.001 UN.002 UN.003 UN.004 UN.005 UN.006 UN.007
 HI.001 HI.002 HI.003 HI.004 HI.006 HI.008 HI.010
@@ -45,7 +46,7 @@ def run_validate(asset, features_paths, profiles_path, profile, version, out):
     for p in features_paths:
         cmd += ["--features-path", p]
     env = dict(os.environ, PXR_PLUGINPATH_NAME=SCHEMA_DIR)
-    # 校验器的规则模块用相对 import，需要在规范仓库根目录运行
+    # The validator's rule modules use relative imports, so it must run from the spec repo root
     proc = subprocess.run(cmd + [os.path.abspath(asset)], cwd=os.path.join(SPECS, "..", "..", ".."),
                           env=env, capture_output=True, text=True)
     skipped = [l for l in proc.stderr.splitlines() if l.startswith("ERROR:simready.validate:Skipping")]
@@ -114,13 +115,13 @@ def main():
         prof = profile_pass(args.asset, tmp)
     n_rules, oav = oav_pass(args.asset)
 
-    print(f"# {args.asset}\n\n## 逐条 requirement（{sum(p for p, _ in reqs.values())}/{len(reqs)} 通过）")
+    print(f"# {args.asset}\n\n## Per-requirement ({sum(p for p, _ in reqs.values())}/{len(reqs)} passed)")
     for r, (passed, msg) in reqs.items():
         print(f"{r:12s} {'PASS' if passed else 'FAIL'}  {msg}")
     print(f"\n## {PROFILE} {PROFILE_VERSION}")
     for k, (passed, msg) in prof.items():
         print(f"{k:24s} {'PASS' if passed else 'FAIL'}  {msg}")
-    print(f"\n## Omniverse Asset Validator：{n_rules} 条规则，{sum(oav.values())} 个问题")
+    print(f"\n## Omniverse Asset Validator: {n_rules} rules, {sum(oav.values())} issues")
     for (sev, rule, msg), n in sorted(oav.items()):
         print(f"{n:4d} {sev} {rule}: {msg}")
 
