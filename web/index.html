@@ -3,99 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title data-i18n="title">GPU data hall builder</title>
+<title>GPU data hall builder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
-<main id="stage">
-  <div id="hud" aria-live="polite">
-    <div><b id="hGpu">0</b><span>GPU</span></div>
-    <div><b id="hIt">0 kW</b><span data-i18n="hudIt">IT load</span></div>
-    <div><b id="hPue">–</b><span data-i18n="hudPue">Estimated PUE</span></div>
-  </div>
-  <div id="stageTools">
-    <button id="undo" type="button" data-i18n="undo" aria-keyshortcuts="Meta+Z Control+Z" disabled>Undo</button>
-    <button id="redo" type="button" data-i18n="redo" aria-keyshortcuts="Meta+Shift+Z Control+Y" disabled>Redo</button>
-    <button id="camReset" type="button" data-i18n="camReset">Reset view</button>
-  </div>
-</main>
-
-<aside id="panel">
-  <div class="head">
-    <h1 data-i18n="title">GPU data hall builder</h1>
-    <div class="row seg lang" id="lang" role="group" data-i18n-aria="language" aria-label="Language"></div>
-  </div>
-  <p class="sub" data-i18n="subtitle">Pick a device, then click an empty floor cell to place it. Drag a device to move it, drag the floor to orbit, pinch or scroll to zoom.</p>
-
-  <h2 data-i18n="hUtility">Utility power</h2>
-  <div class="row seg" id="utility"></div>
-
-  <div class="h2row">
-    <h2 data-i18n="hDevices">Devices</h2>
-    <div class="row seg mini" id="placeMode" role="group" data-i18n-aria="placeMode" aria-label="Placement"></div>
-  </div>
-  <div class="h2row sub-row">
-    <span data-i18n="placePhase">New devices go into phase</span>
-    <div class="row seg mini" id="placePhase" role="group" data-i18n-aria="placePhase" aria-label="New devices go into phase"></div>
-  </div>
-  <p class="sub" id="placeHint" hidden></p>
-  <div class="palette" id="palette"></div>
-
-  <h2 data-i18n="hCheck">Capacity check</h2>
-  <div id="gauges"></div>
-  <ul class="issues" id="issues"></ul>
-  <button id="power" type="button" disabled>Power on</button>
-
-  <h2 data-i18n="hInfo">Details</h2>
-  <div class="info" id="info"></div>
-
-  <h2 data-i18n="hGrowth">Growth plan</h2>
-  <p class="sub" data-i18n="growthIntro">Give each device a deployment phase. Each row checks everything installed up to that phase.</p>
-  <div class="h2row sub-row" id="viewPhaseRow" hidden>
-    <span data-i18n="viewLabel">View up to phase</span>
-    <div class="row seg mini" id="viewPhase" role="group" data-i18n-aria="viewLabel" aria-label="View up to phase"></div>
-  </div>
-  <div id="growth"></div>
-
-  <h2 data-i18n="hDrill">Failure drill</h2>
-  <p class="sub" data-i18n="drillIntro">Select a CDU, RPP, in-row cooler or IB switch rack and mark it failed. Its load moves to the nearest working unit.</p>
-  <div class="row" id="drillBar" style="align-items:center;margin-bottom:6px" hidden>
-    <span id="drillStatus"></span>
-    <button type="button" id="drillRestoreAll" data-i18n="drillRestoreAll">Restore all</button>
-  </div>
-  <ul class="issues" id="n1"></ul>
-
-  <h2 data-i18n="hPresets">Presets</h2>
-  <div class="row">
-    <button type="button" data-preset="empty" data-i18n="presetEmpty">Clear hall</button>
-    <button type="button" data-preset="gb200" data-i18n="presetGb200">GB200 cluster</button>
-    <button type="button" data-preset="gb200n1" data-i18n="presetGb200n1">GB200 with N+1</button>
-    <button type="button" data-preset="rubin" data-i18n="presetRubin">Vera Rubin row</button>
-  </div>
-
-  <h2 data-i18n="hShare">Share</h2>
-  <div class="row">
-    <button type="button" id="shareCopy" data-i18n="shareCopy">Copy share link</button>
-  </div>
-  <p class="sub" id="shareMsg" style="margin-top:6px"></p>
-  <ul class="issues" id="shareWarnings"></ul>
-
-  <div id="usdBox" hidden>
-    <h2>OpenUSD</h2>
-    <div class="row">
-      <button type="button" id="usdExport" data-i18n="usdExport">Export OpenUSD</button>
-      <button type="button" id="usdImport" data-i18n="usdImport">Import .usda</button>
-      <button type="button" id="layoutExport" data-i18n="layoutExport">Export for Unity</button>
-      <input type="file" id="usdFile" accept=".usda,.usd" hidden>
-    </div>
-    <p class="sub" id="usdMsg" style="margin-top:6px"></p>
-    <ul class="issues" id="usdWarnings"></ul>
-  </div>
-  <p class="foot" data-i18n="foot">Power and price figures are rough estimates from public reports and supply chain sources, for learning only. Do not use them for engineering design. Vera Rubin NVL72 power assumes Max-Q at about 190 kW.</p>
-</aside>
+<!-- The 3D view (scene.ts) and the React panel and overlay (ui.tsx) render into these -->
+<main id="stage"></main>
+<aside id="panel"></aside>
 
 <script type="module" src="./src/main.ts"></script>
 </body>

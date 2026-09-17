@@ -6,12 +6,13 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
 
 ## Layout
 
-- `web/`: web version, TypeScript (strict) + Vite + three.js 0.186 (version pinned in npm), no UI framework (panels are plain DOM), entry `web/index.html` → `web/src/main.ts`
+- `web/`: web version, TypeScript (strict) + Vite + three.js 0.186 (version pinned in npm) + React 19 for the panel, entry `web/index.html` → `web/src/main.ts`
   - `tsconfig.json`: `npm run typecheck` (`tsc`, TypeScript 7) only type-checks and emits no files; bundling is done by Vite. `erasableSyntaxOnly` is on:
     no syntax that needs compiling, such as enums or parameter properties, so Node 24+ can run `scripts/*.ts` directly; relative imports all use the `.ts` extension
-  - `src/types.ts`: shared data types (catalog, equipment, layout entries, feeds); `src/dom.ts`: `$` for getting page elements, and `setHTML` for panel re-rendering
-  - Always re-render a whole panel block with `setHTML(el, html)`, never write `innerHTML` directly: it skips the write when content is unchanged (keeping open dropdowns intact), and when it changes it restores keyboard focus by id / data-* / index among focusable controls.
-    Controls whose focus should be restored carry an `id` or a data attribute listed in `dom.ts`'s `KEY_ATTRS`. Tests that need the DOM put `// @vitest-environment happy-dom` at the top of the file
+  - `src/types.ts`: shared data types (catalog, equipment, layout entries, feeds); `src/dom.ts`: `$` for getting page elements
+  - UI architecture: `main.ts` owns the app logic and mutates `state` (`state.ts`), then calls `notify()` (`store.ts`); `ui.tsx` renders the right-hand panel and the overlay on the 3D view (HUD, undo / redo, reset view, via a portal into `#stage`) with React 19,
+    re-rendering on every `notify()` through `useSyncExternalStore`. Components read `state` and the derived `hallModel()` (`model.ts`, also used by main.ts to sync alert caps and dimming in 3D) and call the `Actions` implemented in main.ts; they do not hold app state.
+    The 3D scene (`scene.ts`, `controls.ts`) stays plain three.js. Panel-only state such as share / import messages and export progress lives in `state.ui`. Keep the DOM ids and `data-*` attributes stable: the e2e smoke tests depend on them
   - String types: the type of `zh.ts` is derived from `en.ts`; `tr(key, vars)` checks keys and variables at compile time
   - `vercel.json`: Vercel build settings (Vite, `npm ci`, `npm run build`, output `dist`)
   - `src/catalog.ts`: imports `spec/catalog.json`, bundled at build time
@@ -31,7 +32,7 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
   - `src/growth.ts`: growth planning, cumulative per-phase capacity check (`growthPlan`) and how many more units fit (`headroom`), pure functions
   - `src/feeds.ts`: maintenance of manually assigned supply equipment (setting, cleaning up stale assignments, following supply equipment when it moves), pure functions
   - `src/redundancy.ts`: failure drills and N+1 check, pure functions; `blockingReasons` maps one-to-one to the UI's "cannot power on" conditions (guaranteed by tests)
-  - `src/ui.ts`: right-hand panel; `src/state.ts`: shared state; `src/layout.ts`: presets and localStorage; `src/grid.ts`: grid constants
+  - `src/ui.tsx`: right-hand panel and 3D overlay (React); `src/store.ts`: change notification; `src/model.ts`: derived hall model; `src/state.ts`: shared state; `src/layout.ts`: presets and localStorage; `src/grid.ts`: grid constants
   - `e2e/` + `playwright.config.ts`: Playwright browser smoke tests (`npm run e2e`, CI job `e2e`). They run against `vite build --mode e2e` (test hook `window.__datahall` on, analytics off) and assert through DOM ids, `data-*` attributes and the `#layout=` hash, not app internals, so panel refactors must keep those ids and attributes. First run locally: `npx playwright install chromium`
   - `tests/`: vitest; `usd-export.test.ts` reverse-derives the equipment list from the sample and regenerates it, requiring a byte-for-byte match with `samples/datahall.usda`,
     and parses `schema/generatedSchema.usda` to check that every exported `dchall:` attribute is defined by an applied schema with a matching type (no pxr needed)
