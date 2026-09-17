@@ -26,6 +26,9 @@ import type {TutorialStep} from './tutorial.ts';
 // Actions triggered by the panel, implemented in main.ts
 export interface Actions {
   removeItem(key: string): void;
+  togglePanel(): void;
+  showPanel(): void;
+  stopPlacing(): void;
   setUtility(u: number): void;
   setTool(id: string): void;
   setPlaceMode(mode: 'one' | 'row'): void;
@@ -78,6 +81,7 @@ function App({stage}: {stage: HTMLElement}){
   return (
     <>
       {createPortal(<StageOverlay model={model} />, stage)}
+      <PanelBar model={model} />
       <Header />
       <Tutorial model={model} version={version} />
       <h2>{tr('hUtility')}</h2>
@@ -86,7 +90,7 @@ function App({stage}: {stage: HTMLElement}){
       </div>
       <Devices />
       <Capacity model={model} />
-      <h2>{tr('hInfo')}</h2>
+      <h2 id="hInfo">{tr('hInfo')}</h2>
       <Info model={model} />
       <Growth model={model} />
       <Drill model={model} />
@@ -107,12 +111,63 @@ function StageOverlay({model}: {model: HallModel}){
         <div><b id="hIt">{fmt(s.it)}</b><span>{tr('hudIt')}</span></div>
         <div><b id="hPue">{s.it ? s.pue.toFixed(2) : '–'}</b><span>{tr('hudPue')}</span></div>
       </div>
+      <StageBar />
       <div id="stageTools">
         <button id="undo" type="button" title={MAC ? '⌘Z' : 'Ctrl+Z'} aria-keyshortcuts="Meta+Z Control+Z" disabled={!state.ui.canUndo} onClick={() => actions.undo()}>{tr('undo')}</button>
         <button id="redo" type="button" title={MAC ? '⇧⌘Z' : 'Ctrl+Y'} aria-keyshortcuts="Meta+Shift+Z Control+Y" disabled={!state.ui.canRedo} onClick={() => actions.redo()}>{tr('redo')}</button>
         <button id="camReset" type="button" onClick={() => actions.resetView()}>{tr('camReset')}</button>
       </div>
     </>
+  );
+}
+
+// Narrow screens only (hidden by CSS on wide ones): what a tap on the 3D view will do, with the matching buttons,
+// so a phone user does not have to scroll the panel to see the current mode or the selected device
+function StageBar(){
+  const sel = state.selected ? state.items.get(state.selected) : undefined;
+  let text: string, buttons: ReactNode;
+  if (state.assignFrom){
+    const from = state.items.get(state.assignFrom), key = state.assignFrom;
+    text = tr('barAssign', {name: from ? catName(CAT[from.type]) : ''});
+    buttons = <button type="button" onClick={() => actions.toggleAssignMode(key)}>{tr('barDone')}</button>;
+  } else if (state.tool){
+    const name = catName(CAT[state.tool]), n = [...state.items.values()].filter(it => it.type === state.tool).length;
+    text = state.placeMode === 'row' ? tr(state.rowAnchor ? 'barRowEnd' : 'barRowStart', {name})
+      : state.ui.lastPlaced === state.tool ? tr('barPlaced', {name, n}) : tr('barPlace', {name});
+    buttons = <button type="button" id="barDone" onClick={() => actions.stopPlacing()}>{tr('barDone')}</button>;
+  } else if (sel && state.selected){
+    const key = state.selected;
+    text = `${catName(CAT[sel.type])} · ${loc(sel.x, sel.z)}`;
+    buttons = <>
+      <button type="button" id="barDetails" onClick={() => { actions.showPanel(); scrollPanelTo('#hInfo'); }}>{tr('barDetails')}</button>
+      <button type="button" id="barRemove" onClick={() => actions.removeItem(key)}>{tr('barRemove')}</button>
+    </>;
+  } else return null;
+  return <div id="stageBar" aria-live="polite"><span>{text}</span><div className="row">{buttons}</div></div>;
+}
+
+// Scroll the panel so an element sits just below its sticky top bar (after React has rendered the expanded panel)
+function scrollPanelTo(selector: string){
+  requestAnimationFrame(() => {
+    const el = document.querySelector(selector), panel = document.querySelector('#panel');
+    if (!el || !panel) return;
+    const top = (document.querySelector('#panelBar')?.getBoundingClientRect().bottom ?? panel.getBoundingClientRect().top) + 8;
+    panel.scrollBy({top: el.getBoundingClientRect().top - top});
+  });
+}
+
+// Narrow screens only: hall status and a button that folds the panel away so the 3D view gets the whole screen
+function PanelBar({model}: {model: HallModel}){
+  const collapsed = state.ui.panelCollapsed, s = model.totals;
+  useEffect(() => { document.body.classList.toggle('panel-collapsed', collapsed); }, [collapsed]);
+  const problems = [...s.issues, ...model.perDevice].filter(i => i.lvl === 'bad').length;
+  const [text, cls] = !s.it ? [tr('barEmpty'), 'warn'] : state.powered ? [tr('barPowered'), 'ok']
+    : model.blocking ? [tr('barBlocked', {n: Math.max(problems, 1)}), 'bad'] : [tr('barReady'), 'ok'];
+  return (
+    <div id="panelBar">
+      <span id="panelStatus" className={cls}>{text}</span>
+      <button type="button" id="panelToggle" aria-expanded={!collapsed} onClick={() => actions.togglePanel()}>{tr(collapsed ? 'panelShow' : 'panelHide')}</button>
+    </div>
   );
 }
 
