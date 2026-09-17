@@ -62,7 +62,7 @@ function makeMesh(key, it){
   const t = CAT[it.type], h = t.h, g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, h, CZ * .94),
     new THREE.MeshStandardMaterial({color: col('--rack'), roughness: .55, metalness: .35}));
-  body.position.y = h / 2; body.castShadow = true; g.add(body);
+  body.position.y = h / 2; body.castShadow = body.userData.castsShadow = true; g.add(body);
   const accent = col(t.c);
   const stripeMat = new THREE.MeshStandardMaterial({color: accent, emissive: accent, emissiveIntensity: .12});
   const n = t.group === 'gpu' ? 9 : 3;
@@ -115,7 +115,7 @@ export function removeMesh(it){
 export function rebuildLinks(){
   if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => o.geometry && o.geometry.dispose()); }
   linkObj = new THREE.Group();
-  const list = [...state.items.values()];
+  const list = [...state.items].filter(([key]) => !state.failed.has(key)).map(([, it]) => it);
   const {supplies, links} = supplyLoads(list, CAT);
   const run = (field, y, cssVar) => {
     const pts = {ok: [], bad: []};
@@ -141,6 +141,20 @@ export function rebuildLinks(){
 // keys：需要显示红色顶盖的设备（超载的 CDU、RPP，没接上的设备）
 export function setAlerts(keys){
   state.items.forEach((it, key) => { it.mesh.userData.alert.visible = keys.has(key); });
+}
+
+// 故障演练：故障设施半透明、不投影子（红色顶盖不受影响）
+export function setFailed(keys){
+  state.items.forEach((it, key) => {
+    const failed = keys.has(key), g = it.mesh;
+    if (g.userData.failed === failed) return;
+    g.userData.failed = failed;
+    g.traverse(o => {
+      if (!o.material || o === g.userData.alert) return;
+      Object.assign(o.material, {transparent: failed, opacity: failed ? .25 : 1, depthWrite: !failed, needsUpdate: true});
+      o.castShadow = !failed && o.userData.castsShadow;
+    });
+  });
 }
 
 export function setOutline(){
@@ -209,9 +223,10 @@ export function renderOnce(){ camera.updateMatrixWorld(); renderer.render(scene,
 export function startLoop(){
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function frame(now){
-    state.items.forEach(it => {
+    state.items.forEach((it, key) => {
       const m = it.mesh.userData.stripeMat;
-      if (!state.powered){ m.emissiveIntensity = .12; return; }
+      // 故障的设施和超载、没接上的设备不亮
+      if (!state.powered || state.failed.has(key) || it.mesh.userData.alert.visible){ m.emissiveIntensity = .12; return; }
       const delay = (Math.abs(it.x - GW / 2) + it.z) * 70;
       const t = (now - state.powerStart - delay) / 400;
       const on = reduce ? 1 : clamp(t, 0, 1);

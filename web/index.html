@@ -48,10 +48,19 @@
   <h2 data-i18n="hInfo">Details</h2>
   <div class="info" id="info"></div>
 
+  <h2 data-i18n="hDrill">Failure drill</h2>
+  <p class="sub" data-i18n="drillIntro">Select a CDU, RPP, in-row cooler or IB switch rack and mark it failed. Its load moves to the nearest working unit.</p>
+  <div class="row" id="drillBar" style="align-items:center;margin-bottom:6px" hidden>
+    <span id="drillStatus"></span>
+    <button type="button" id="drillRestoreAll" data-i18n="drillRestoreAll">Restore all</button>
+  </div>
+  <ul class="issues" id="n1"></ul>
+
   <h2 data-i18n="hPresets">Presets</h2>
   <div class="row">
     <button type="button" data-preset="empty" data-i18n="presetEmpty">Clear hall</button>
     <button type="button" data-preset="gb200" data-i18n="presetGb200">GB200 cluster</button>
+    <button type="button" data-preset="gb200n1" data-i18n="presetGb200n1">GB200 with N+1</button>
     <button type="button" data-preset="rubin" data-i18n="presetRubin">Vera Rubin row</button>
   </div>
 

@@ -5,6 +5,7 @@ export const state = {
   selected: null,     // 当前选中的已摆放设备 key
   placeMode: 'one',   // 放置方式：'one' 单个，'row' 整排
   rowAnchor: null,    // 整排放置时已经点过的第一格 {x, z}
+  failed: new Set(),  // 故障演练：标记为故障的设施 key。不进布局、撤销历史和分享链接
   powered: false,
   powerStart: 0,
 };
