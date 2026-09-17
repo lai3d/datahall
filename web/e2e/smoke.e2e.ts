@@ -178,6 +178,32 @@ test('methodology dialog opens from the header and from section links, and close
   expect(errors).toEqual([]);
 });
 
+test('repair suggestion: one click adds the missing units, and undo takes them away', async ({page}) => {
+  const errors = await openApp(page, '/?lang=en#layout=1,2,gb200:4.3-5.3-6.3-7.3-8.3-9.3-10.3-11.3');
+  await expect(page.locator('#repair')).toContainText('Add 2 RPPs, 2 CDUs, 2 in-row coolers and 2 IB switch racks.');
+  await page.locator('#repairApply').click();
+  await expect(page.locator('#issues')).toContainText('All checks pass');
+  await expect(page.locator('#repair')).toHaveCount(0);
+  expect((await layout(page)).items).toHaveLength(16);
+  await page.locator('#undo').click();
+  expect((await layout(page)).items).toHaveLength(8);
+  await expect(page.locator('#repair')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('repair suggestion: when the feed is the limit, raise it or remove racks instead', async ({page}) => {
+  const racks = Array.from({length: 16}, (_, x) => `${x}.3`).join('-');
+  const errors = await openApp(page, `/?lang=en#layout=1,2,vr200:${racks}`);
+  await expect(page.locator('#repair .repair-option[data-option="0"]')).toContainText('Raise the utility feed to 5 MW, then add');
+  await expect(page.locator('#repair .repair-option[data-option="1"]')).toContainText('Or: Remove 8 × Vera Rubin NVL72 from the end of the rows, then add');
+  await page.locator('#repairApplyAlt').click();
+  await expect(page.locator('#issues')).toContainText('All checks pass');
+  const l = await layout(page);
+  expect(l.utility).toBe(2);
+  expect(l.items.filter(i => i.startsWith('vr200@'))).toHaveLength(8);
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

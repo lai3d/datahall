@@ -33,6 +33,8 @@ test('the tutorial walks from an empty hall to a powered-on GB200 row', async ({
   await clickCell(page, 11, 3);
   await stepIs(page, 'why');
   await expect(page.locator('#power')).toBeDisabled();
+  // The tutorial teaches adding the units by hand, so the one-click fix stays hidden
+  await expect(page.locator('#repair')).toHaveCount(0);
 
   await page.locator('#tutorialNext').click();
   await stepIs(page, 'power');

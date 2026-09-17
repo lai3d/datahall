@@ -12,6 +12,9 @@ export interface Totals {
 
 // Teaching PUE coefficients: cooling energy per kW of liquid-cooled and air-cooled heat, and distribution losses per kW of IT.
 // Shared with energy.ts, growth.ts and the methodology dialog, which quotes them; the Unity C# port keeps its own copy
+// Utility feeds offered in the panel, in MW
+export const UTILITY_OPTIONS = [2, 5, 10];
+
 export const PUE_FACTORS = {liquid: .08, air: .30, losses: .05} as const;
 
 export function fmt(kw: number): string{ return kw >= 1000 ? (kw / 1000).toFixed(2) + ' MW' : Math.round(kw) + ' kW'; }

@@ -2,6 +2,7 @@ import {CAT} from './catalog.ts';
 import {GRID, keyOf, FEEDS} from './grid.ts';
 import {phasesIn, MAX_PHASE} from './growth.ts';
 import {cleanInputs} from './energy.ts';
+import {planRepair} from './repair.ts';
 import type {EnergyInputs} from './energy.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
 import {state, itemList, snapshot} from './state.ts';
@@ -213,6 +214,19 @@ function restoreAll(){ state.failed.clear(); view.rebuildLinks(); refresh(); }
 function newProps(){
   if (state.viewPhase !== null && state.phase > state.viewPhase) state.viewPhase = null;
   return state.phase > 1 ? {phase: state.phase} : {};
+}
+// Apply one repair option (repair.ts), recomputed from the current hall so a stale panel cannot apply an outdated plan.
+// One undo entry; new units pop up so the change is visible in 3D
+function applyRepair(index: number){
+  const options = planRepair(hallModel().active, CAT, state.utility, new Set(state.items.keys()), GRID);
+  const o = options?.[index];
+  if (!o) return;
+  edit(() => {
+    if (o.utility !== null) state.utility = o.utility;
+    o.remove.forEach(r => remove(keyOf(r.x, r.z)));
+    o.add.forEach(a => place(a.type, a.x, a.z, newProps()));
+  });
+  o.add.forEach(a => view.popMesh(state.items.get(keyOf(a.x, a.z))));
 }
 function setItemPhase(key: string, phase: number){
   const it = state.items.get(key);
@@ -459,6 +473,7 @@ const actions: Actions = {
   setViewPhase: n => setView(() => { state.viewPhase = n; }),
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
   setEnergy,
+  applyRepair,
   openMethod: section => { state.ui.method = section; notify(); },
   closeMethod: () => { state.ui.method = null; notify(); },
   setItemPhase,

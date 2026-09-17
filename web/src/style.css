@@ -125,6 +125,10 @@ dialog.method::backdrop{background:rgb(0 0 0 / .45)}
 .method-body .devices .sources{margin:2px 0 6px}
 .method-body .devices{font-size:13px}
 .method-body section{scroll-margin-top:56px}
+.repair{border:1px solid var(--line);border-left:3px solid var(--coolant);border-radius:6px;padding:8px 10px;margin-top:8px;font-size:14px}
+.repair p{margin:4px 0}
+.repair-option{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.repair-option button{flex:none}
 .compare{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
 .cmp{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .cmp > i{width:6px;flex:none}
