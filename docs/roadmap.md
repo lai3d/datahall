@@ -1,5 +1,7 @@
 # Roadmap (2026 Q4)
 
+中文版：[roadmap.zh.md](roadmap.zh.md). Both versions carry the same content; change them together.
+
 Written 2026-09-17. Positioning: **a demo for spreading and teaching data hall capacity logic**. Planned through mid-December 2026; the next quarter is planned after that.
 
 Estimates are in Claude session hours. Calendar time depends on how sessions are scheduled. Work that a person has to do by hand is listed separately at the end.
