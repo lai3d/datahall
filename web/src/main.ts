@@ -1,6 +1,8 @@
 import {CAT} from './catalog.ts';
 import {GRID, keyOf, FEEDS} from './grid.ts';
 import {phasesIn, MAX_PHASE} from './growth.ts';
+import {cleanInputs} from './energy.ts';
+import type {EnergyInputs} from './energy.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
 import {state, itemList, snapshot} from './state.ts';
 import * as view from './scene.ts';
@@ -84,6 +86,14 @@ function refresh(){
 
 // ---------- tutorial ----------
 const TUTORIAL_SEEN = 'datahall.tutorial.seen';
+// Energy estimate inputs persist per browser; stored values are untrusted and cleaned like form input
+const ENERGY_KEY = 'datahall.energy';
+function restoreEnergy(){ try { state.energy = cleanInputs(JSON.parse(localStorage.getItem(ENERGY_KEY) || '{}')); } catch (e) {} }
+function setEnergy(change: Partial<EnergyInputs>){
+  state.energy = cleanInputs({...state.energy, ...change});
+  try { localStorage.setItem(ENERGY_KEY, JSON.stringify(state.energy)); } catch (e) {}
+  notify();
+}
 function tutorialSeen(): boolean{ try { return localStorage.getItem(TUTORIAL_SEEN) === '1'; } catch (e) { return false; } }
 function markTutorialSeen(){ try { localStorage.setItem(TUTORIAL_SEEN, '1'); } catch (e) {} state.ui.tutorialOffer = false; }
 
@@ -448,6 +458,7 @@ const actions: Actions = {
   setPlacePhase: n => setView(() => { n = Math.min(Math.max(n, 1), MAX_PHASE); state.phase = n; if (state.viewPhase !== null && n > state.viewPhase) state.viewPhase = null; }),
   setViewPhase: n => setView(() => { state.viewPhase = n; }),
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
+  setEnergy,
   setItemPhase,
   setFeedChoice,
   toggleAssignMode,
@@ -477,6 +488,7 @@ mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
 
 // First visit (no share link, nothing saved, tutorial never started or dismissed): offer the tutorial
 state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
+restoreEnergy();
 if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || PRESETS.gb200);
 // Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
 if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce, meters: view.meters, flowDots: view.flowDots};

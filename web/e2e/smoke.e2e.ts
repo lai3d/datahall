@@ -144,6 +144,20 @@ test('load meters on CDUs and RPPs follow the load, and power flows along the li
   expect(errors).toEqual([]);
 });
 
+test('annual energy: price and average load change the yearly cost and are remembered', async ({page}) => {
+  const errors = await openApp(page);
+  // GB200 preset at the default 8.62 ¢/kWh and 80% load
+  await expect(page.locator('#energyCost')).toHaveText('$773K');
+  await page.locator('#energyPrice').fill('0.12');
+  await page.locator('#energyLoad').fill('60');
+  await expect(page.locator('#energyCost')).toHaveText('$819K');
+  await expect(page.locator('#energy')).toContainText('Annual PUE1.24');
+  await page.reload();
+  await expect(page.locator('#energyPrice')).toHaveValue('0.12');
+  await expect(page.locator('#energyCost')).toHaveText('$819K');
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

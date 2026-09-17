@@ -34,6 +34,8 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
   - `src/growth.ts`: growth planning, cumulative per-phase capacity check (`growthPlan`) and how many more units fit (`headroom`), pure functions
   - `src/compare.ts`: rack comparison, the largest hall each GPU rack type can run on the current utility feed with the fewest support devices (`largestHall`, `supportFor`), pure functions.
     Totals only, like `headroom`: no per-device nearest assignment check, and the floor limit is the cell count, not a real placement. The panel section explains that GPU counts drop for newer racks because per-GPU performance is not modeled
+  - `src/energy.ts`: annual energy and electricity cost, pure functions. Uses `sim.ts`'s facility formula split by what follows load: IT, cooling and distribution losses scale with the average load, equipment overhead runs all year, so the annual PUE rises at lower load.
+    Inputs (price, average load) are view state in `state.energy`, kept in localStorage `datahall.energy` and cleaned by `cleanInputs`; they are not part of the layout, share links or analytics
   - `src/viz.ts`: pure helpers for the load visualization (meter segments and level, points along a link path, flow dot positions)
   - `src/scale.ts`: everyday scale references for the IT load in the HUD (DGX Sparks, US homes), rounded to two significant figures
   - `src/feeds.ts`: maintenance of manually assigned supply equipment (setting, cleaning up stale assignments, following supply equipment when it moves), pure functions
@@ -206,6 +208,7 @@ Power and price figures come from public reports and supply-chain estimates, **n
 - AMD Helios: 72 MI455X, about 225–245 kW, fully liquid-cooled (StorageReview, 2026-07); about $5–5.5M per rack (Futurum via CNBC, 2026-07); a 1.2 m wide Open Rack Wide, simplified to one cell
 - MI355X DLC rack: 8 servers × 8 GPUs, about 120 kW (GIGABYTE GIGAPOD); the 80% liquid fraction and the price are estimates
 - The IB switch rack's "288 ports" is a simplified model, not a real topology
+- Default electricity price (`energy.ts`): 8.62 ¢/kWh, the 2025 US industrial average (US EIA, Electric Power Monthly, table 5.3), excluding taxes, demand charges and fixed fees. The 80% average load is an assumption
 - Scale references (`scale.ts`): DGX Spark 240 W (its power adapter rating), US home about 1.2 kW average (about 10,500 kWh a year, US EIA). A Mac Studio reference waits for a sourced power figure
 
 ## Style
