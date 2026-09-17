@@ -3,12 +3,13 @@
 // - 独立部署：Blob + <a download> 直接下载文件
 import {zipStore} from './zip.js';
 import {USD_README} from './usd-export.js';
+import {tr} from './i18n.js';
 
 export async function createSaver(){
   let downloads = null;
   try { downloads = window.claude && await window.claude.use('downloads'); } catch (e) {}
   if (downloads) return {
-    hint: 'OpenUSD 打包为 zip，内含 datahall.usda 和字段说明。',
+    hint: () => tr('saverZip'),
     save: (filename, text) => {
       const usd = filename.endsWith('.usda');
       return downloads.save({filename: usd ? 'datahall-openusd.zip' : filename.replace(/\.\w+$/, '.zip'),
@@ -16,7 +17,7 @@ export async function createSaver(){
     },
   };
   return {
-    hint: 'OpenUSD 下载 datahall.usda 文本层。',
+    hint: () => tr('saverFile'),
     save: async (filename, text) => downloadText(filename, text),
   };
 }

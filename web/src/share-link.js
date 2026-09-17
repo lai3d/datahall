@@ -3,6 +3,7 @@
 // 例如 #layout=1,5,vr200:3.3-4.3,cdu:3.5   列、排从 0 开始，与 layout.json、USD 的 gridColumn/gridRow 一致。
 // 只用 hash 不用查询参数：hash 不会发到服务器，静态托管也不需要任何配置。
 import {keyOf} from './grid.js';
+import {tr, loc, catName} from './i18n.js';
 
 export const LINK_KEY = 'layout';
 export const LINK_VERSION = 1;
@@ -26,22 +27,22 @@ export function decodeLayout(hash, CAT, GRID){
   if (raw === null) return null;
   const warnings = [];
   const [version, utility, ...groups] = raw.split(',');
-  if (Number(version) !== LINK_VERSION) return {u: 2, list: [], warnings: [`分享链接的版本 ${version} 不受支持，没有载入布局。`]};
+  if (Number(version) !== LINK_VERSION) return {u: 2, list: [], warnings: [tr('linkVersion', {v: version})]};
   let u = Number(utility);
   if (!(u > 0 && Number.isFinite(u))){
-    warnings.push('分享链接里的市电容量无效，按 2 MW 载入。');
+    warnings.push(tr('linkUtility'));
     u = 2;
   }
   const list = [], seen = new Set();
   for (const group of groups){
     const [type, cells = ''] = group.split(':');
-    if (!CAT[type]){ warnings.push(`分享链接里的设备类型 ${type} 不在当前目录里，已跳过。`); continue; }
+    if (!CAT[type]){ warnings.push(tr('linkType', {type})); continue; }
     for (const cell of cells.split('-').filter(Boolean)){
       const m = cell.match(/^(\d+)\.(\d+)$/);
-      if (!m){ warnings.push(`分享链接里的位置 ${type}:${cell} 格式不对，已跳过。`); continue; }
+      if (!m){ warnings.push(tr('linkCell', {cell: `${type}:${cell}`})); continue; }
       const x = +m[1], z = +m[2];
-      if (x >= GRID.GW || z >= GRID.GD){ warnings.push(`${CAT[type].name} 的位置（第 ${x + 1} 列第 ${z + 1} 排）超出网格，已跳过。`); continue; }
-      if (seen.has(keyOf(x, z))){ warnings.push(`${CAT[type].name} 和其他设备占用同一格（第 ${x + 1} 列第 ${z + 1} 排），已跳过。`); continue; }
+      if (x >= GRID.GW || z >= GRID.GD){ warnings.push(tr('linkOutside', {name: catName(CAT[type]), loc: loc(x, z)})); continue; }
+      if (seen.has(keyOf(x, z))){ warnings.push(tr('linkOverlap', {name: catName(CAT[type]), loc: loc(x, z)})); continue; }
       seen.add(keyOf(x, z));
       list.push([type, x, z]);
     }

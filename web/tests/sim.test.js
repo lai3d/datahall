@@ -4,6 +4,10 @@ import {CAT, CATALOG} from '../src/catalog.js';
 import {GRID, keyOf} from '../src/grid.js';
 import {PRESETS} from '../src/layout.js';
 import {supplyLoads, supplyIssues} from '../src/supply.js';
+import {setLang} from '../src/i18n.js';
+
+// 这里断言中文文案；英文见 i18n.test.js
+setLang('zh');
 
 const toList = p => p.list.map(([type, x, z]) => ({type, x, z}));
 

@@ -4,6 +4,7 @@ import {compute, fmt} from './sim.js';
 import {supplyLoads, supplyIssues} from './supply.js';
 import {keyOf} from './grid.js';
 import {state, itemList} from './state.js';
+import {LANGS, getLang, tr, loc, catName, catNote} from './i18n.js';
 
 const $ = s => document.querySelector(s);
 const UTIL = [2, 5, 10];
@@ -15,16 +16,25 @@ export function initUI(a){
   $('#utility').onclick = e => { const b = e.target.closest('button'); if (b) actions.setUtility(+b.dataset.u); };
   $('#palette').onclick = e => { const b = e.target.closest('button'); if (b) actions.setTool(b.dataset.t); };
   $('#power').onclick = () => actions.togglePower();
+  $('#lang').onclick = e => { const b = e.target.closest('button'); if (b) actions.setLang(b.dataset.lang); };
   document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => actions.loadPreset(b.dataset.preset));
+}
+
+// index.html 里带 data-i18n 的静态文案，以及语言切换按钮
+export function applyStaticText(){
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', tr(el.dataset.i18nAria)));
+  $('#lang').innerHTML = LANGS.map(l =>
+    `<button type="button" data-lang="${l.id}" lang="${l.html}" aria-pressed="${l.id === getLang()}">${l.label}</button>`).join('');
 }
 
 export function buildUI(){
   $('#utility').innerHTML = UTIL.map(u => `<button type="button" data-u="${u}" aria-pressed="${u === state.utility}">${u} MW</button>`).join('');
   $('#palette').innerHTML = CATALOG.map(t => {
-    const bits = [t.kw ? t.kw + ' kW' : '', t.gpus ? t.gpus + ' GPU' : '', t.liqCool ? '冷量 ' + t.liqCool + ' kW' : '',
-      t.airCool ? '冷量 ' + t.airCool + ' kW' : '', t.dist ? '分配 ' + t.dist + ' kW' : '', t.ports ? t.ports + ' 端口' : ''].filter(Boolean).join('，');
+    const bits = [t.kw ? t.kw + ' kW' : '', t.gpus ? t.gpus + ' GPU' : '', t.liqCool ? tr('chipCooling', {kw: t.liqCool}) : '',
+      t.airCool ? tr('chipCooling', {kw: t.airCool}) : '', t.dist ? tr('chipDist', {kw: t.dist}) : '', t.ports ? tr('chipPorts', {n: t.ports}) : ''].filter(Boolean).join(tr('listSep'));
     return `<button type="button" class="chip" data-t="${t.id}" aria-pressed="${state.tool === t.id}">
-      <i style="background:var(${t.c})"></i><div><strong>${t.name}</strong><small>${bits}</small></div></button>`;
+      <i style="background:var(${t.c})"></i><div><strong>${catName(t)}</strong><small>${bits}</small></div></button>`;
   }).join('');
 }
 
@@ -49,26 +59,25 @@ export function refresh(){
   $('#hIt').textContent = fmt(s.it);
   $('#hPue').textContent = s.it ? s.pue.toFixed(2) : '–';
   $('#gauges').innerHTML =
-    gauge('配电', s.it, s.dist, '--copper') +
-    gauge('液冷', s.liqHeat, s.liqCap, '--coolant') +
-    gauge('风冷', s.airHeat, s.airCap, '--air') +
-    `<div class="gauge"><div class="top"><span>后端网络</span><em style="color:${s.gpus > s.ports ? 'var(--bad)' : 'inherit'}">${s.gpus} / ${s.ports} 端口</em></div>
+    gauge(tr('gaugeDist'), s.it, s.dist, '--copper') +
+    gauge(tr('gaugeLiquid'), s.liqHeat, s.liqCap, '--coolant') +
+    gauge(tr('gaugeAir'), s.airHeat, s.airCap, '--air') +
+    `<div class="gauge"><div class="top"><span>${tr('gaugeNetwork')}</span><em style="color:${s.gpus > s.ports ? 'var(--bad)' : 'inherit'}">${tr('ports', {used: s.gpus, total: s.ports})}</em></div>
       <div class="bar"><i style="width:${s.ports ? Math.min(100, s.gpus / s.ports * 100) : (s.gpus ? 100 : 0)}%;background:var(${s.gpus > s.ports ? '--bad' : '--net'})"></i></div></div>` +
-    gauge('市电', s.facility, state.utility * 1000, '--ink') +
-    `<div class="gauge"><div class="top"><span>硬件投入估算</span><em>约 $${s.capex.toFixed(1)}M</em></div></div>`;
+    gauge(tr('gaugeUtility'), s.facility, state.utility * 1000, '--ink') +
+    `<div class="gauge"><div class="top"><span>${tr('gaugeCapex')}</span><em>${tr('capex', {m: s.capex.toFixed(1)})}</em></div></div>`;
   // 全机房总量的检查在前，逐台设备的超载在后
   let html = [...s.issues, ...perDevice].map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
-  if (!s.it) html = '<li class="warn">机房是空的。先放一个 GPU 机柜，再补齐配电、冷却和网络。</li>';
-  else if (!blocking) html += `<li class="ok">检查通过，可以通电。</li>`;
+  if (!s.it) html = `<li class="warn">${tr('issueEmpty')}</li>`;
+  else if (!blocking) html += `<li class="ok">${tr('issueOk')}</li>`;
   $('#issues').innerHTML = html;
   const btn = $('#power');
   btn.disabled = !s.it || blocking;
   btn.classList.toggle('on', state.powered);
-  btn.textContent = state.powered ? '已通电，点击断电' : '通电';
+  btn.textContent = tr(state.powered ? 'powerOff' : 'powerOn');
   renderInfo();
 }
 
-const where = it => `第 ${it.x + 1} 列第 ${it.z + 1} 排`;
 const badText = txt => `<span style="color:var(--bad)">${txt}</span>`;
 
 // 详情面板里的供给关系：CDU、RPP 显示负载，其他设备显示供液和配电来自哪一台
@@ -78,17 +87,17 @@ function supplyRows(t, info){
   if (info.supply){
     const {loadKw, capacityKw, consumers, overloaded} = info.supply;
     const text = `${fmt(loadKw)} / ${fmt(capacityKw)}`;
-    rows.push(['当前负载', overloaded ? badText(text + '，超载') : text], ['接入设备', consumers.length + ' 台']);
+    rows.push([tr('rowLoad'), overloaded ? badText(text + tr('overloadedSuffix')) : text], [tr('rowConsumers'), tr('deviceCount', {n: consumers.length})]);
   }
-  const source = (field, label, needed) => {
+  const source = (field, label, row, needed) => {
     if (!needed) return;
     const s = info.links?.[field];
-    if (!s) { rows.push([label + '来自', badText('没有可接的 ' + (field === 'coolantSource' ? 'CDU' : 'RPP'))]); return; }
-    const text = `${s.type === 'cdu' ? 'CDU' : 'RPP'}（${where(s)}）`;
-    rows.push([label + '来自', info.loads.supplies.get(s).overloaded ? badText(text + '，超载') : text]);
+    if (!s) { rows.push([tr(row), badText(tr('noSupply', {label}))]); return; }
+    const text = tr('supplyAt', {label, loc: loc(s.x, s.z)});
+    rows.push([tr(row), info.loads.supplies.get(s).overloaded ? badText(text + tr('overloadedSuffix')) : text]);
   };
-  source('coolantSource', '冷却液', t.kw > 0 && t.liq > 0);
-  source('powerFeed', '配电', t.kw > 0);
+  source('coolantSource', 'CDU', 'rowCoolantFrom', t.kw > 0 && t.liq > 0);
+  source('powerFeed', 'RPP', 'rowPowerFrom', t.kw > 0);
   return rows;
 }
 
@@ -96,20 +105,21 @@ export function renderInfo(){
   const box = $('#info');
   const it = state.selected && state.items.get(state.selected);
   const t = it ? CAT[it.type] : state.tool ? CAT[state.tool] : null;
-  if (!t){ box.innerHTML = '点一个设备查看参数，或者从上面选设备开始摆放。'; return; }
+  if (!t){ box.innerHTML = tr('infoEmpty'); return; }
   const rows = [];
-  if (t.kw) rows.push(['功耗', t.kw + ' kW']);
-  if (t.gpus) rows.push(['GPU', t.gpus]);
-  if (t.kw) rows.push(['散热', t.liq ? `液冷 ${Math.round(t.liq * 100)}%` : '风冷']);
-  if (t.liqCool) rows.push(['液冷能力', t.liqCool + ' kW']);
-  if (t.airCool) rows.push(['风冷能力', t.airCool + ' kW']);
-  if (t.dist) rows.push(['配电能力', t.dist + ' kW']);
-  if (t.ports) rows.push(['GPU 端口', t.ports]);
-  rows.push(['价格估算', '$' + t.cap + 'M']);
+  if (t.kw) rows.push([tr('rowPower'), t.kw + ' kW']);
+  if (t.gpus) rows.push([tr('rowGpu'), t.gpus]);
+  if (t.kw) rows.push([tr('rowCooling'), t.liq ? tr('liquidPct', {pct: Math.round(t.liq * 100)}) : tr('air')]);
+  if (t.liqCool) rows.push([tr('rowLiquidCap'), t.liqCool + ' kW']);
+  if (t.airCool) rows.push([tr('rowAirCap'), t.airCool + ' kW']);
+  if (t.dist) rows.push([tr('rowDistCap'), t.dist + ' kW']);
+  if (t.ports) rows.push([tr('rowPorts'), t.ports]);
+  rows.push([tr('rowPrice'), '$' + t.cap + 'M']);
   if (it) rows.push(...supplyRows(t, supplyByKey.get(keyOf(it.x, it.z))));
-  box.innerHTML = `<strong>${t.name}</strong>${it ? `<span style="color:var(--muted)">，位置 ${it.x + 1} 列 ${it.z + 1} 排</span>` : '<span style="color:var(--muted)">，点地板空位放置</span>'}
+  const at = it ? tr('infoAt', {x: it.x + 1, z: it.z + 1, loc: loc(it.x, it.z)}) : tr('infoPlaceHint');
+  box.innerHTML = `<strong>${catName(t)}</strong><span style="color:var(--muted)">${at}</span>
     <table>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
-    <p>${t.note}</p>
-    ${it ? '<div class="row" style="margin-top:8px"><button type="button" id="del">移除设备</button></div>' : ''}`;
+    <p>${catNote(t)}</p>
+    ${it ? `<div class="row" style="margin-top:8px"><button type="button" id="del">${tr('remove')}</button></div>` : ''}`;
   const d = $('#del'); if (d) d.onclick = () => actions.removeItem(state.selected);
 }

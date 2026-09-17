@@ -1,4 +1,6 @@
 // 容量模型：配电、液冷、风冷、后端网络、市电，任一不满足不能通电
+import {tr} from './i18n.js';
+
 export function fmt(kw){ return kw >= 1000 ? (kw / 1000).toFixed(2) + ' MW' : Math.round(kw) + ' kW'; }
 
 export function compute(list, CAT, utility){
@@ -19,13 +21,13 @@ export function compute(list, CAT, utility){
   s.pue = s.it ? s.facility / s.it : 0;
   s.issues = [];
   const add = (lvl, txt) => s.issues.push({lvl, txt});
-  if (s.it > s.dist) add('bad', `配电不足：机柜需要 ${fmt(s.it)}，配电柜只能分配 ${fmt(s.dist)}。加 RPP。`);
-  if (s.liqHeat > s.liqCap) add('bad', `液冷不足：${fmt(s.liqHeat)} 热量，CDU 只能带走 ${fmt(s.liqCap)}。加 CDU。`);
-  if (s.airHeat > s.airCap) add('bad', `风冷不足：${fmt(s.airHeat)} 热量，空调只能带走 ${fmt(s.airCap)}。加列间空调。`);
-  if (s.gpus > s.ports) add('bad', `后端网络不足：${s.gpus} 颗 GPU，只有 ${s.ports} 个端口。加 IB 交换机柜。`);
-  if (s.facility > utility * 1000) add('bad', `超出市电：设施总功耗 ${fmt(s.facility)}，市电只有 ${utility} MW。`);
-  if (s.future) add('warn', 'Kyber 机柜需要 800 VDC 配电，目前还只是路线图产品。');
-  if (s.dense) add('warn', 'DGX B200 整柜约 57 kW 纯风冷，现实中通常要配背板换热器。');
+  if (s.it > s.dist) add('bad', tr('issueDist', {need: fmt(s.it), cap: fmt(s.dist)}));
+  if (s.liqHeat > s.liqCap) add('bad', tr('issueLiquid', {heat: fmt(s.liqHeat), cap: fmt(s.liqCap)}));
+  if (s.airHeat > s.airCap) add('bad', tr('issueAir', {heat: fmt(s.airHeat), cap: fmt(s.airCap)}));
+  if (s.gpus > s.ports) add('bad', tr('issueNetwork', {gpus: s.gpus, ports: s.ports}));
+  if (s.facility > utility * 1000) add('bad', tr('issueUtility', {facility: fmt(s.facility), u: utility}));
+  if (s.future) add('warn', tr('issueKyber'));
+  if (s.dense) add('warn', tr('issueDgx'));
   s.blocking = s.issues.some(i => i.lvl === 'bad');
   return s;
 }

@@ -3,6 +3,10 @@ import {encodeLayout, decodeLayout} from '../src/share-link.js';
 import {CAT, CATALOG} from '../src/catalog.js';
 import {GRID} from '../src/grid.js';
 import {PRESETS} from '../src/layout.js';
+import {setLang} from '../src/i18n.js';
+
+// 这里断言中文文案；英文见 i18n.test.js
+setLang('zh');
 
 const sortCells = list => [...list].sort((a, b) => (a[1] - b[1]) || (a[2] - b[2]));
 

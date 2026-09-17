@@ -34,6 +34,11 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
   #panel{width:380px;max-height:none;height:100%;border-top:0;border-left:1px solid var(--line);padding:18px}
 }
 h1{font-size:22px;font-weight:700;margin:0 0 2px;letter-spacing:.2px}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.lang{flex:none;gap:0}
+.lang button{padding:3px 8px;font-size:12px;min-height:0}
+.lang button:first-child{border-radius:6px 0 0 6px}
+.lang button:last-child{border-radius:0 6px 6px 0;margin-left:-1px}
 .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
 h2{font-size:15px;font-weight:600;margin:16px 0 8px;color:var(--muted)}
 button{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}

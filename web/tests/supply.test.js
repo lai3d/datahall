@@ -2,6 +2,10 @@ import {describe, expect, it} from 'vitest';
 import {compute} from '../src/sim.js';
 import {CAT} from '../src/catalog.js';
 import {supplyLoads, supplyIssues} from '../src/supply.js';
+import {setLang} from '../src/i18n.js';
+
+// 这里断言中文文案；英文见 i18n.test.js
+setLang('zh');
 
 const at = (type, x, z) => ({type, x, z});
 const racks = (z, xs) => xs.map(x => at('vr200', x, z));

@@ -3,15 +3,14 @@
 // 只在网页版使用：compute() 是和 Unity 共用的契约（spec/capacity-cases.json），这里不改它。
 import {supplyLinks} from './grid.js';
 import {fmt} from './sim.js';
+import {tr, loc} from './i18n.js';
 
 // 每种供给设备：从哪个拓扑字段找消费者、消费者的负载、自身容量字段、提示用的名称
 const KINDS = {
-  cdu: {link: 'coolantSource', load: t => (t.kw || 0) * (t.liq || 0), capacity: 'liqCool', label: 'CDU', what: '液冷热量', verb: '只能带走'},
-  rpp: {link: 'powerFeed', load: t => t.kw || 0, capacity: 'dist', label: 'RPP', what: '功率', verb: '只能分配'},
+  cdu: {link: 'coolantSource', load: t => (t.kw || 0) * (t.liq || 0), capacity: 'liqCool', label: 'CDU', message: 'overloadCdu'},
+  rpp: {link: 'powerFeed', load: t => t.kw || 0, capacity: 'dist', label: 'RPP', message: 'overloadRpp'},
 };
 const MAX_LISTED = 3;
-
-const where = it => `第 ${it.x + 1} 列第 ${it.z + 1} 排`;
 
 // list：[{type, x, z}]。返回
 //   supplies：Map(供给设备 → {kind, loadKw, capacityKw, consumers, overloaded})
@@ -51,8 +50,8 @@ export function supplyIssues(loads, totals){
     const over = [...loads.supplies].filter(([, s]) => s.kind === id && s.overloaded)
       .sort(([a], [b]) => (a.z - b.z) || (a.x - b.x));
     over.slice(0, MAX_LISTED).forEach(([it, s]) => issues.push({lvl: 'bad',
-      txt: `${kind.label}（${where(it)}）超载：分到 ${s.consumers.length} 台设备共 ${fmt(s.loadKw)} ${kind.what}，${kind.verb} ${fmt(s.capacityKw)}。把一部分设备挪近其他 ${kind.label}，或在旁边再加一台。`}));
-    if (over.length > MAX_LISTED) issues.push({lvl: 'bad', txt: `另有 ${over.length - MAX_LISTED} 台 ${kind.label} 超载。`});
+      txt: tr(kind.message, {loc: loc(it.x, it.z), n: s.consumers.length, load: fmt(s.loadKw), cap: fmt(s.capacityKw)})}));
+    if (over.length > MAX_LISTED) issues.push({lvl: 'bad', txt: tr('overloadMore', {n: over.length - MAX_LISTED, label: kind.label})});
   }
   return issues;
 }
