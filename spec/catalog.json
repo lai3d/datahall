@@ -93,6 +93,41 @@
       }
     },
     {
+      "id": "helios",
+      "name": "AMD Helios MI455X",
+      "group": "gpu",
+      "c": "--amd",
+      "gpus": 72,
+      "kw": 235,
+      "liq": 1,
+      "cap": 5.25,
+      "h": 2.3,
+      "note": "72 颗 MI455X + 18 颗 EPYC Venice，UALink 72 卡全互联，全液冷，2026 年三季度末出货。整柜约 225–245 kW（StorageReview，2026-07），售价约 $5–5.5M（Futurum 经 CNBC，2026-07）。真实机柜是 1.2 m 宽的 Open Rack Wide，这里按一格简化。",
+      "i18n": {
+        "en": {
+          "note": "72 MI455X GPUs + 18 EPYC Venice CPUs, all 72 GPUs connected by UALink, fully liquid-cooled, shipping from late Q3 2026. About 225–245 kW per rack (StorageReview, 2026-07) and about $5–5.5M (Futurum via CNBC, 2026-07). The real rack is a 1.2 m wide Open Rack Wide; it is simplified to one cell here."
+        }
+      }
+    },
+    {
+      "id": "mi355",
+      "name": "MI355X 液冷柜 ×8",
+      "group": "gpu",
+      "c": "--amd",
+      "gpus": 64,
+      "kw": 120,
+      "liq": 0.8,
+      "cap": 2.4,
+      "h": 2.2,
+      "note": "一柜 8 台 4U 液冷服务器，每台 8 颗 MI355X（1400 W）+ 2 颗 EPYC，整柜 64 GPU、约 120 kW（GIGABYTE GIGAPOD DLC 机柜）。GPU 和 CPU 冷板液冷，其余风冷，液冷比例按 80% 估算。价格按 MI355X 约 $25k 一颗加整机估算。",
+      "i18n": {
+        "en": {
+          "name": "MI355X DLC rack ×8",
+          "note": "Eight 4U liquid-cooled servers per rack, each with 8 MI355X GPUs (1400 W) and 2 EPYC CPUs: 64 GPUs and about 120 kW per rack (GIGABYTE GIGAPOD DLC rack). GPUs and CPUs are cold-plate cooled and the rest is air-cooled; the liquid fraction is an 80% estimate. Price estimated from about $25k per MI355X plus the servers."
+        }
+      }
+    },
+    {
       "id": "ib",
       "name": "Quantum-X800 IB",
       "group": "net",

@@ -1017,6 +1017,38 @@
             "heightM": 2.6
           },
           {
+            "id": "helios",
+            "name": "AMD Helios MI455X",
+            "category": "gpu",
+            "powerKw": 235,
+            "gpuCount": 72,
+            "liquidFraction": 1,
+            "liquidCoolingKw": 0,
+            "airCoolingKw": 0,
+            "overheadKw": 0,
+            "distributionKw": 0,
+            "fabricPorts": 0,
+            "capexMusd": 5.25,
+            "roadmap": false,
+            "heightM": 2.3
+          },
+          {
+            "id": "mi355",
+            "name": "MI355X 液冷柜 ×8",
+            "category": "gpu",
+            "powerKw": 120,
+            "gpuCount": 64,
+            "liquidFraction": 0.8,
+            "liquidCoolingKw": 0,
+            "airCoolingKw": 0,
+            "overheadKw": 0,
+            "distributionKw": 0,
+            "fabricPorts": 0,
+            "capexMusd": 2.4,
+            "roadmap": false,
+            "heightM": 2.2
+          },
+          {
             "id": "ib",
             "name": "Quantum-X800 IB",
             "category": "net",
@@ -1104,8 +1136,8 @@
             "column": 0,
             "row": 9,
             "phase": 1,
-            "powerFeed": "R10_C10",
-            "coolantSource": "R10_C08"
+            "powerFeed": "R10_C12",
+            "coolantSource": "R10_C10"
           },
           {
             "name": "R10_C02",
@@ -1113,8 +1145,8 @@
             "column": 1,
             "row": 9,
             "phase": 1,
-            "powerFeed": "R10_C10",
-            "coolantSource": "R10_C08"
+            "powerFeed": "R10_C12",
+            "coolantSource": "R10_C10"
           },
           {
             "name": "R10_C03",
@@ -1122,8 +1154,8 @@
             "column": 2,
             "row": 9,
             "phase": 1,
-            "powerFeed": "R10_C10",
-            "coolantSource": "R10_C08"
+            "powerFeed": "R10_C12",
+            "coolantSource": "R10_C10"
           },
           {
             "name": "R10_C04",
@@ -1131,7 +1163,7 @@
             "column": 3,
             "row": 9,
             "phase": 1,
-            "powerFeed": "R10_C10",
+            "powerFeed": "R10_C12",
             "coolantSource": ""
           },
           {
@@ -1140,49 +1172,67 @@
             "column": 4,
             "row": 9,
             "phase": 1,
-            "powerFeed": "R10_C10",
-            "coolantSource": "R10_C08"
+            "powerFeed": "R10_C12",
+            "coolantSource": "R10_C10"
           },
           {
             "name": "R10_C06",
-            "type": "ib",
+            "type": "helios",
             "column": 5,
             "row": 9,
             "phase": 1,
-            "powerFeed": "R10_C10",
-            "coolantSource": ""
+            "powerFeed": "R10_C12",
+            "coolantSource": "R10_C10"
           },
           {
             "name": "R10_C07",
-            "type": "stor",
+            "type": "mi355",
             "column": 6,
             "row": 9,
             "phase": 1,
-            "powerFeed": "R10_C10",
-            "coolantSource": ""
+            "powerFeed": "R10_C12",
+            "coolantSource": "R10_C10"
           },
           {
             "name": "R10_C08",
-            "type": "cdu",
+            "type": "ib",
             "column": 7,
             "row": 9,
             "phase": 1,
-            "powerFeed": "",
+            "powerFeed": "R10_C12",
             "coolantSource": ""
           },
           {
             "name": "R10_C09",
-            "type": "crah",
+            "type": "stor",
             "column": 8,
+            "row": 9,
+            "phase": 1,
+            "powerFeed": "R10_C12",
+            "coolantSource": ""
+          },
+          {
+            "name": "R10_C10",
+            "type": "cdu",
+            "column": 9,
             "row": 9,
             "phase": 1,
             "powerFeed": "",
             "coolantSource": ""
           },
           {
-            "name": "R10_C10",
+            "name": "R10_C11",
+            "type": "crah",
+            "column": 10,
+            "row": 9,
+            "phase": 1,
+            "powerFeed": "",
+            "coolantSource": ""
+          },
+          {
+            "name": "R10_C12",
             "type": "rpp",
-            "column": 9,
+            "column": 11,
             "row": 9,
             "phase": 1,
             "powerFeed": "",
@@ -1191,35 +1241,35 @@
         ]
       },
       "expected": {
-        "itKw": 1154,
-        "gpus": 392,
-        "liquidHeatKw": 1005.75,
-        "airHeatKw": 148.25,
+        "itKw": 1509,
+        "gpus": 528,
+        "liquidHeatKw": 1336.75,
+        "airHeatKw": 172.25,
         "liquidCapacityKw": 800,
         "airCapacityKw": 120,
         "distributionKw": 800,
         "fabricPorts": 288,
         "overheadKw": 21,
-        "capexMusd": 26.18,
-        "facilityKw": 1357.635,
-        "pue": 1.1764601386481803,
+        "capexMusd": 33.83,
+        "facilityKw": 1764.065,
+        "pue": 1.1690291583830352,
         "blocking": true,
         "issues": [
           {
             "level": "bad",
-            "text": "配电不足：机柜需要 1.15 MW，配电柜只能分配 800 kW。加 RPP。"
+            "text": "配电不足：机柜需要 1.51 MW，配电柜只能分配 800 kW。加 RPP。"
           },
           {
             "level": "bad",
-            "text": "液冷不足：1.01 MW 热量，CDU 只能带走 800 kW。加 CDU。"
+            "text": "液冷不足：1.34 MW 热量，CDU 只能带走 800 kW。加 CDU。"
           },
           {
             "level": "bad",
-            "text": "风冷不足：148 kW 热量，空调只能带走 120 kW。加列间空调。"
+            "text": "风冷不足：172 kW 热量，空调只能带走 120 kW。加列间空调。"
           },
           {
             "level": "bad",
-            "text": "后端网络不足：392 颗 GPU，只有 288 个端口。加 IB 交换机柜。"
+            "text": "后端网络不足：528 颗 GPU，只有 288 个端口。加 IB 交换机柜。"
           },
           {
             "level": "warn",

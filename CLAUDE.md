@@ -1,6 +1,6 @@
 # GPU Data Hall Builder
 
-A simulator for experiencing how an AI data center is built, focused on NVIDIA's new-generation GPU racks (GB200/GB300 NVL72, Vera Rubin NVL72, Kyber).
+A simulator for experiencing how an AI data center is built, focused on new-generation GPU racks (NVIDIA GB200/GB300 NVL72, Vera Rubin NVL72, Kyber; AMD Helios, MI355X).
 Target form: a web version (for sharing, and the capacity-planning logic) + a Unity version (immersive experience, VR, tray teardown, failure drills).
 The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady assets and the Omniverse DSX ecosystem later.
 
@@ -174,11 +174,13 @@ The web version is the current focus (decided 2026-09-17), positioned as a demo 
 
 ## Data reliability
 
-Power and price figures come from public reports and supply-chain estimates, **not official NVIDIA specifications**; when changing values, cite the source in the note in catalog.json:
+Power and price figures come from public reports and supply-chain estimates, **not official NVIDIA or AMD specifications**; when changing values, cite the source in the note in catalog.json:
 - GB300 NVL72: about 132–142 kW
 - Vera Rubin NVL72: Max-Q about 190 kW, Max-P about 230 kW (Ming-Chi Kuo, 2026-01), shipping in H2 2026
 - Rubin Ultra Kyber: about 600 kW, 144 GPUs, 2027 roadmap
 - Vera Rubin NVL72 price: about $5–7M per rack (Tom's Hardware, 2026-03)
+- AMD Helios: 72 MI455X, about 225–245 kW, fully liquid-cooled (StorageReview, 2026-07); about $5–5.5M per rack (Futurum via CNBC, 2026-07); a 1.2 m wide Open Rack Wide, simplified to one cell
+- MI355X DLC rack: 8 servers × 8 GPUs, about 120 kW (GIGABYTE GIGAPOD); the 80% liquid fraction and the price are estimates
 - The IB switch rack's "288 ports" is a simplified model, not a real topology
 
 ## Style
@@ -188,5 +190,5 @@ Power and price figures come from public reports and supply-chain estimates, **n
 - The UI defaults to English and supports Simplified Chinese. Both languages use sentence-style copy; English uses sentence case, no all-caps labels
 - Issue text in `spec/capacity-cases.json` is always generated in Chinese (`buildCases` temporarily switches to Chinese), and Unity's C# capacity model compares it verbatim; when changing the Chinese wording of capacity issues, update the C# as well
 - The content of exported files (`.usda` comments and README, `layout.json`) does not change with the UI language
-- Fixed color semantics: GPU green, coolant cyan, power distribution copper, network purple
+- Fixed color semantics: NVIDIA GPU green, AMD GPU rose (`--amd`), coolant cyan, power distribution copper, network purple. Rose was chosen over AMD red so racks never look like the red overload marker
 - Answer directly, no pleasantries.
