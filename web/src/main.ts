@@ -16,6 +16,7 @@ import {encodeLayout, decodeLayout} from './share-link.ts';
 import {DEFAULT_LANG, setLang, htmlLang, tr} from './i18n.ts';
 import {lineCells, freeCells, sameLayout, createHistory, toItem} from './edit.ts';
 import {canFail} from './redundancy.ts';
+import {hasShareLink, initAnalytics} from './analytics.ts';
 import {$} from './dom.ts';
 import type {PlacedItem} from './state.ts';
 import type {Actions} from './ui.ts';
@@ -368,6 +369,8 @@ function switchLang(id: string){
 }
 
 // ---------- boot ----------
+// Before anything writes the current layout into the hash
+const openedFromShareLink = hasShareLink(location.hash);
 applyLang(initialLang(), false);
 const el = view.initScene($('#stage'));
 initControls(el, view.camera, {
@@ -407,3 +410,4 @@ if (!loadFromLink(false)) showLayout(restoreLayout() || PRESETS.gb200);
 // For browser automation tests on the dev server
 if (import.meta.env.DEV) (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce};
 view.startLoop();
+initAnalytics(openedFromShareLink);
