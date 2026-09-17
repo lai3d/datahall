@@ -75,9 +75,10 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
 
 ## 下一步（按优先级）
 
-1. Unity 版：方案对比见 `docs/unity-options.md`，推荐离线 pxr → `layout.json` + 每种设备一个 glb，由 glTFast 导入；
-   开工前要先确认 VR 目标（Quest 一体机还是 PC VR）、是否需要在头显里打开任意 USD、Unity 版本和渲染管线、Unity 工程放在哪。
-   Unity 侧需要用户本机装好 Unity 6 和 Android Build Support，否则只能写代码，没法验证。
+1. Unity 版：目标平台是 macOS 桌面（Apple Silicon），VR 暂不做。方案对比见 `docs/unity-options.md`：
+   推荐 `layout.json`（网页版导出，或 pxr 从 usda 转换）加上每种设备一个 glb（pxr 离线转换），由 glTFast 导入。
+   开工前还要确认：Unity 程序是否必须直接打开任意 `.usd`、渲染管线、工程是否放在 `unity/`。
+   Unity 侧需要用户本机装好 Unity 6，否则只能写代码，没法验证。
 
 ## 数据可信度
 
