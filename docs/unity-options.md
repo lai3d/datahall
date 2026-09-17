@@ -6,6 +6,14 @@
 
 **决定（2026-09-17）：** 采用方案 A。Unity 6000.6.1f1（本机已安装），URP，工程放在本仓库 `unity/`。
 
+**实现状态（2026-09-17）：** A1–A4 已完成。
+- **A1：** `spec/layout.schema.json`，网页“导出给 Unity”。
+- **A2：** `tools/usd_to_unity.py`。
+- **A3：** `unity/`，打包出的 macOS 程序通过冒烟断言，截图核对过渲染和中文界面。
+- **A4：** C# 容量模型，和 `spec/capacity-cases.json` 逐条一致。
+
+A5（真实 SimReady 资产）还没做。A1–A4 实际用了约半个 Claude 会话小时，明显少于上文估算的 4–6 小时：导出格式范围小，Unity 本机工具链也已就绪。
+
 macOS 上没有主流 VR 运行时（SteamVR 2020 年起停止支持 macOS），所以 VR 暂不在范围内。以后如果要做 Quest 一体机，见文末附录，届时推荐不变，理由会更充分。
 
 ## 结论
