@@ -10,6 +10,7 @@
   - `vercel.json`：Vercel 构建设置（Vite，`npm ci`、`npm run build`、输出 `dist`）
   - `src/catalog.js`：import `spec/catalog.json`，构建时打进包里
   - `src/sim.js`：容量模型与 PUE，纯函数
+  - `src/supply.js`：按设备的容量检查，每台 CDU、RPP 按 `supplyLinks` 就近分到的负载和自身容量比较，纯函数。只在网页版，Unity 的 `CapacityModel` 没有对应实现
   - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
   - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载文件
   - `src/share-link.js`：分享链接，布局编码进网址 hash，纯函数
@@ -78,6 +79,10 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
 
 - **容量模型**：配电（RPP）、液冷（CDU）、风冷（列间空调）、后端网络端口、市电五项约束，任一不满足不能通电。
   PUE 估算：`(IT + 设备自耗 + 液冷热量×0.08 + 风冷热量×0.30 + IT×0.05) / IT`，是教学用简化公式。
+  - 网页版另有逐台检查（`supply.js`）：总量够时，就近分到某台 CDU 的液冷热量或某台 RPP 的功率超过它的容量，也不能通电。
+    总量已经不够时只报总量，不逐台重复。三维视图里超载的 CDU、RPP 和没接上的设备顶上显示红色，接到超载设备的连线画成红色。
+    `compute()` 和 `spec/capacity-cases.json` 不含逐台检查（和 Unity 共用的契约不变）。
+  - 预设必须同时通过总量和逐台检查（`sim.test.js`）。Rubin 预设的设施按 CDU、RPP、IB、空调循环摆放就是为此。
 - **OpenUSD 约定**：Z 轴向上，metersPerUnit = 1，defaultPrim = `/DataHall`。
   - `/DataHall/Catalog/<id>`：`class` 原型，带参数、简化几何和自己的 `Looks`（UsdPreviewSurface），几何绑定原型内的材质
   - `/DataHall/Equipment`：`kind = "group"`；`/DataHall/Equipment/Rxx_Cyy`：`kind = "component"`、`instanceable` 实例，引用 Catalog 原型
@@ -116,10 +121,9 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
 
 当前以网页版为主（2026-09-17 决定），Unity 版暂停。
 
-1. 按设备的容量检查：每台 CDU、RPP 按分配到的机柜算负载，在三维视图里标出超载设备和没接上的机柜。
-2. 编辑体验：拖动移动设备、撤销和重做、整排放置。
-3. three.js 从 r128 升级到新版（色彩管理、画质）。
-4. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
+1. 编辑体验：拖动移动设备、撤销和重做、整排放置。
+2. three.js 从 r128 升级到新版（色彩管理、画质）。
+3. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
    Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
 
 ## 数据可信度

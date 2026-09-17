@@ -3,6 +3,7 @@ import {compute, fmt} from '../src/sim.js';
 import {CAT, CATALOG} from '../src/catalog.js';
 import {GRID, keyOf} from '../src/grid.js';
 import {PRESETS} from '../src/layout.js';
+import {supplyLoads, supplyIssues} from '../src/supply.js';
 
 const toList = p => p.list.map(([type, x, z]) => ({type, x, z}));
 
@@ -43,6 +44,13 @@ describe('compute', () => {
 describe('预设', () => {
   it.each(Object.entries(PRESETS).filter(([k]) => k !== 'empty'))('%s 可以直接通电', (name, p) => {
     expect(compute(toList(p), CAT, p.u).blocking).toBe(false);
+  });
+
+  it.each(Object.entries(PRESETS).filter(([k]) => k !== 'empty'))('%s 每台 CDU、RPP 都不超载，设备都接上了', (name, p) => {
+    const loads = supplyLoads(toList(p), CAT);
+    expect(supplyIssues(loads, compute(toList(p), CAT, p.u))).toEqual([]);
+    expect([...loads.supplies.values()].some(s => s.overloaded)).toBe(false);
+    expect(loads.unconnected).toEqual([]);
   });
 
   it.each(Object.entries(PRESETS))('%s 的设备类型存在、在网格内、不重叠', (name, p) => {

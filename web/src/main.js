@@ -167,6 +167,7 @@ initUI({
   setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; view.setOutline(); buildUI(); renderInfo(); },
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
+  showAlerts: keys => view.setAlerts(keys),
 });
 initExport();
 initShare();

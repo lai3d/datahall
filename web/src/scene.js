@@ -1,7 +1,8 @@
 // three.js 场景：地板网格、设备模型、管线连线、选中框、放置预览、拾取、渲染循环
 import * as THREE from 'three';
 import {CAT} from './catalog.js';
-import {GRID, clamp, keyOf, nearest} from './grid.js';
+import {GRID, clamp, keyOf} from './grid.js';
+import {supplyLoads} from './supply.js';
 import {state} from './state.js';
 
 const {GW, GD, CX, CZ} = GRID;
@@ -73,8 +74,15 @@ function makeMesh(key, it){
       new THREE.MeshStandardMaterial({color: col('--warn')}));
     tag.position.y = h + .02; g.add(tag);
   }
+  // 超载或没接上时显示的红色顶盖，由 setAlerts 控制
+  const bad = col('--bad');
+  const alert = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, .08, CZ * .94),
+    new THREE.MeshStandardMaterial({color: bad, emissive: bad, emissiveIntensity: .45}));
+  alert.position.y = h + (t.future ? .1 : .04);
+  alert.visible = false;
+  g.add(alert);
   g.position.copy(cellPos(it.x, it.z));
-  g.userData = {key, stripeMat};
+  g.userData = {key, stripeMat, alert};
   g.traverse(o => o.userData.key = key);
   return g;
 }
@@ -88,26 +96,36 @@ export function removeMesh(it){
   it.mesh.traverse(o => { o.geometry && o.geometry.dispose(); });
 }
 
+// 供液、配电连线，拓扑与 USD 导出一致（supplyLinks）。接到超载 CDU、RPP 的连线画成红色
 export function rebuildLinks(){
   if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => o.geometry && o.geometry.dispose()); }
   linkObj = new THREE.Group();
   const list = [...state.items.values()];
-  const cdus = list.filter(i => i.type === 'cdu'), rpps = list.filter(i => i.type === 'rpp');
-  const run = (arr, filter, y, cssVar) => {
-    const pts = [];
-    list.filter(filter).forEach(it => {
-      const n = nearest(it, arr); if (!n) return;
-      const A = cellPos(it.x, it.z), B = cellPos(n.a.x, n.a.z);
-      const ha = CAT[it.type].h, hb = CAT[n.a.type].h;
-      pts.push(A.clone().setY(ha), A.clone().setY(y), A.clone().setY(y), B.clone().setY(y), B.clone().setY(y), B.clone().setY(hb));
+  const {supplies, links} = supplyLoads(list, CAT);
+  const run = (field, y, cssVar) => {
+    const pts = {ok: [], bad: []};
+    list.forEach(it => {
+      const source = links.get(it)?.[field]; if (!source) return;
+      const A = cellPos(it.x, it.z), B = cellPos(source.x, source.z);
+      const ha = CAT[it.type].h, hb = CAT[source.type].h;
+      pts[supplies.get(source).overloaded ? 'bad' : 'ok'].push(
+        A.clone().setY(ha), A.clone().setY(y), A.clone().setY(y), B.clone().setY(y), B.clone().setY(y), B.clone().setY(hb));
     });
-    if (!pts.length) return;
-    const m = new THREE.LineBasicMaterial({color: col(cssVar), transparent: true, opacity: state.powered ? .95 : .35});
-    linkObj.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), m));
+    for (const [kind, p] of Object.entries(pts)){
+      if (!p.length) continue;
+      const m = new THREE.LineBasicMaterial({color: col(kind === 'bad' ? '--bad' : cssVar), transparent: true,
+        opacity: kind === 'bad' ? .95 : state.powered ? .95 : .35});
+      linkObj.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(p), m));
+    }
   };
-  run(cdus, i => CAT[i.type].liq > 0, 2.85, '--coolant');
-  run(rpps, i => CAT[i.type].kw > 0, 3.15, '--copper');
+  run('coolantSource', 2.85, '--coolant');
+  run('powerFeed', 3.15, '--copper');
   scene.add(linkObj);
+}
+
+// keys：需要显示红色顶盖的设备（超载的 CDU、RPP，没接上的设备）
+export function setAlerts(keys){
+  state.items.forEach((it, key) => { it.mesh.userData.alert.visible = keys.has(key); });
 }
 
 export function setOutline(){
