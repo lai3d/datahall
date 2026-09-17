@@ -7,6 +7,7 @@
 ## 目录
 
 - `web/`：网页版，Vite + three.js 0.128（npm 锁版本），入口 `web/index.html` → `web/src/main.js`
+  - `vercel.json`：Vercel 构建设置（Vite，`npm ci`、`npm run build`、输出 `dist`）
   - `src/catalog.js`：import `spec/catalog.json`，构建时打进包里
   - `src/sim.js`：容量模型与 PUE，纯函数
   - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
@@ -54,6 +55,7 @@ cd web && npm i
 npm run dev        # 开发服务器
 npm test           # vitest
 npm run build      # 产物在 web/dist，base 为相对路径，可部署到任意子路径
+# 部署：Vercel 项目 lai3ds-projects/datahall 关联本仓库，Root Directory 为 web；合并到 main 发布正式版，PR 自动生成预览
 
 python3 -m venv .venv && .venv/bin/pip install usd-core jinja2
 .venv/bin/python tools/validate_usd.py samples/datahall.usda
@@ -114,11 +116,10 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
 
 当前以网页版为主（2026-09-17 决定），Unity 版暂停。
 
-1. 部署到 Vercel，main 合并后自动更新。
-2. 按设备的容量检查：每台 CDU、RPP 按分配到的机柜算负载，在三维视图里标出超载设备和没接上的机柜。
-3. 编辑体验：拖动移动设备、撤销和重做、整排放置。
-4. three.js 从 r128 升级到新版（色彩管理、画质）。
-5. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
+1. 按设备的容量检查：每台 CDU、RPP 按分配到的机柜算负载，在三维视图里标出超载设备和没接上的机柜。
+2. 编辑体验：拖动移动设备、撤销和重做、整排放置。
+3. three.js 从 r128 升级到新版（色彩管理、画质）。
+4. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
    Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
 
 ## 数据可信度
