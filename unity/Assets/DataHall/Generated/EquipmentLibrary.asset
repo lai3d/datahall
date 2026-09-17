@@ -17,6 +17,12 @@ MonoBehaviour:
     prefab: {fileID: 4576228430382064243, guid: 455aa4f3047bd445ca11e5c2549050f3, type: 3}
   - id: crah
     prefab: {fileID: 3908861323118903925, guid: 0ab2b57b575be41f9aba3317bb95ceed, type: 3}
+  - id: dgx
+    prefab: {fileID: 556744164081078175, guid: bf6e702f109ec46c4a42b4e001fb6868, type: 3}
+  - id: gb200
+    prefab: {fileID: 5961522317816861629, guid: 27697c577f57b4df8aa417b9deaf3d55, type: 3}
+  - id: gb300
+    prefab: {fileID: 6390499682558366724, guid: b187d91f5b39c4429bb0c619a52ab95f, type: 3}
   - id: ib
     prefab: {fileID: 2327197559567367210, guid: 5cfd4de57e2e047c4922cdf73f5bbeae, type: 3}
   - id: kyber

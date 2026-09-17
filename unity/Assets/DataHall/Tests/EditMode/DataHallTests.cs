@@ -202,12 +202,21 @@ namespace DataHall.Tests
             CollectionAssert.AreEqual(new[] { Editor.ProjectSetup.ScenePath }, EditorBuildSettings.scenes.Select(x => x.path));
         }
 
+        [System.Serializable]
+        class CatalogItem { public string id; }
+
+        [System.Serializable]
+        class CatalogFile { public List<CatalogItem> items; }
+
         [Test]
         public void EveryCatalogTypeHasPrefabVariantOfItsModel()
         {
-            var layout = LayoutData.Parse(Repo.SampleLayout);
+            // 以 spec/catalog.json 为准：网页上能摆的每种设备在 Unity 里都要有模型，否则会退回占位方块
+            var catalog = JsonUtility.FromJson<CatalogFile>(File.ReadAllText(Repo.Path("spec/catalog.json")));
             var library = AssetDatabase.LoadAssetAtPath<EquipmentLibrary>(Editor.BundleImporter.LibraryPath);
-            foreach (var entry in layout.catalog)
+            Assert.AreEqual(10, catalog.items.Count);
+            CollectionAssert.AreEquivalent(catalog.items.Select(i => i.id), library.entries.Select(e => e.id));
+            foreach (var entry in catalog.items)
             {
                 var prefab = library.Find(entry.id);
                 Assert.IsNotNull(prefab, entry.id);

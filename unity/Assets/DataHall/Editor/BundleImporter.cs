@@ -10,7 +10,7 @@ namespace DataHall.Editor
     //   glb 复制到 Generated/Models，由 glTFast 导入；每种设备第一次导入时生成 Prefabs/<id>.prefab（模型的变体），
     //   以后重新导入只更新模型，变体上加的交互保留；EquipmentLibrary 记录 id → prefab；
     //   layout.json 复制到 StreamingAssets，作为程序默认打开的机房。
-    // 命令行：Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.BundleImporter.ImportFromCommandLine -bundle <dir> -quit
+    // 命令行：Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.BundleImporter.ImportFromCommandLine -bundle <dir> [-noLayout] -quit
     public static class BundleImporter
     {
         public const string ModelsDir = "Assets/DataHall/Generated/Models";
@@ -32,7 +32,7 @@ namespace DataHall.Editor
             var args = Environment.GetCommandLineArgs();
             var i = Array.IndexOf(args, "-bundle");
             if (i < 0 || i + 1 >= args.Length) throw new ArgumentException("missing -bundle <dir>");
-            var library = ImportBundle(args[i + 1]);
+            var library = ImportBundle(args[i + 1], copyLayout: Array.IndexOf(args, "-noLayout") < 0);
             Debug.Log($"DataHall: imported {library.entries.Count} equipment types");
         }
 
