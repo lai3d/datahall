@@ -407,7 +407,7 @@ const mq = window.matchMedia('(prefers-color-scheme: dark)');
 mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
 
 if (!loadFromLink(false)) showLayout(restoreLayout() || PRESETS.gb200);
-// For browser automation tests on the dev server
-if (import.meta.env.DEV) (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce};
+// Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
+if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce};
 view.startLoop();
 initAnalytics(openedFromShareLink);

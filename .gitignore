@@ -6,3 +6,6 @@ __pycache__/
 .simready/
 build/
 .playwright-mcp/
+test-results/
+playwright-report/
+dist-e2e/

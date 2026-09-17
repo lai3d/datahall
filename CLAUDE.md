@@ -32,6 +32,7 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
   - `src/feeds.ts`: maintenance of manually assigned supply equipment (setting, cleaning up stale assignments, following supply equipment when it moves), pure functions
   - `src/redundancy.ts`: failure drills and N+1 check, pure functions; `blockingReasons` maps one-to-one to the UI's "cannot power on" conditions (guaranteed by tests)
   - `src/ui.ts`: right-hand panel; `src/state.ts`: shared state; `src/layout.ts`: presets and localStorage; `src/grid.ts`: grid constants
+  - `e2e/` + `playwright.config.ts`: Playwright browser smoke tests (`npm run e2e`, CI job `e2e`). They run against `vite build --mode e2e` (test hook `window.__datahall` on, analytics off) and assert through DOM ids, `data-*` attributes and the `#layout=` hash, not app internals, so panel refactors must keep those ids and attributes. First run locally: `npx playwright install chromium`
   - `tests/`: vitest; `usd-export.test.ts` reverse-derives the equipment list from the sample and regenerates it, requiring a byte-for-byte match with `samples/datahall.usda`,
     and parses `schema/generatedSchema.usda` to check that every exported `dchall:` attribute is defined by an applied schema with a matching type (no pxr needed)
   - `scripts/update-sample.ts`: `npm run sample`, regenerates `samples/datahall.usda` from the sample's original layout after an intentional export format change
