@@ -26,12 +26,18 @@ def Xform "DataHall" (
     double dchall:cellWidthM = 0.6
     double dchall:cellDepthM = 1.2
 
-    def Cube "Floor" (
+    def Mesh "Floor" (
         prepend apiSchemas = ["MaterialBindingAPI"]
     )
     {
-        double size = 1
         float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+        int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+        int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+        normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+            interpolation = "faceVarying"
+        )
+        point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+        uniform token subdivisionScheme = "none"
         rel material:binding = </DataHall/Looks/floor>
         color3f[] primvars:displayColor = [(0.1647, 0.2078, 0.251)]
         double3 xformOp:translate = (0.0, 0.0, -0.01)
@@ -76,24 +82,36 @@ def Xform "DataHall" (
             bool dchall:roadmap = 0
             double dchall:heightM = 2.3
 
-            def Cube "Body" (
+            def Mesh "Body" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/vr200/Looks/body>
                 color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
                 double3 xformOp:translate = (0.0, 0.0, 1.15)
                 float3 xformOp:scale = (0.552, 1.128, 2.3)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
-            def Cube "Front" (
+            def Mesh "Front" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/vr200/Looks/front>
                 color3f[] primvars:displayColor = [(0.4627, 0.7255, 0.0)]
                 double3 xformOp:translate = (0.0, -0.576, 1.15)
@@ -148,24 +166,36 @@ def Xform "DataHall" (
             bool dchall:roadmap = 0
             double dchall:heightM = 2.1
 
-            def Cube "Body" (
+            def Mesh "Body" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/cdu/Looks/body>
                 color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
                 double3 xformOp:translate = (0.0, 0.0, 1.05)
                 float3 xformOp:scale = (0.552, 1.128, 2.1)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
-            def Cube "Front" (
+            def Mesh "Front" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/cdu/Looks/front>
                 color3f[] primvars:displayColor = [(0.2471, 0.7137, 0.7882)]
                 double3 xformOp:translate = (0.0, -0.576, 1.05)
@@ -220,24 +250,36 @@ def Xform "DataHall" (
             bool dchall:roadmap = 0
             double dchall:heightM = 2.1
 
-            def Cube "Body" (
+            def Mesh "Body" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/rpp/Looks/body>
                 color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
                 double3 xformOp:translate = (0.0, 0.0, 1.05)
                 float3 xformOp:scale = (0.552, 1.128, 2.1)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
-            def Cube "Front" (
+            def Mesh "Front" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/rpp/Looks/front>
                 color3f[] primvars:displayColor = [(0.8157, 0.5412, 0.2706)]
                 double3 xformOp:translate = (0.0, -0.576, 1.05)
@@ -292,24 +334,36 @@ def Xform "DataHall" (
             bool dchall:roadmap = 0
             double dchall:heightM = 2.2
 
-            def Cube "Body" (
+            def Mesh "Body" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/ib/Looks/body>
                 color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
                 double3 xformOp:translate = (0.0, 0.0, 1.1)
                 float3 xformOp:scale = (0.552, 1.128, 2.2)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
-            def Cube "Front" (
+            def Mesh "Front" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/ib/Looks/front>
                 color3f[] primvars:displayColor = [(0.6039, 0.549, 0.8784)]
                 double3 xformOp:translate = (0.0, -0.576, 1.1)
@@ -364,24 +418,36 @@ def Xform "DataHall" (
             bool dchall:roadmap = 0
             double dchall:heightM = 2.1
 
-            def Cube "Body" (
+            def Mesh "Body" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/crah/Looks/body>
                 color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
                 double3 xformOp:translate = (0.0, 0.0, 1.05)
                 float3 xformOp:scale = (0.552, 1.128, 2.1)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
-            def Cube "Front" (
+            def Mesh "Front" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/crah/Looks/front>
                 color3f[] primvars:displayColor = [(0.6039, 0.6588, 0.7098)]
                 double3 xformOp:translate = (0.0, -0.576, 1.05)
@@ -437,24 +503,36 @@ def Xform "DataHall" (
             bool dchall:roadmap = 1
             double dchall:heightM = 2.6
 
-            def Cube "Body" (
+            def Mesh "Body" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/kyber/Looks/body>
                 color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
                 double3 xformOp:translate = (0.0, 0.0, 1.3)
                 float3 xformOp:scale = (0.552, 1.128, 2.6)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
-            def Cube "Front" (
+            def Mesh "Front" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/kyber/Looks/front>
                 color3f[] primvars:displayColor = [(0.4627, 0.7255, 0.0)]
                 double3 xformOp:translate = (0.0, -0.576, 1.3)
@@ -509,24 +587,36 @@ def Xform "DataHall" (
             bool dchall:roadmap = 0
             double dchall:heightM = 2.2
 
-            def Cube "Body" (
+            def Mesh "Body" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/stor/Looks/body>
                 color3f[] primvars:displayColor = [(0.2039, 0.251, 0.2941)]
                 double3 xformOp:translate = (0.0, 0.0, 1.1)
                 float3 xformOp:scale = (0.552, 1.128, 2.2)
                 uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
             }
-            def Cube "Front" (
+            def Mesh "Front" (
                 prepend apiSchemas = ["MaterialBindingAPI"]
             )
             {
-                double size = 1
                 float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]
+                int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+                int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]
+                normal3f[] normals = [(0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, -1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, 0, 1), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, -1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0), (-1, 0, 0)] (
+                    interpolation = "faceVarying"
+                )
+                point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]
+                uniform token subdivisionScheme = "none"
                 rel material:binding = </DataHall/Catalog/stor/Looks/front>
                 color3f[] primvars:displayColor = [(0.498, 0.6353, 0.7686)]
                 double3 xformOp:translate = (0.0, -0.576, 1.1)

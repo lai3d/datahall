@@ -14,10 +14,21 @@ export function buildUsda(list, CAT, utility, g, meta){
   const pad = n => String(n).padStart(2, '0');
   const primName = it => `R${pad(it.z + 1)}_C${pad(it.x + 1)}`;
   const pos = it => [(it.x - (g.GW - 1) / 2) * g.CX, -((it.z - (g.GD - 1) / 2) * g.CZ)];
-  const EXTENT = 'float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]';
+  // 单位立方体网格：SimReady VG.MESH.001 要求非细分 Mesh。面从外侧看逆时针（rightHanded），法线按面给出
+  const BOX = [
+    'float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]',
+    'int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]',
+    'int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 2, 3, 7, 6, 1, 2, 6, 5, 3, 0, 4, 7]',
+    'normal3f[] normals = [' + [[0, 0, -1], [0, 0, 1], [0, -1, 0], [0, 1, 0], [1, 0, 0], [-1, 0, 0]]
+      .flatMap(n => Array(4).fill(`(${n.join(', ')})`)).join(', ') + '] (',
+    '    interpolation = "faceVarying"',
+    ')',
+    'point3f[] points = [(-0.5, -0.5, -0.5), (0.5, -0.5, -0.5), (0.5, 0.5, -0.5), (-0.5, 0.5, -0.5), (-0.5, -0.5, 0.5), (0.5, -0.5, 0.5), (0.5, 0.5, 0.5), (-0.5, 0.5, 0.5)]',
+    'uniform token subdivisionScheme = "none"',
+  ];
   const cube = (ind, name, color, t, s, material) => [
-    `${ind}def Cube "${name}" (`, `${ind}    prepend apiSchemas = ["MaterialBindingAPI"]`, `${ind})`, `${ind}{`,
-    `${ind}    double size = 1`, `${ind}    ${EXTENT}`,
+    `${ind}def Mesh "${name}" (`, `${ind}    prepend apiSchemas = ["MaterialBindingAPI"]`, `${ind})`, `${ind}{`,
+    ...BOX.map(l => `${ind}    ${l}`),
     `${ind}    rel material:binding = <${material}>`,
     `${ind}    color3f[] primvars:displayColor = [${rgb(color)}]`,
     `${ind}    double3 xformOp:translate = (${t.map(f).join(', ')})`,

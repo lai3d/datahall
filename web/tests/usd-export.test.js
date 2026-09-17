@@ -119,6 +119,22 @@ describe('SimReady 约定（docs/simready-audit.md）', () => {
   const prims = parseLayer(out);
 
   // SR.001 的官方校验器（2026.06.0）不会真正报错，这里按规范原文检查
+  it('立方体网格每个面按右手定则朝外，且与写入的法线一致', () => {
+    const arr = name => JSON.parse('[' + out.match(new RegExp(`${name} = \\[([^\\]]*)\\]`))[1].replace(/\(/g, '[').replace(/\)/g, ']') + ']');
+    const points = arr('point3f\\[\\] points'), idx = arr('int\\[\\] faceVertexIndices'), normals = arr('normal3f\\[\\] normals');
+    const sub = (a, b) => a.map((v, i) => v - b[i]);
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const dot = (a, b) => a.reduce((t, v, i) => t + v * b[i], 0);
+    expect(idx.length).toBe(24);
+    for (let face = 0; face < 6; face++){
+      const [p0, p1, p2, p3] = idx.slice(face * 4, face * 4 + 4).map(i => points[i]);
+      const n = cross(sub(p1, p0), sub(p2, p0));
+      const centroid = [p0, p1, p2, p3].reduce((c, p) => c.map((v, i) => v + p[i] / 4), [0, 0, 0]);
+      expect(dot(n, centroid), `face ${face} faces outward`).toBeGreaterThan(0);
+      normals.slice(face * 4, face * 4 + 4).forEach(nn => expect(dot(nn, n) / Math.hypot(...n), `face ${face} normal`).toBeCloseTo(1));
+    }
+  });
+
   it('customLayerData 带 SR.001 要求的元数据', () => {
     const head = out.slice(0, out.indexOf('\n)\n'));
     ['asset_name', 'asset_type', 'source_file'].forEach(k => expect(head).toMatch(new RegExp(`string ${k} = "[^"]+"`)));
@@ -133,7 +149,8 @@ describe('SimReady 约定（docs/simready-audit.md）', () => {
 
   it('每个几何都绑定材质，目标是 UsdPreviewSurface 材质，且在同一原型或 /DataHall/Looks 内', () => {
     const byPath = Object.fromEntries(prims.map(p => [p.path, p]));
-    const gprims = prims.filter(p => ['Cube', 'Mesh'].includes(p.type));
+    const gprims = prims.filter(p => p.type === 'Mesh');
+    expect(prims.filter(p => ['Cube', 'Sphere', 'Cylinder', 'Cone', 'Capsule'].includes(p.type))).toEqual([]);
     expect(gprims.length).toBe(1 + CATALOG.length * 2);
     for (const p of gprims){
       const block = out.slice(out.indexOf(`"${p.name}"`, out.indexOf(`"${p.parent.name}"`)));
