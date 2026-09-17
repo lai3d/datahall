@@ -1,11 +1,14 @@
 // three.js scene: floor grid, device models, supply links, selection box, placement preview, picking, render loop
 import * as THREE from 'three';
 import {CAT} from './catalog.ts';
-import {GRID, clamp} from './grid.ts';
+import {GRID, clamp, keyOf} from './grid.ts';
 import {supplyLoads} from './supply.ts';
 import {state, isActive, inView} from './state.ts';
 import type {PlacedItem} from './state.ts';
 import type {FeedField, Item, Pos} from './types.ts';
+import type {Loads} from './supply.ts';
+import {METER_SEGMENTS, flowPositions, meterFor, pathLength, pointAlong} from './viz.ts';
+import type {Meter, Vec} from './viz.ts';
 
 const {GW, GD, CX, CZ} = GRID;
 const css = (n: string): string => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -74,12 +77,16 @@ function makeMesh(key: string, it: Item): THREE.Group{
   body.position.y = h / 2; body.castShadow = body.userData.castsShadow = true; g.add(body);
   const accent = col(t.c);
   const stripeMat = new THREE.MeshStandardMaterial({color: accent, emissive: accent, emissiveIntensity: .12});
-  const n = t.group === 'gpu' ? 9 : 3;
-  const sGeo = new THREE.BoxGeometry(CX * .78, t.group === 'gpu' ? .04 : .12, .02);
+  // CDUs and RPPs show a load meter instead of plain stripes: segments light from the bottom, set by setLoads
+  const metered = !!(t.liqCool || t.dist);
+  const n = t.group === 'gpu' ? 9 : metered ? METER_SEGMENTS : 3;
+  const sGeo = new THREE.BoxGeometry(CX * .78, t.group === 'gpu' ? .04 : metered ? .2 : .12, .02);
+  const offMat = metered ? new THREE.MeshStandardMaterial({color: col('--rack').lerp(col('--grid'), .08), roughness: .8}) : null;
+  const segments: THREE.Mesh[] = [];
   for (let i = 0; i < n; i++){
-    const s = new THREE.Mesh(sGeo, stripeMat);
+    const s = new THREE.Mesh(sGeo, offMat || stripeMat);
     s.position.set(0, .3 + i * (h - .5) / Math.max(n - 1, 1), CZ * .47 + .012);
-    g.add(s);
+    g.add(s); segments.push(s);
   }
   if (t.liq || t.liqCool){
     const pipeMat = new THREE.MeshStandardMaterial({color: col('--coolant'), roughness: .3});
@@ -101,7 +108,7 @@ function makeMesh(key: string, it: Item): THREE.Group{
   alert.visible = false;
   g.add(alert);
   g.position.copy(cellPos(it.x, it.z));
-  g.userData = {key, stripeMat, alert};
+  g.userData = {key, stripeMat, alert, accent, meter: metered ? {segments, offMat, state: meterFor(0, 0)} : null};
   g.traverse(o => o.userData.key = key);
   return g;
 }
@@ -123,25 +130,32 @@ export function removeMesh(it: PlacedItem): void{
 
 // Coolant and power links, same topology as the USD export (supplyLinks). Links to overloaded CDUs/RPPs are drawn red, manual assignments dashed
 export function rebuildLinks(): void{
-  if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => { if (o instanceof THREE.LineSegments) o.geometry.dispose(); }); }
+  if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => { if (o instanceof THREE.LineSegments || o instanceof THREE.Points) o.geometry.dispose(); }); }
+  flows.length = 0;
   linkObj = new THREE.Group();
   const list = [...state.items].filter(([key, it]) => isActive(key, it)).map(([, it]) => it);
   const {supplies, links} = supplyLoads(list, CAT);
   const group = linkObj;
   const run = (field: FeedField, y: number, cssVar: string) => {
     const pts: Record<'ok' | 'bad' | 'okManual' | 'badManual', THREE.Vector3[]> = {ok: [], bad: [], okManual: [], badManual: []};
+    const paths: {pts: Vec[]; color: THREE.Color}[] = [];
     list.forEach(it => {
       const source = links.get(it)?.[field]; if (!source) return;
       const A = cellPos(it.x, it.z), B = cellPos(source.x, source.z);
       const ha = CAT[it.type].h, hb = CAT[source.type].h;
       const want = it.feeds?.[field], manual = !!want && want[0] === source.x && want[1] === source.z;
-      pts[`${supplies.get(source)!.overloaded ? 'bad' : 'ok'}${manual ? 'Manual' : ''}` as const].push(
+      const overloaded = supplies.get(source)!.overloaded;
+      pts[`${overloaded ? 'bad' : 'ok'}${manual ? 'Manual' : ''}` as const].push(
         A.clone().setY(ha), A.clone().setY(y), A.clone().setY(y), B.clone().setY(y), B.clone().setY(y), B.clone().setY(hb));
+      // Flow runs from the supply device to the consumer
+      paths.push({pts: [B.clone().setY(hb), B.clone().setY(y), A.clone().setY(y), A.clone().setY(ha)], color: col(overloaded ? '--bad' : cssVar).lerp(new THREE.Color(0xffffff), .3)});
     });
+    if (paths.length) addFlow(group, paths);
     for (const [kind, p] of Object.entries(pts)){
       if (!p.length) continue;
       const bad = kind.startsWith('bad'), manual = kind.endsWith('Manual');
-      const opts = {color: col(bad ? '--bad' : cssVar), transparent: true, opacity: bad || state.powered ? .95 : manual ? .75 : .35};
+      // While flow dots run, lines step back so the dots read; without motion, powered lines are drawn bright instead
+      const opts = {color: col(bad ? '--bad' : cssVar), transparent: true, opacity: bad ? .95 : flowing() ? .5 : state.powered ? .95 : manual ? .75 : .35};
       const m = manual ? new THREE.LineDashedMaterial({...opts, dashSize: .14, gapSize: .09}) : new THREE.LineBasicMaterial(opts);
       const lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(p), m);
       if (manual) lines.computeLineDistances();
@@ -152,6 +166,66 @@ export function rebuildLinks(): void{
   run('powerFeed', 3.15, '--copper');
   scene.add(linkObj);
 }
+
+// Load meters on CDUs and RPPs: lit segments and color follow the nearest-assigned load (supply.ts). Devices left out of the
+// calculation (failed, later phase) show an empty meter. Call before setDimmed: swapping materials resets the dimming cache
+const LEVEL_COLOR = {ok: '', warn: '--warn', bad: '--bad'} as const;
+export function setLoads(loads: Loads): void{
+  const byKey = new Map([...loads.supplies].map(([it, s]) => [keyOf(it.x, it.z), s]));
+  state.items.forEach((it, key) => {
+    const {meter, stripeMat, accent} = it.mesh.userData;
+    if (!meter) return;
+    const s = byKey.get(key), next: Meter = s ? meterFor(s.loadKw, s.capacityKw) : meterFor(0, 0);
+    if (next.lit === meter.state.lit && next.level === meter.state.level) return;
+    meter.state = next;
+    const c = LEVEL_COLOR[next.level] ? col(LEVEL_COLOR[next.level]) : accent;
+    stripeMat.color.copy(c); stripeMat.emissive.copy(c);
+    meter.segments.forEach((m: THREE.Mesh, i: number) => { m.material = i < next.lit ? stripeMat : meter.offMat; });
+    it.mesh.userData.opacity = undefined;
+  });
+}
+export const meters = (): Record<string, Meter> => Object.fromEntries([...state.items].filter(([, it]) => it.mesh.userData.meter).map(([key, it]) => [key, it.mesh.userData.meter.state]));
+
+// Flow dots along the links while powered: one Points object per supply kind, positions rewritten every frame by updateFlows
+const FLOW_SPACING = .45, FLOW_SPEED = .7;   // meters between dots, meters per second
+const flows: {points: THREE.Points; paths: {pts: Vec[]; length: number; count: number}[]}[] = [];
+// Round dots: points are squares unless their texture cuts them
+let dotTexture: THREE.CanvasTexture | null = null;
+function dot(): THREE.CanvasTexture{
+  if (dotTexture) return dotTexture;
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#fff'; g.beginPath(); g.arc(16, 16, 15, 0, Math.PI * 2); g.fill();
+  return dotTexture = new THREE.CanvasTexture(c);
+}
+function addFlow(group: THREE.Group, paths: {pts: Vec[]; color: THREE.Color}[]){
+  const sized = paths.map(p => { const length = pathLength(p.pts); return {...p, length, count: flowPositions(length, FLOW_SPACING, 0).length}; });
+  const total = sized.reduce((n, p) => n + p.count, 0);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(total * 3), 3));
+  const colors = new Float32Array(total * 3);
+  let i = 0;
+  sized.forEach(p => { for (let k = 0; k < p.count; k++, i++) colors.set([p.color.r, p.color.g, p.color.b], i * 3); });
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const points = new THREE.Points(geom, new THREE.PointsMaterial({size: .15, map: dot(), alphaTest: .5, vertexColors: true, transparent: true, opacity: .95, depthWrite: false}));
+  points.frustumCulled = false;
+  group.add(points);
+  flows.push({points, paths: sized});
+}
+const flowing = (): boolean => state.powered && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function updateFlows(now: number){
+  const on = flowing();
+  const travel = (now - state.powerStart) / 1000 * FLOW_SPEED;
+  flows.forEach(({points, paths}) => {
+    points.visible = on;
+    if (!on) return;
+    const pos = points.geometry.getAttribute('position') as THREE.BufferAttribute;
+    let i = 0;
+    paths.forEach(p => flowPositions(p.length, FLOW_SPACING, travel).forEach(s => { const v = pointAlong(p.pts, s); pos.setXYZ(i++, v.x, v.y, v.z); }));
+    pos.needsUpdate = true;
+  });
+}
+export const flowDots = (): number => flows.reduce((n, f) => n + (f.points.visible ? f.paths.reduce((m, p) => m + p.count, 0) : 0), 0);
 
 // keys: devices that should show the red cap (overloaded CDUs/RPPs, unconnected devices)
 export function setAlerts(keys: Set<string>): void{
@@ -252,7 +326,7 @@ function applyPops(now: number){
   });
 }
 
-export function renderOnce(): void{ applyPops(Infinity); camera.updateMatrixWorld(); renderer.render(scene, camera); }
+export function renderOnce(): void{ applyPops(Infinity); updateFlows(performance.now()); camera.updateMatrixWorld(); renderer.render(scene, camera); }
 
 // PNG of the 3D view at its current size. toBlob copies the canvas in the same task as the render, so the
 // renderer does not need preserveDrawingBuffer
@@ -274,6 +348,7 @@ export function startLoop(): void{
       m.emissiveIntensity = .12 + on * (reduce ? .9 : .8 + .12 * Math.sin(now / 350 + it.x));
     });
     applyPops(now);
+    updateFlows(now);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }

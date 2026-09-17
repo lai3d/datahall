@@ -126,6 +126,24 @@ test('rack comparison follows the utility feed, and the HUD shows a scale refere
   expect(errors).toEqual([]);
 });
 
+test('load meters on CDUs and RPPs follow the load, and power flows along the links when powered on', async ({page}) => {
+  const errors = await openApp(page, '/?lang=en#layout=1,5,vr200:3.3-4.3,cdu:3.5,rpp:4.5,ib:5.5,crah:6.5');
+  const meters = () => page.evaluate(() => window.__datahall!.meters());
+  // Two Vera Rubin racks and an IB rack: 361 kW of liquid heat on an 800 kW CDU, 404 kW on an 800 kW RPP
+  expect(await meters()).toMatchObject({'3,5': {lit: 3, level: 'ok'}, '4,5': {lit: 3, level: 'ok'}});
+  expect(await page.evaluate(() => window.__datahall!.flowDots())).toBe(0);
+  await page.locator('#power').click();
+  expect(await page.evaluate(() => { window.__datahall!.renderOnce(); return window.__datahall!.flowDots(); })).toBeGreaterThan(0);
+  await page.locator('#power').click();
+  expect(await page.evaluate(() => { window.__datahall!.renderOnce(); return window.__datahall!.flowDots(); })).toBe(0);
+  // Five racks overload both
+  await page.goto('about:blank');
+  await page.goto('/?lang=en#layout=1,5,vr200:0.3-1.3-2.3-3.3-4.3,cdu:2.5,rpp:3.5');
+  await page.waitForFunction(() => !!window.__datahall);
+  expect(await meters()).toMatchObject({'2,5': {lit: 5, level: 'bad'}, '3,5': {lit: 5, level: 'bad'}});
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

@@ -34,6 +34,7 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
   - `src/growth.ts`: growth planning, cumulative per-phase capacity check (`growthPlan`) and how many more units fit (`headroom`), pure functions
   - `src/compare.ts`: rack comparison, the largest hall each GPU rack type can run on the current utility feed with the fewest support devices (`largestHall`, `supportFor`), pure functions.
     Totals only, like `headroom`: no per-device nearest assignment check, and the floor limit is the cell count, not a real placement. The panel section explains that GPU counts drop for newer racks because per-GPU performance is not modeled
+  - `src/viz.ts`: pure helpers for the load visualization (meter segments and level, points along a link path, flow dot positions)
   - `src/scale.ts`: everyday scale references for the IT load in the HUD (DGX Sparks, US homes), rounded to two significant figures
   - `src/feeds.ts`: maintenance of manually assigned supply equipment (setting, cleaning up stale assignments, following supply equipment when it moves), pure functions
   - `src/redundancy.ts`: failure drills and N+1 check, pure functions; `blockingReasons` maps one-to-one to the UI's "cannot power on" conditions (guaranteed by tests)
@@ -177,6 +178,12 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # open a layou
     (`state.ui.panelCollapsed`, view state only, via the `panel-collapsed` class on body)
   - Placement feedback on every screen: placed devices grow up from the floor for 220 ms (`scene.ts`'s `popMesh`, skipped with reduced motion; `renderOnce` finishes it immediately so snapshots and tests never see a half-grown rack) and touch taps vibrate where supported
   - Portrait views keep the horizontal field of view of a square view (`resize` in `scene.ts`), so the hall still fits across a phone with the panel folded away
+- **Load visualization** (`scene.ts`):
+  - CDUs and RPPs have a 5-segment load meter on the front instead of plain stripes (`setLoads`, called from `refresh()` before `setDimmed`, because swapping segment materials resets the dimming cache). Segments light from the bottom by nearest-assigned load, rounding up;
+    the color is the device color below 80%, amber from 80% and red above capacity (`viz.ts`'s `meterFor`). Failed and later-phase devices show an empty meter
+  - While powered on, dots flow along each link from the supply device to the consumer (one `THREE.Points` per supply kind, positions rewritten each frame; red for overloaded supplies). Lines dim to let the dots read.
+    With reduced motion there are no dots and powered lines stay bright
+  - Test hooks: `window.__datahall.meters()` (meter state by cell key) and `flowDots()` (number of visible dots). Read the canvas in the same task as `renderOnce()`: without `preserveDrawingBuffer` a later task gets a blank image
 - **3D rendering** (three 0.186): color management is on by default; CSS colors are read as sRGB, converted to linear space for computation, and output as sRGB; no tone mapping, so palette colors do not shift.
   Lighting uses physical units, and intensities must be π times the r128 values for equivalent brightness; the sun light casts shadows (only equipment bodies cast, the floor receives, the shadow camera covers the whole hall).
   `PCFSoftShadowMap` was removed in r186; use the default `PCFShadowMap`

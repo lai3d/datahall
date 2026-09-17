@@ -5,7 +5,10 @@ import type {Page} from '@playwright/test';
 
 declare global {
   interface Window {
-    __datahall?: {cellToScreen(x: number, z: number, y?: number): {x: number; y: number}; renderOnce(): void};
+    __datahall?: {
+      cellToScreen(x: number, z: number, y?: number): {x: number; y: number}; renderOnce(): void;
+      meters(): Record<string, {lit: number; level: string}>; flowDots(): number;
+    };
   }
 }
 
