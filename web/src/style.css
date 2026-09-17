@@ -45,6 +45,15 @@ h1{font-size:22px;font-weight:700;margin:0 0 2px;letter-spacing:.2px}
 .h2row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 8px}
 .h2row h2{margin:0}
 #placeHint{margin:-2px 0 8px}
+/* The running tutorial card stays at the top of the scrolling panel */
+.tutorial{border:1px solid var(--coolant);border-radius:8px;padding:10px 12px;margin:10px 0 4px;background:color-mix(in srgb,var(--coolant) 8%,var(--panel))}
+#tutorial{position:sticky;top:0;z-index:2;box-shadow:0 -22px 0 0 var(--panel),0 6px 12px -8px rgb(0 0 0 / .35)}   /* the first shadow hides content scrolling past in the panel's top padding */
+.tutorial p{margin:4px 0 8px;font-size:14px}
+.tutorial-head{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.tutorial-head span{color:var(--muted)}
+.tut-target{outline:2px solid var(--coolant) !important;outline-offset:2px;animation:tut-pulse 1.4s ease-in-out infinite}
+@keyframes tut-pulse{50%{outline-color:transparent}}
+@media (prefers-reduced-motion:reduce){.tut-target{animation:none}}
 .h2row.sub-row{margin:-2px 0 8px;font-size:13px;color:var(--muted)}
 table.growth{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
 table.growth th{font-weight:600;color:var(--muted);text-align:left;padding:2px 4px;border-bottom:1px solid var(--line)}

@@ -20,6 +20,8 @@ import type {HallModel, SupplyInfo} from './model.ts';
 import type {Reason, ReasonKind} from './redundancy.ts';
 import type {PresetName} from './layout.ts';
 import type {CatalogItem, FeedField, Item} from './types.ts';
+import {STEPS, LAST, RACKS} from './tutorial.ts';
+import type {TutorialStep} from './tutorial.ts';
 
 // Actions triggered by the panel, implemented in main.ts
 export interface Actions {
@@ -38,6 +40,10 @@ export interface Actions {
   toggleAssignMode(key: string): void;
   restoreAll(): void;
   setLang(id: string): void;
+  startTutorial(): void;
+  tutorialNext(): void;
+  exitTutorial(): void;
+  dismissTutorialOffer(): void;
   undo(): void;
   redo(): void;
   resetView(): void;
@@ -72,6 +78,7 @@ function App({stage}: {stage: HTMLElement}){
     <>
       {createPortal(<StageOverlay model={model} />, stage)}
       <Header />
+      <Tutorial model={model} version={version} />
       <h2>{tr('hUtility')}</h2>
       <div className="row seg" id="utility">
         {UTIL.map(u => <button key={u} type="button" data-u={u} aria-pressed={u === state.utility} onClick={() => actions.setUtility(u)}>{u} MW</button>)}
@@ -387,6 +394,62 @@ function Drill({model}: {model: HallModel}){
   );
 }
 
+// Guided tutorial card at the top of the panel, or the first-visit offer. The current step's control gets a pulsing outline
+// Steps whose text has no variables
+const TUTORIAL_TEXT = {
+  pick: 'tutPick', why: 'tutWhy', power: 'tutPower', liquid: 'tutLiquid', air: 'tutAir',
+  network: 'tutNetwork', utility: 'tutUtility', powerOn: 'tutPowerOn',
+} as const satisfies Record<Exclude<TutorialStep['id'], 'place' | 'done'>, MessageKey>;
+
+function stepText(id: TutorialStep['id'], model: HallModel): string{
+  if (id === 'place') return tr('tutPlace', {n: RACKS, gap: RACKS - 1});
+  if (id === 'done') return tr('tutDone', {gpus: model.totals.gpus.toLocaleString(), pue: model.totals.it ? model.totals.pue.toFixed(2) : '–'});
+  return tr(TUTORIAL_TEXT[id]);
+}
+
+function Tutorial({model, version}: {model: HallModel; version: number}){
+  const index = state.tutorial, step = index === null ? null : STEPS[index];
+  // Re-apply after every render: React may rewrite the target's className (for example the power button)
+  useEffect(() => {
+    const el = step?.target ? document.querySelector(step.target) : null;
+    el?.classList.add('tut-target');
+    return () => el?.classList.remove('tut-target');
+  }, [step, version]);
+  // When the step changes, scroll the panel so the highlighted control sits below the card, which is sticky at the top
+  useEffect(() => {
+    const el = step?.target ? document.querySelector(step.target) : null, panel = document.querySelector('#panel');
+    if (!el || !panel) return;
+    const t = el.getBoundingClientRect(), p = panel.getBoundingClientRect();
+    const top = (document.querySelector('#tutorial')?.getBoundingClientRect().bottom ?? p.top) + 12, bottom = p.bottom - 12;
+    if (t.top < top) panel.scrollBy({top: t.top - top});
+    else if (t.bottom > bottom) panel.scrollBy({top: Math.min(t.bottom - bottom, t.top - top)});
+  }, [step]);
+  if (!step || index === null){
+    if (!state.ui.tutorialOffer) return null;
+    return (
+      <div className="tutorial" id="tutorialOffer">
+        <p>{tr('tutorialOffer')}</p>
+        <div className="row">
+          <button type="button" id="tutorialStart" onClick={() => actions.startTutorial()}>{tr('tutorialStart')}</button>
+          <button type="button" id="tutorialDismiss" onClick={() => actions.dismissTutorialOffer()}>{tr('tutorialDismiss')}</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <section className="tutorial" id="tutorial" data-step={step.id} aria-live="polite">
+      <div className="tutorial-head"><strong>{tr('tutorialTitle')}</strong><span>{tr('tutorialStep', {n: index + 1, total: STEPS.length})}</span></div>
+      <p>{stepText(step.id, model)}</p>
+      <div className="row">
+        {step.manual && index < LAST && <button type="button" id="tutorialNext" onClick={() => actions.tutorialNext()}>{tr('tutorialNext')}</button>}
+        {index === LAST
+          ? <button type="button" id="tutorialClose" onClick={() => actions.exitTutorial()}>{tr('tutorialClose')}</button>
+          : <button type="button" id="tutorialExit" onClick={() => actions.exitTutorial()}>{tr('tutorialExit')}</button>}
+      </div>
+    </section>
+  );
+}
+
 const PRESET_BUTTONS = [['empty', 'presetEmpty'], ['gb200', 'presetGb200'], ['gb200n1', 'presetGb200n1'], ['rubin', 'presetRubin']] as const;
 function Presets(){
   return (
@@ -394,6 +457,7 @@ function Presets(){
       <h2>{tr('hPresets')}</h2>
       <div className="row">
         {PRESET_BUTTONS.map(([name, label]) => <button key={name} type="button" data-preset={name} onClick={() => actions.loadPreset(name)}>{tr(label)}</button>)}
+        <button type="button" id="tutorialRestart" onClick={() => actions.startTutorial()}>{tr('tutorialStart')}</button>
       </div>
     </>
   );

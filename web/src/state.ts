@@ -16,6 +16,7 @@ export interface UiState {
   exporting: boolean;     // a save is in progress; export buttons are disabled
   canUndo: boolean;
   canRedo: boolean;
+  tutorialOffer: boolean; // show the "start the tutorial" offer (first visit)
 }
 
 export interface AppState {
@@ -32,6 +33,7 @@ export interface AppState {
   failed: Set<string>;
   powered: boolean;
   powerStart: number;
+  tutorial: number | null;   // index into tutorial.ts STEPS while the tutorial runs
   ui: UiState;
 }
 
@@ -49,7 +51,8 @@ export const state: AppState = {
   failed: new Set(),  // Failure drill: keys of facilities marked failed. Not part of the layout, undo history or share links
   powered: false,
   powerStart: 0,
-  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false},
+  tutorial: null,
+  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false},
 };
 
 // All deep copies: snapshots go into undo history and localStorage and must not follow later state changes

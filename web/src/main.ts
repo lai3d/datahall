@@ -18,8 +18,10 @@ import type {Saver} from './download.ts';
 import {encodeLayout, decodeLayout} from './share-link.ts';
 import {DEFAULT_LANG, setLang, htmlLang, tr} from './i18n.ts';
 import {lineCells, freeCells, sameLayout, createHistory, toItem} from './edit.ts';
-import {canFail} from './redundancy.ts';
-import {hasShareLink, initAnalytics} from './analytics.ts';
+import {canFail, blockingReasons} from './redundancy.ts';
+import {advance, LAST} from './tutorial.ts';
+import type {TutorialContext} from './tutorial.ts';
+import {hasShareLink, initAnalytics, reportTutorialDone} from './analytics.ts';
 import {$} from './dom.ts';
 import type {PlacedItem} from './state.ts';
 import type {Actions} from './ui.tsx';
@@ -62,7 +64,8 @@ function edit(fn: () => void){
 }
 const removeItem = (key: string) => edit(() => remove(key));
 // Loading a preset, importing a file or opening a share link swaps in a different hall, so the failure drill is cleared; undo and redo keep it (facilities still in their cells stay failed)
-const loadLayout = (p: Layout) => edit(() => { state.failed.clear(); state.viewPhase = null; state.phase = 1; replaceLayout(p); });
+// They also end a running tutorial
+const loadLayout = (p: Layout) => edit(() => { state.failed.clear(); state.viewPhase = null; state.phase = 1; state.tutorial = null; replaceLayout(p); });
 // Not recorded in undo history: loading at startup, and undo/redo themselves
 function showLayout(p: Layout){ replaceLayout(p); state.powered = false; state.rowAnchor = null; changed(); }
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
@@ -71,9 +74,42 @@ function redo(){ if (drag) return; const p = undoStack.redo(snapshot()); if (p) 
 function select(key: string | null){ state.selected = key; state.assignFrom = null; view.setOutline(); notify(); }
 // Sync the 3D scene's alert caps and dimming with the current model, then re-render the panel
 function refresh(){
-  view.setAlerts(hallModel().alerts);
+  const model = hallModel();
+  view.setAlerts(model.alerts);
   view.setDimmed();
+  if (state.tutorial !== null) stepTutorial(model, false);
   notify();
+}
+
+// ---------- tutorial ----------
+const TUTORIAL_SEEN = 'datahall.tutorial.seen';
+function tutorialSeen(): boolean{ try { return localStorage.getItem(TUTORIAL_SEEN) === '1'; } catch (e) { return false; } }
+function markTutorialSeen(){ try { localStorage.setItem(TUTORIAL_SEEN, '1'); } catch (e) {} state.ui.tutorialOffer = false; }
+
+function tutorialContext(model: ReturnType<typeof hallModel>): TutorialContext{
+  const counts: Record<string, number> = {};
+  for (const it of model.all) counts[it.type] = (counts[it.type] || 0) + 1;
+  const reasons = blockingReasons(model.active, CAT, state.utility);
+  return {
+    tool: state.tool, counts, blocking: model.blocking, powered: state.powered,
+    reasons: reasons.flatMap(r => r.kind === 'overload' ? [] : [r.kind]),
+    overloads: reasons.flatMap(r => r.kind === 'overload' && (r.item.type === 'cdu' || r.item.type === 'rpp') ? [r.item.type] : []),
+  };
+}
+// Advance the running tutorial on the current hall; `next` is the "Next" button on manual steps
+function stepTutorial(model: ReturnType<typeof hallModel>, next: boolean){
+  if (state.tutorial === null) return;
+  const before = state.tutorial;
+  state.tutorial = advance(before, tutorialContext(model), next);
+  if (before < LAST && state.tutorial === LAST) reportTutorialDone();
+}
+// Start from an empty hall at 2 MW with nothing selected
+function startTutorial(){
+  markTutorialSeen();
+  loadLayout(PRESETS.empty);
+  Object.assign(state, {tool: null, selected: null, placeMode: 'one', rowAnchor: null, assignFrom: null, powered: false, tutorial: 0});
+  view.setOutline(); updateGhost();
+  refresh();
 }
 function changed(){
   for (const key of state.failed){ const it = state.items.get(key); if (!it || !canFail(CAT[it.type])) state.failed.delete(key); }
@@ -369,8 +405,8 @@ const controls = initControls(el, view.camera, {
 const actions: Actions = {
   removeItem,
   setUtility: u => edit(() => { state.utility = u; }),
-  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; state.rowAnchor = null; state.assignFrom = null; view.setOutline(); notify(); updateGhost(); },
-  setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; notify(); updateGhost(); },
+  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; state.rowAnchor = null; state.assignFrom = null; view.setOutline(); updateGhost(); refresh(); },
+  setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; updateGhost(); refresh(); },
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
   toggleFailed,
@@ -382,6 +418,10 @@ const actions: Actions = {
   toggleAssignMode,
   restoreAll,
   setLang: switchLang,
+  startTutorial,
+  tutorialNext: () => { stepTutorial(hallModel(), true); refresh(); },
+  exitTutorial: () => { state.tutorial = null; notify(); },
+  dismissTutorialOffer: () => { markTutorialSeen(); notify(); },
   undo,
   redo,
   resetView: () => controls.resetView(),
@@ -399,6 +439,8 @@ initKeyboard();
 const mq = window.matchMedia('(prefers-color-scheme: dark)');
 mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
 
+// First visit (no share link, nothing saved, tutorial never started or dismissed): offer the tutorial
+state.ui.tutorialOffer = !openedFromShareLink && restoreLayout() === null && !tutorialSeen();
 if (!loadFromLink(false)) showLayout(restoreLayout() || PRESETS.gb200);
 // Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
 if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce};
