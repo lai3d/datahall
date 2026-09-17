@@ -23,6 +23,8 @@
     `plugInfo.json` 里的 `Root`/`ResourcePath`/`LibraryPath` 是手改的相对路径，重新生成会保留
 - `samples/datahall.usda`：导出样例，已用 OpenUSD 26.08 和 schema 校验，同时是导出回归测试的 golden 文件
 - `tools/validate_usd.py`：基于 schema 的 USD 校验，自动注册 `schema/` 插件；`tools/test_validate_usd.py` 是它的测试
+- `tools/simready_setup.sh` + `tools/simready_audit.py`：对照 NVIDIA SimReady Foundation（固定版本）和 OAV 默认规则核对，环境在 `.simready/`
+- `docs/simready-audit.md`：SimReady 核对报告
 
 ## 运行
 
@@ -38,6 +40,7 @@ python3 -m venv .venv && .venv/bin/pip install usd-core jinja2
 tools/gen_schema.sh             # 改了 schema/schema.usda 之后（默认用 .venv 的 python）
 tools/gen_schema.sh --validate  # 检查生成文件是否过期
 export PXR_PLUGINPATH_NAME=$PWD/schema  # 让 usdview、Omniverse 识别 schema
+tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py samples/datahall.usda  # SimReady 核对（需要 uv）
 ```
 
 ## 已定的设计决策
@@ -55,12 +58,14 @@ export PXR_PLUGINPATH_NAME=$PWD/schema  # 让 usdview、Omniverse 识别 schema
   - 属性名和类型与 0.1 的自定义属性保持一致；没加载插件时文件照样能打开、属性值照样可读。0.1 的文件没有 `apiSchemas`，校验会要求重新导出
   - schema 的 doc 用英文：usdGenSchema 会把第一句截成 `userDocBrief` 并补英文句点，中文句号会变成"。."
   - 改属性的顺序：`schema/schema.usda` → `tools/gen_schema.sh` → `web/src/usd-export.js` → `npm run sample` → `validate_usd.py`
-  - 替换高精度模型的方式：在更强的层对 Catalog 原型写 `over`
+  - 替换高精度模型的方式：在更强的层对 Catalog 原型写 `over`，但**不能直接对原型加 reference**：AIF 设备资产正面朝 +X，本项目正面朝 -Y；
+    要在原型下建子 Xform 引用资产、`rotateXYZ = (0, 0, -90)`、`kind = "subcomponent"`，详见 `docs/simready-audit.md`
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
 ## 下一步（按优先级）
 
-1. 对照 NVIDIA SimReady 规范核对 kind、单位、材质绑定要求（尚未逐条核对，不要假设已合规）。
+1. 按 `docs/simready-audit.md` 的“建议修复顺序”修复：Equipment kind=group、原型内 UsdPreviewSurface 材质、SR.001 元数据、Cube 改 Mesh。
+   核对结论：单位合规；kind 和材质绑定不合规；没有面向数据中心的 SimReady profile，不要声称某个 profile 整体通过。
 2. 网页版支持导入自己导出的 `.usda` 子集（不追求通用 USD 解析）。
 3. Unity 版：USD → JSON + glTF 的离线转换管线（Python pxr），或基于 USD C++ 的 native plugin，先做方案对比再动手。
 
