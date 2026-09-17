@@ -16,7 +16,7 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
   - String types: the type of `zh.ts` is derived from `en.ts`; `tr(key, vars)` checks keys and variables at compile time
   - `vercel.json`: Vercel build settings (Vite, `npm ci`, `npm run build`, output `dist`)
   - `src/catalog.ts`: imports `spec/catalog.json`, bundled at build time
-  - `src/sim.ts`: capacity model and PUE, pure functions
+  - `src/sim.ts`: capacity model and PUE, pure functions; `PUE_FACTORS` holds the teaching coefficients, shared by `energy.ts`, `growth.ts` and the methodology dialog
   - `src/i18n.ts` + `src/locales/en.ts`, `zh.ts`: UI language, English by default, switchable to Simplified Chinese (toggle at top right, remembered in localStorage, `?lang=zh` selects it directly).
     All UI copy, capacity issues and import messages go through `tr(key, vars)`; new strings must be added to both files, and `tests/i18n.test.ts` checks that keys match and no variables are missing
   - `src/supply.ts`: per-device capacity check; compares the load each CDU and RPP gets through nearest assignment via `supplyLinks` against its own capacity, pure functions. Web version only; Unity's `CapacityModel` has no counterpart
@@ -180,6 +180,9 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # open a layou
     (`state.ui.panelCollapsed`, view state only, via the `panel-collapsed` class on body)
   - Placement feedback on every screen: placed devices grow up from the floor for 220 ms (`scene.ts`'s `popMesh`, skipped with reduced motion; `renderOnce` finishes it immediately so snapshots and tests never see a half-grown rack) and touch taps vibrate where supported
   - Portrait views keep the horizontal field of view of a square view (`resize` in `scene.ts`), so the hall still fits across a phone with the panel folded away
+- **Methodology dialog** (`ui.tsx`'s `Method`, a modal `<dialog id="method">`): explains the five checks, the per-device check, the PUE formula and why its coefficients are what they are, prices and energy, the limits of the planning estimates, and lists every catalog note.
+  Opened from "How the model works" under the subtitle or from links next to the sections it explains (`data-method="checks" | "cost" | "planning"`), which scroll to that section (`state.ui.method`, view state).
+  Capacities and coefficients in the text are read from the catalog and `PUE_FACTORS`, never typed into the copy, so changing the model updates the explanation
 - **Load visualization** (`scene.ts`):
   - CDUs and RPPs have a 5-segment load meter on the front instead of plain stripes (`setLoads`, called from `refresh()` before `setDimmed`, because swapping segment materials resets the dimming cache). Segments light from the bottom by nearest-assigned load, rounding up;
     the color is the device color below 80%, amber from 80% and red above capacity (`viz.ts`'s `meterFor`). Failed and later-phase devices show an empty meter
@@ -208,6 +211,7 @@ Power and price figures come from public reports and supply-chain estimates, **n
 - AMD Helios: 72 MI455X, about 225–245 kW, fully liquid-cooled (StorageReview, 2026-07); about $5–5.5M per rack (Futurum via CNBC, 2026-07); a 1.2 m wide Open Rack Wide, simplified to one cell
 - MI355X DLC rack: 8 servers × 8 GPUs, about 120 kW (GIGABYTE GIGAPOD); the 80% liquid fraction and the price are estimates
 - The IB switch rack's "288 ports" is a simplified model, not a real topology
+- PUE context in the methodology dialog: weighted average annual PUE 1.54 in 2025, 1.44 for facilities of 20 MW and above (Uptime Institute Global Data Center Survey 2025)
 - Default electricity price (`energy.ts`): 8.62 ¢/kWh, the 2025 US industrial average (US EIA, Electric Power Monthly, table 5.3), excluding taxes, demand charges and fixed fees. The 80% average load is an assumption
 - Scale references (`scale.ts`): DGX Spark 240 W (its power adapter rating), US home about 1.2 kW average (about 10,500 kWh a year, US EIA). A Mac Studio reference waits for a sourced power figure
 

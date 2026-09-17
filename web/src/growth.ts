@@ -1,5 +1,5 @@
 // Growth planning: devices come online in batches by deployment phase (phase, starting at 1); capacity is checked cumulatively per phase, and remaining rack headroom is estimated. Pure functions, no DOM dependency.
-import {compute} from './sim.ts';
+import {compute, PUE_FACTORS} from './sim.ts';
 import {blockingReasons} from './redundancy.ts';
 import type {Reason, ReasonKind} from './redundancy.ts';
 import type {Totals} from './sim.ts';
@@ -49,13 +49,13 @@ export function growthPlan(items: Item[], CAT: Catalog, utility: number): PhaseR
 export function headroom(items: Item[], CAT: Catalog, utility: number, type: string): {limit: ReasonKind | null; count: number}{
   const s = compute(items, CAT, utility), t = CAT[type];
   const kw = t.kw || 0, liq = t.liq || 0;
-  // Demand added per rack, matching the PUE formula in sim.ts: IT + overhead + liquid heat×0.08 + air heat×0.30 + IT×0.05
+  // Demand added per rack, matching the PUE formula in sim.ts: IT + overhead + cooling for liquid and air heat + distribution losses
   const need: Record<ReasonKind, number> = {
     dist: kw,
     liquid: kw * liq,
     air: kw * (1 - liq),
     network: t.gpus || 0,
-    utility: kw + (t.ovh || 0) + kw * liq * .08 + kw * (1 - liq) * .30 + kw * .05,
+    utility: kw + (t.ovh || 0) + kw * liq * PUE_FACTORS.liquid + kw * (1 - liq) * PUE_FACTORS.air + kw * PUE_FACTORS.losses,
   };
   const left: Record<ReasonKind, number> = {
     dist: s.dist - s.it,
