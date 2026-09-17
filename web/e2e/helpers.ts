@@ -17,6 +17,8 @@ export async function openApp(page: Page, path = '/?lang=en'): Promise<string[]>
   page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test(m.text()) && !/Failed to load resource.*404/.test(m.text())) errors.push(m.text()); });
   await page.goto('/?lang=en');
   await page.evaluate(() => localStorage.clear());
+  // A real navigation, so a path that only adds a hash still reloads the page
+  await page.goto('about:blank');
   await page.goto(path);
   await expect(page.locator('#issues li').first()).toBeVisible();
   await page.waitForFunction(() => !!window.__datahall);

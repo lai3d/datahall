@@ -89,6 +89,26 @@ export default {
   headroomNote: 'Headroom counts hall totals only. It ignores floor space and which CDU or RPP each rack connects to.',
   rowPhase: 'Phase',
 
+  // Guided tutorial (tutorial.ts)
+  tutorialTitle: 'Tutorial',
+  tutorialOffer: 'New here? The tutorial walks you through building a small GB200 hall and getting it to power on. It takes about 3 minutes.',
+  tutorialStart: 'Start tutorial',
+  tutorialDismiss: 'Not now',
+  tutorialStep: ({n, total}: {n: number; total: number}) => `Step ${n} of ${total}`,
+  tutorialNext: 'Next',
+  tutorialExit: 'Exit tutorial',
+  tutorialClose: 'Close',
+  tutPick: 'The hall is empty. Pick the GB200 NVL72 rack in the device list.',
+  tutPlace: ({n, gap}: {n: number; gap: number}) => `Place ${n} racks in a row: switch placement to "Row", click an empty floor cell, then click the cell ${gap} cells further along the same row.`,
+  tutWhy: 'The power button is still disabled. Each rack draws 125 kW and sends 85% of its heat to liquid cooling, but the hall has no power distribution, no cooling and no network yet. The capacity check lists every shortage.',
+  tutPower: 'Add power distribution: pick the RPP power panel and place 2 in the row in front of the racks. Each RPP feeds about 800 kW, and every rack connects to the nearest one.',
+  tutLiquid: 'Add liquid cooling: place 2 CDUs in the same row. One CDU removes about 800 kW of heat, and the 8 racks produce about 850 kW.',
+  tutAir: 'The remaining heat goes into the air: place 2 in-row coolers.',
+  tutNetwork: 'Each rack holds 72 GPUs, and every GPU needs a back-end network port: place 2 Quantum-X800 IB switch racks.',
+  tutUtility: 'The facility now draws more than the utility feed. Pick a larger utility power at the top of the panel.',
+  tutPowerOn: 'All shortages are fixed. Power on the hall. If the button is still disabled, fix what the capacity check still lists.',
+  tutDone: ({gpus, pue}: {gpus: string; pue: string}) => `Your hall is running: ${gpus} GPUs at an estimated PUE of ${pue}. Next, mark a CDU failed in the failure drill, or plan a second phase in the growth plan.`,
+
   // Failure drill (redundancy.ts)
   hDrill: 'Failure drill',
   drillIntro: 'Select a CDU, RPP, in-row cooler or IB switch rack and mark it failed. Its load moves to the nearest working unit.',

@@ -9,7 +9,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 ## Goal and measures
 
 - **Goal**: a stranger opens the link, understands within 5 minutes why an AI data hall "cannot power on", and wants to pass the link along.
-- **Measures**: visits, share of visitors who finish a scenario, and how often a `#layout=` share link is opened. Visits and share-link opens are measured with Vercel Web Analytics from 2026-09-17 (share-link visits show up as the page `/shared`); scenario completion is not measured yet.
+- **Measures**: visits, share of visitors who finish a scenario, and how often a `#layout=` share link is opened. All three are measured with Vercel Web Analytics from 2026-09-17: share-link visits show up as the page `/shared`, and finishing the guided tutorial as the page `/tutorial-done` (compare with visits to `/`).
 - **Not this quarter**: real network topology (the IB switch rack stays a simplified 288-port model), user-editable device parameters, the Unity app.
 
 ## Now (next 2 to 4 sessions)
@@ -19,7 +19,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Migrate JS to TS (strict) | Everything that follows is built on TS | — | Done, 2026-09-17 |
 | English docs and code comments | Docs and comments default to English from 2026-09-17. CLAUDE.md, docs/ and all code comments are converted; UI copy, catalog data and asserted Chinese output stay Chinese | 2–3 h | Done, 2026-09-17 |
 | Fix the 3 bugs from the 2026-09-17 review | Nearest-supply ties resolve by placement order and dragging changes that order, so an identical layout can "mysteriously" overload and the result travels with share links; a corrupt localStorage entry keeps the page from loading; the share-link phase cap does not match the UI | 1 h | Not started |
-| Guided scenario (tutorial mode) | New users open the page and do not know what to do. "Place 8 racks → why it cannot power on → add a CDU → power on" is the teaching storyline | 4–6 h | Not started |
+| Guided scenario (tutorial mode) | New users open the page and do not know what to do. "Place 8 racks → why it cannot power on → add a CDU → power on" is the teaching storyline | 4–6 h | Done, 2026-09-17 |
 | Social preview image and one-click screenshot | Spreading depends on links, and links need an image. One OG image; export the 3D view as PNG (`toDataURL` after `renderOnce` already works) | 1–2 h | Not started |
 | Vercel Web Analytics | Without measurement there is no way to know whether anyone uses it | 0.5 h | Done, 2026-09-17 |
 | AMD racks in the catalog | Helios (72 MI455X) and an MI355X DLC rack as catalog entries only; the model is vendor-neutral and the comparison story needs a second vendor | 1 h | Done, 2026-09-17 |

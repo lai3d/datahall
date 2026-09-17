@@ -20,6 +20,7 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 - **Manual supply assignment.** Racks connect to the nearest CDU and RPP by default. You can pick a different one per rack, or select a CDU or RPP and click the racks it should feed. The choice is kept in USD, layout.json and share links.
 - **Growth plan.** Put devices into deployment phases. A phase table checks everything built up to each phase, you can view the hall as of any phase, and a headroom estimate shows how many more racks fit before power, cooling or ports run out.
 - **Failure drill.** Mark a CDU, RPP, in-row cooler or IB switch rack as failed and watch its load move to the nearest working unit. An N+1 check lists every device whose single failure would break the hall.
+- **Guided tutorial.** First-time visitors can build a small GB200 hall step by step and learn why it cannot power on until power distribution, cooling and networking are added.
 - **Editing.** Drag a device to move it, place a whole row with two clicks, and undo or redo any change (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y). Delete removes the selected device.
 - **Share links.** The layout is encoded in the URL hash, so the address bar always links to the current hall.
 - **English and Simplified Chinese UI.**
