@@ -6,7 +6,7 @@ export default defineConfig({
   base: './',
   // 开发服务器默认只放行 web/，catalog.json 在上一级 spec/
   server: {fs: {allow: [fileURLToPath(new URL('..', import.meta.url))]}},
-  // three r128 整包约 530 kB，不值得为它拆包
+  // three 0.186 整包约 600 kB（含本项目代码），不值得为它拆包
   build: {chunkSizeWarningLimit: 700},
   test: {environment: 'node'},
 });

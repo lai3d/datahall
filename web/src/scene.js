@@ -19,11 +19,20 @@ const cellPos = (x, z) => new THREE.Vector3((x - (GW - 1) / 2) * CX, 0, (z - (GD
 export function initScene(stage){
   renderer = new THREE.WebGLRenderer({antialias:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
   stage.prepend(renderer.domElement);
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.75));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(6, 14, 9); scene.add(sun);
+  // three r155 起光照按物理单位计算，强度乘 π 才和 r128 时的亮度相当
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.75 * Math.PI));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.75 * Math.PI); sun.position.set(6, 14, 9);
+  // 设备投到地板上的影子：阴影相机盖住整个机房
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, {left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40});
+  sun.shadow.radius = 3;
+  sun.shadow.bias = -0.0005;
+  scene.add(sun);
   itemRoot = new THREE.Group(); scene.add(itemRoot);
   buildHall();
   const resize = () => {
@@ -40,7 +49,7 @@ function buildHall(){
   scene.background = col('--hall');
   floor = new THREE.Mesh(new THREE.PlaneGeometry(GW * CX + .6, GD * CZ + .6),
     new THREE.MeshStandardMaterial({color: col('--floor'), roughness: .95}));
-  floor.rotation.x = -Math.PI / 2; scene.add(floor);
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   const pts = [], w = GW * CX / 2, d = GD * CZ / 2;
   for (let i = 0; i <= GW; i++){ const x = -w + i * CX; pts.push(new THREE.Vector3(x, .002, -d), new THREE.Vector3(x, .002, d)); }
   for (let j = 0; j <= GD; j++){ const z = -d + j * CZ; pts.push(new THREE.Vector3(-w, .002, z), new THREE.Vector3(w, .002, z)); }
@@ -53,7 +62,7 @@ function makeMesh(key, it){
   const t = CAT[it.type], h = t.h, g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, h, CZ * .94),
     new THREE.MeshStandardMaterial({color: col('--rack'), roughness: .55, metalness: .35}));
-  body.position.y = h / 2; g.add(body);
+  body.position.y = h / 2; body.castShadow = true; g.add(body);
   const accent = col(t.c);
   const stripeMat = new THREE.MeshStandardMaterial({color: accent, emissive: accent, emissiveIntensity: .12});
   const n = t.group === 'gpu' ? 9 : 3;

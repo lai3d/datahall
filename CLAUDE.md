@@ -6,7 +6,7 @@
 
 ## 目录
 
-- `web/`：网页版，Vite + three.js 0.128（npm 锁版本），入口 `web/index.html` → `web/src/main.js`
+- `web/`：网页版，Vite + three.js 0.186（npm 锁版本），入口 `web/index.html` → `web/src/main.js`
   - `vercel.json`：Vercel 构建设置（Vite，`npm ci`、`npm run build`、输出 `dist`）
   - `src/catalog.js`：import `spec/catalog.json`，构建时打进包里
   - `src/sim.js`：容量模型与 PUE，纯函数
@@ -127,14 +127,16 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
   - 快捷键：⌘Z / Ctrl+Z 撤销，⇧⌘Z / Ctrl+Y 重做，Delete / Backspace 删除选中设备，Esc 依次取消整排起点、当前设备、选中
   - 开发服务器下 `window.__datahall` 暴露 `state`、`cellToScreen`、`visibleGhosts`、`renderOnce`，给浏览器自动化用（生产构建没有）。
     自动化浏览器窗口在后台时 requestAnimationFrame 会暂停：画面和相机矩阵不更新，先调 `renderOnce()`，截图用 canvas 的 `toDataURL`
+- **三维渲染**（three 0.186）：色彩管理默认开启，CSS 里的颜色按 sRGB 读入、换算到线性空间计算、输出 sRGB；不加色调映射，调色板颜色不偏。
+  光照按物理单位，强度是 r128 时的 π 倍才亮度相当；太阳光投影子（只有设备主体投射，地板接收，阴影相机盖住整个机房）。
+  `PCFSoftShadowMap` 在 r186 已移除，用默认的 `PCFShadowMap`
 - **网格坐标**：网页里 three.js 是 Y-up，导出时 `(x, y, z)_three → (x, -z, y)_usd`。格子 0.6m × 1.2m，16 列 × 10 排。
 
 ## 下一步（按优先级）
 
 当前以网页版为主（2026-09-17 决定），Unity 版暂停。
 
-1. three.js 从 r128 升级到新版（色彩管理、画质）。
-2. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
+1. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
    Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
 
 ## 数据可信度
