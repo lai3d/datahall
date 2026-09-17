@@ -35,7 +35,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Load visualization | Animated flow on links after power-on; CDUs and RPPs colored by load, so "nearest assignment" becomes visible | 2–3 h |
 | Annual electricity cost | One electricity price input; convert facility kW into money | 1 h |
 | Mobile polish | Collapsible panel, placement feedback on touch. Most share links are opened on phones | 2 h |
-| Catalog data refresh | Measured GB300 power after shipping, Rubin's official naming, Kyber figures re-checked; sources go into the `catalog.json` notes | 1 h |
+| Catalog data refresh | Measured GB300 power after shipping, Rubin's official naming, Kyber figures re-checked, DGX B200 replaced by B300; add Huawei CloudMatrix 384 as a compute rack (32 Ascend 910C) plus an optical switch rack, the best contrast story to NVL72; TPU Ironwood only if a credible per-rack power figure appears. Before adding any air-cooled dense rack, turn the hardcoded `dgx` density warning in `sim.ts` into a catalog flag. Sources go into the `catalog.json` notes | 2 h |
 
 ## Later (after the quarter, directional)
 

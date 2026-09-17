@@ -35,7 +35,7 @@ English version: [roadmap.md](roadmap.md). 两个版本内容一致，改动时�
 | 负载可视化 | 通电后连线流动、CDU 和 RPP 按负载变色，让"就近分配"看得见 | 2–3 h |
 | 年电费估算 | 一个电价输入，facility kW 换算成钱 | 1 h |
 | 手机端打磨 | 面板可折叠、触屏放置有反馈。分享链接大半在手机上打开 | 2 h |
-| 目录数据更新 | GB300 出货后的实测功耗、Rubin 的正式命名、Kyber 数字校对；来源写进 `catalog.json` 的 note | 1 h |
+| 目录数据更新 | GB300 出货后的实测功耗、Rubin 的正式命名、Kyber 数字校对，DGX B200 换成 B300；加华为 CloudMatrix 384 的计算柜（32 颗 Ascend 910C）和光交换柜，是和 NVL72 对比最好的故事；TPU Ironwood 等有可信的单柜功耗再加。加任何风冷密集柜之前，先把 `sim.ts` 里写死 `dgx` 的密度提示改成目录标志位。来源写进 `catalog.json` 的 note | 2 h |
 
 ## Later（季度末以后，方向性）
 
