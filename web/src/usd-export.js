@@ -2,7 +2,7 @@
 // 坐标换算：(x, y, z)_three → (x, -z, y)_usd，Z 轴向上，单位米
 // 属性由 schema/schema.usda 里的 DataHallAPI、DataHallEquipmentAPI、LiquidCooledAPI 定义，
 // 改属性时先改 schema，web 测试会检查两边是否一致
-import {nearest} from './grid.js';
+import {equipmentName, supplyLinks} from './grid.js';
 
 // meta.date：生成日期 YYYY-MM-DD，由调用方传入以保持纯函数（SimReady SR.001 的 usd_date_generated）
 export function buildUsda(list, CAT, utility, g, meta){
@@ -11,8 +11,7 @@ export function buildUsda(list, CAT, utility, g, meta){
   const f = v => { const s = (Math.round(v * 10000) / 10000).toString(); return s.includes('.') || s.includes('e') ? s : s + '.0'; };
   const rgb = h => { const n = parseInt(h.slice(1), 16); return `(${f((n >> 16 & 255) / 255)}, ${f((n >> 8 & 255) / 255)}, ${f((n & 255) / 255)})`; };
   const str = s => '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-  const pad = n => String(n).padStart(2, '0');
-  const primName = it => `R${pad(it.z + 1)}_C${pad(it.x + 1)}`;
+  const primName = equipmentName;
   const pos = it => [(it.x - (g.GW - 1) / 2) * g.CX, -((it.z - (g.GD - 1) / 2) * g.CZ)];
   // 单位立方体网格：SimReady VG.MESH.001 要求非细分 Mesh。面从外侧看逆时针（rightHanded），法线按面给出
   const BOX = [
@@ -48,7 +47,7 @@ export function buildUsda(list, CAT, utility, g, meta){
     `${ind}    }`, `${ind}}`].join('\n');
 
   const used = [...new Set(list.map(i => i.type))].filter(id => CAT[id]);
-  const cdus = list.filter(i => i.type === 'cdu'), rpps = list.filter(i => i.type === 'rpp');
+  const links = supplyLinks(list, CAT);
 
   const L = [];
   L.push('#usda 1.0', '(',
@@ -111,8 +110,9 @@ export function buildUsda(list, CAT, utility, g, meta){
     L.push(`        def Xform "${primName(it)}" (`, '            kind = "component"', '            instanceable = true',
       `            prepend references = </DataHall/Catalog/${it.type}>`, '        )', '        {',
       `            int dchall:gridColumn = ${it.x}`, `            int dchall:gridRow = ${it.z}`);
-    if (t.liq > 0){ const n = nearest(it, cdus); if (n) L.push(`            rel dchall:coolantSource = </DataHall/Equipment/${primName(n.a)}>`); }
-    if (t.kw > 0){ const n = nearest(it, rpps); if (n) L.push(`            rel dchall:powerFeed = </DataHall/Equipment/${primName(n.a)}>`); }
+    const {coolantSource, powerFeed} = links.get(it);
+    if (coolantSource) L.push(`            rel dchall:coolantSource = </DataHall/Equipment/${primName(coolantSource)}>`);
+    if (powerFeed) L.push(`            rel dchall:powerFeed = </DataHall/Equipment/${primName(powerFeed)}>`);
     L.push(`            double3 xformOp:translate = (${f(px)}, ${f(py)}, 0.0)`,
       '            uniform token[] xformOpOrder = ["xformOp:translate"]', '        }');
   });

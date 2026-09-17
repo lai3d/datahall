@@ -67,3 +67,14 @@ it('fmt', () => {
   expect(fmt(999.6)).toBe('1000 kW');
   expect(fmt(1269.8)).toBe('1.27 MW');
 });
+
+describe('spec/capacity-cases.json', () => {
+  it('和当前 sim.js、catalog.json 的计算结果一致（不一致时运行 npm run capacity-cases）', async () => {
+    const {readFileSync} = await import('node:fs');
+    const {buildCases, CASES_PATH} = await import('../scripts/capacity-cases.js');
+    const file = JSON.parse(readFileSync(CASES_PATH, 'utf8'));
+    expect(file.cases).toEqual(buildCases());
+    expect(file.cases.length).toBe(7);
+    expect(file.cases.some(c => c.expected.blocking) && file.cases.some(c => !c.expected.blocking)).toBe(true);
+  });
+});

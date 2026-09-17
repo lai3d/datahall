@@ -7,12 +7,14 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "sample": "node scripts/update-sample.js"
+    "sample": "node scripts/update-sample.js",
+    "capacity-cases": "node scripts/capacity-cases.js"
   },
   "dependencies": {
     "three": "0.128.0"
   },
   "devDependencies": {
+    "ajv": "^8.20.0",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"
   }
