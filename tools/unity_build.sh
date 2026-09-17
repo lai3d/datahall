@@ -2,6 +2,7 @@
 # 打包 macOS 程序到 build/DataHall.app，并用 batchmode 运行冒烟测试：打开默认 layout.json，输出统计后退出
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+"$root/tools/check_lfs.sh" || exit 1
 unity="${UNITY:-/Applications/Unity/Hub/Editor/6000.6.1f1/Unity.app/Contents/MacOS/Unity}"
 app="$root/build/DataHall.app"
 mkdir -p "$root/build"

@@ -2,6 +2,7 @@
 # 运行 Unity EditMode 测试，结果写到 build/unity-editmode.xml，打印汇总和失败详情
 set -uo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
+"$root/tools/check_lfs.sh" || exit 1
 unity="${UNITY:-/Applications/Unity/Hub/Editor/6000.6.1f1/Unity.app/Contents/MacOS/Unity}"
 mkdir -p "$root/build"
 results="$root/build/unity-editmode.xml"
