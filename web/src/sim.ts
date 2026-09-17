@@ -10,6 +10,10 @@ export interface Totals {
   facility: number; pue: number; issues: Issue[]; blocking: boolean;
 }
 
+// Teaching PUE coefficients: cooling energy per kW of liquid-cooled and air-cooled heat, and distribution losses per kW of IT.
+// Shared with energy.ts, growth.ts and the methodology dialog, which quotes them; the Unity C# port keeps its own copy
+export const PUE_FACTORS = {liquid: .08, air: .30, losses: .05} as const;
+
 export function fmt(kw: number): string{ return kw >= 1000 ? (kw / 1000).toFixed(2) + ' MW' : Math.round(kw) + ' kW'; }
 
 export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
@@ -24,9 +28,9 @@ export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
     if (t.future) s.future = true;
     if (i.type === 'dgx') s.dense = true;
   }
-  // Simplified teaching PUE: cooling power of liquid heat ×0.08 and air heat ×0.30, plus distribution losses of IT×0.05
-  const chiller = s.liqHeat * .08 + s.airHeat * .30;
-  const losses = s.it * .05;
+  // Simplified teaching PUE: cooling power for liquid and air heat, plus distribution losses (PUE_FACTORS)
+  const chiller = s.liqHeat * PUE_FACTORS.liquid + s.airHeat * PUE_FACTORS.air;
+  const losses = s.it * PUE_FACTORS.losses;
   s.facility = s.it + s.ovh + chiller + losses;
   s.pue = s.it ? s.facility / s.it : 0;
   const add = (lvl: Issue['lvl'], txt: string) => s.issues.push({lvl, txt});

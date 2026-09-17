@@ -459,6 +459,8 @@ const actions: Actions = {
   setViewPhase: n => setView(() => { state.viewPhase = n; }),
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
   setEnergy,
+  openMethod: section => { state.ui.method = section; notify(); },
+  closeMethod: () => { state.ui.method = null; notify(); },
   setItemPhase,
   setFeedChoice,
   toggleAssignMode,

@@ -20,6 +20,7 @@ export interface UiState {
   canRedo: boolean;
   tutorialOffer: boolean; // show the "start the tutorial" offer (first visit)
   panelCollapsed: boolean; // narrow screens: the panel is folded down to its status bar
+  method: string | null;    // section of the methodology dialog to show; null when closed
   lastPlaced: string | null; // device type placed by the last tap, for the stage bar's feedback; cleared when the tool changes
 }
 
@@ -58,7 +59,7 @@ export const state: AppState = {
   powerStart: 0,
   tutorial: null,
   energy: {price: DEFAULT_PRICE, load: DEFAULT_LOAD},
-  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, lastPlaced: null},
+  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, method: null, lastPlaced: null},
 };
 
 // All deep copies: snapshots go into undo history and localStorage and must not follow later state changes

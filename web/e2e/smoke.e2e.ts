@@ -158,6 +158,23 @@ test('annual energy: price and average load change the yearly cost and are remem
   expect(errors).toEqual([]);
 });
 
+test('methodology dialog opens from the header and from section links, and closes with Esc', async ({page}) => {
+  const errors = await openApp(page);
+  await page.locator('#methodOpen').click();
+  const dialog = page.locator('#method');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator('#m-pue .formula')).toContainText('liquid-cooled heat × 0.08 + air-cooled heat × 0.30 + IT × 0.05');
+  await expect(dialog.locator('#m-checks')).toContainText('800 kW each');
+  await expect(dialog.locator('#m-devices li[data-t="vr200"]')).toContainText('Vera Rubin NVL72');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await page.locator('button[data-method="planning"]').click();
+  await expect(dialog.locator('#m-planning')).toBeInViewport();
+  await page.locator('#methodClose').click();
+  await expect(dialog).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

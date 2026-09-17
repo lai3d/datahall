@@ -17,7 +17,7 @@ afterEach(() => setLang(DEFAULT_LANG));
 const VARS = {x: 3, z: 4, loc: 'L', n: 2, u: 5, kw: 800, used: 1, total: 2, m: '1.0', need: 'A', cap: 'B', heat: 'C',
   gpus: 7, ports: 8, facility: 'D', load: 'E', label: 'CDU', pct: 85, file: 'f.usda', reason: 'R', v: 'V', type: 'T', cell: 'T:c',
   name: 'N', msg: 'M', gw: 16, gd: 10, cx: .6, cz: 1.2, cur: 'K', diffs: 'P', where: 'W', id: 'I', other: 'O', line: 9,
-  c: '"?"', expected: 'X', got: 'Y', open: '(', close: ')', reasons: 'Q', field: 'F', target: 'T', source: 'S', phase: 2, limit: 'L', gap: 7, pue: '1.2', sparks: '1,000', homes: '200', cells: 20};
+  c: '"?"', expected: 'X', got: 'Y', open: '(', close: ')', reasons: 'Q', field: 'F', target: 'T', source: 'S', phase: 2, limit: 'L', gap: 7, pue: '1.2', sparks: '1,000', homes: '200', cells: 20, liq: '0.08', air: '0.30', loss: '0.05', airPue: '1.35', liqPue: '1.13', ovh: 12};
 
 describe('message tables', () => {
   it('defaults to English', () => expect(DEFAULT_LANG).toBe('en'));

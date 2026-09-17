@@ -1,6 +1,7 @@
 // Annual energy and electricity cost, pure functions. Uses the same facility formula as sim.ts, split by what scales with load:
-// IT power, cooling energy (proportional to heat) and distribution losses (IT × 0.05) follow the average load,
+// IT power, cooling energy (proportional to heat) and distribution losses follow the average load,
 // while equipment overhead (CDU pumps, in-row cooler fans) runs all year regardless.
+import {PUE_FACTORS} from './sim.ts';
 import type {Totals} from './sim.ts';
 
 export const HOURS_PER_YEAR = 8760;
@@ -16,7 +17,7 @@ export interface AnnualEnergy {itMWh: number; overheadMWh: number; totalMWh: num
 
 export function annualEnergy(s: Totals, {price, load}: EnergyInputs): AnnualEnergy{
   const itKw = s.it * load;
-  const scaled = (s.liqHeat * .08 + s.airHeat * .30 + s.it * .05) * load;
+  const scaled = (s.liqHeat * PUE_FACTORS.liquid + s.airHeat * PUE_FACTORS.air + s.it * PUE_FACTORS.losses) * load;
   const overheadKw = s.ovh + scaled;
   const itMWh = itKw * HOURS_PER_YEAR / 1000, overheadMWh = overheadKw * HOURS_PER_YEAR / 1000, totalMWh = itMWh + overheadMWh;
   return {itMWh, overheadMWh, totalMWh, pue: itMWh ? totalMWh / itMWh : 0, cost: totalMWh * 1000 * price};

@@ -6,7 +6,7 @@ import type {CSSProperties, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createPortal} from 'react-dom';
 import {CATALOG, CAT} from './catalog.ts';
-import {fmt} from './sim.ts';
+import {fmt, PUE_FACTORS} from './sim.ts';
 import {compareRacks} from './compare.ts';
 import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
@@ -43,6 +43,8 @@ export interface Actions {
   setViewPhase(n: number | null): void;
   setHeadroomType(type: string): void;
   setEnergy(change: Partial<EnergyInputs>): void;
+  openMethod(section: MethodSection): void;
+  closeMethod(): void;
   setItemPhase(key: string, phase: number): void;
   setFeedChoice(key: string, field: FeedField, value: string): void;
   toggleAssignMode(key: string): void;
@@ -105,6 +107,7 @@ function App({stage}: {stage: HTMLElement}){
       <Share notice={state.ui.share} />
       <Usd notice={state.ui.usd} />
       <p className="foot">{tr('foot')}</p>
+      <Method />
     </>
   );
 }
@@ -189,7 +192,75 @@ function Header(){
         </div>
       </div>
       <p className="sub">{tr('subtitle')}</p>
+      <p className="sub method-open"><button type="button" className="link" id="methodOpen" onClick={() => actions.openMethod('intro')}>{tr('methodOpen')}</button></p>
     </>
+  );
+}
+
+// Methodology and assumptions, in a modal dialog opened from the header or from "How it works" links next to the sections it explains.
+// Figures quoted in the text come from the catalog and PUE_FACTORS, so the explanation cannot drift from the model
+export type MethodSection = 'intro' | 'checks' | 'pue' | 'cost' | 'planning' | 'devices';
+const MethodLink = ({section, label = 'methodMore'}: {section: MethodSection; label?: 'methodMore' | 'methodHow'}) =>
+  <button type="button" className="link" data-method={section} onClick={() => actions.openMethod(section)}>{tr(label)}</button>;
+
+function Method(){
+  const ref = useRef<HTMLDialogElement>(null), section = state.ui.method;
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (section && !d.open) d.showModal();
+    if (!section && d.open) d.close();
+    if (section) document.getElementById('m-' + section)?.scrollIntoView({block: 'start'});
+  }, [section]);
+  const {liquid, air, losses} = PUE_FACTORS, f = (n: number) => n.toFixed(2);
+  const src = (href: string, text: string) => <p className="src">{tr('methodSource')} <a href={href} target="_blank" rel="noopener noreferrer">{text}</a></p>;
+  return (
+    <dialog ref={ref} id="method" className="method" aria-labelledby="methodTitle" onClose={() => { if (state.ui.method) actions.closeMethod(); }}
+      onClick={e => { if (e.target === ref.current) actions.closeMethod(); }}>
+      <div className="method-head">
+        <h2 id="methodTitle">{tr('methodTitle')}</h2>
+        <button type="button" id="methodClose" onClick={() => actions.closeMethod()}>{tr('methodClose')}</button>
+      </div>
+      <div className="method-body">
+        <section id="m-intro"><p>{tr('mIntro')}</p></section>
+        <section id="m-checks">
+          <h3>{tr('mHChecks')}</h3>
+          <p>{tr('mChecksIntro')}</p>
+          <ul>
+            <li>{tr('mDist', {cap: CAT.rpp.dist ?? 0})}</li>
+            <li>{tr('mLiquid', {cap: CAT.cdu.liqCool ?? 0, ovh: CAT.cdu.ovh ?? 0})}</li>
+            <li>{tr('mAir', {cap: CAT.crah.airCool ?? 0, ovh: CAT.crah.ovh ?? 0})}</li>
+            <li>{tr('mNetwork', {ports: CAT.ib.ports ?? 0})}</li>
+            <li>{tr('mUtility')}</li>
+          </ul>
+          <p>{tr('mPerDevice')}</p>
+        </section>
+        <section id="m-pue">
+          <h3>{tr('mHPue')}</h3>
+          <p className="formula">{tr('mPueFormula', {liq: f(liquid), air: f(air), loss: f(losses)})}</p>
+          <p>{tr('mPueWhy', {liq: f(liquid), air: f(air), airPue: f(1 + air + losses), liqPue: f(1 + liquid + losses)})}</p>
+          <p>{tr('mPueLeaves')}</p>
+          {src('https://intelligence.uptimeinstitute.com/resource/uptime-institute-global-data-center-survey-2025', 'Uptime Institute Global Data Center Survey 2025')}
+        </section>
+        <section id="m-cost">
+          <h3>{tr('mHCost')}</h3>
+          <p>{tr('mCost')}</p>
+          <p>{tr('mEnergy')}</p>
+          {src('https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=table_5_03', 'US EIA, Electric Power Monthly, table 5.3')}
+        </section>
+        <section id="m-planning">
+          <h3>{tr('mHPlanning')}</h3>
+          <p>{tr('mPlanning')}</p>
+        </section>
+        <section id="m-devices">
+          <h3>{tr('mHDevices')}</h3>
+          <p>{tr('mDevicesIntro')}</p>
+          <ul className="devices">
+            {CATALOG.map(t => <li key={t.id} data-t={t.id}><strong>{catName(t)}</strong> {catNote(t)}</li>)}
+          </ul>
+        </section>
+      </div>
+    </dialog>
   );
 }
 
@@ -253,7 +324,7 @@ function Capacity({model}: {model: HallModel}){
   ];
   return (
     <>
-      <h2>{tr('hCheck')}</h2>
+      <div className="h2row"><h2>{tr('hCheck')}</h2><MethodLink section="checks" label="methodHow" /></div>
       <div id="gauges">
         <Gauge label={tr('gaugeDist')} value={s.it} cap={s.dist} cssVar="--copper" />
         <Gauge label={tr('gaugeLiquid')} value={s.liqHeat} cap={s.liqCap} cssVar="--coolant" />
@@ -408,7 +479,7 @@ function Energy({model}: {model: HallModel}){
           ? <table><tbody>{rows.map(([k, v], i) => <tr key={i} className={i === rows.length - 1 ? 'total' : undefined}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>
           : <p className="sub">{tr('energyEmpty')}</p>}
       </div>
-      <p className="sub" style={{marginTop: 6}}>{tr('energyNote')}</p>
+      <p className="sub" style={{marginTop: 6}}>{tr('energyNote')} <MethodLink section="cost" /></p>
     </>
   );
 }
@@ -441,7 +512,7 @@ function Compare({model}: {model: HallModel}){
           );
         })}
       </div>
-      <p className="sub" style={{marginTop: 6}}>{tr('compareNote')}</p>
+      <p className="sub" style={{marginTop: 6}}>{tr('compareNote')} <MethodLink section="planning" /></p>
     </>
   );
 }

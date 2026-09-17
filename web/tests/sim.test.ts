@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {compute, fmt} from '../src/sim.ts';
+import {compute, fmt, PUE_FACTORS} from '../src/sim.ts';
 import {CAT, CATALOG} from '../src/catalog.ts';
 import {GRID, keyOf} from '../src/grid.ts';
 import {PRESETS} from '../src/layout.ts';
@@ -91,5 +91,12 @@ describe('spec/capacity-cases.json', () => {
     expect(file.cases.length).toBe(Object.keys(PRESETS).length + 4);   // One per preset plus 4 special cases
     type Case = {expected: {blocking: boolean}};
     expect(file.cases.some((c: Case) => c.expected.blocking) && file.cases.some((c: Case) => !c.expected.blocking)).toBe(true);
+  });
+});
+
+describe('PUE coefficients quoted in the methodology dialog', () => {
+  it('give an all-air rack 1 + air + losses and a fully liquid-cooled rack 1 + liquid + losses', () => {
+    expect(compute([{type: 'dgx', x: 0, z: 0}], CAT, 2).pue).toBeCloseTo(1 + PUE_FACTORS.air + PUE_FACTORS.losses, 9);
+    expect(compute([{type: 'kyber', x: 0, z: 0}], CAT, 2).pue).toBeCloseTo(1 + PUE_FACTORS.liquid + PUE_FACTORS.losses, 9);
   });
 });

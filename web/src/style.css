@@ -107,6 +107,22 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .energy td{padding:2px 0}
 .energy td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .energy tr.total td{font-weight:700;border-top:1px solid var(--line);padding-top:4px}
+button.link{border:0;padding:0;background:none;color:var(--coolant);text-decoration:underline;text-underline-offset:2px;font-size:inherit;cursor:pointer}
+.h2row button.link{font-size:13px}
+.method-open{margin:-6px 0 12px}
+dialog.method{width:min(680px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);overflow:auto}
+dialog.method::backdrop{background:rgb(0 0 0 / .45)}
+.method-head{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line)}
+.method-head h2{margin:0;color:var(--ink);font-size:18px}
+.method-body{padding:4px 18px 18px;font-size:14px;line-height:1.5}
+.method-body h3{font-size:15px;margin:16px 0 6px}
+.method-body ul{padding-left:18px;margin:6px 0}
+.method-body li{margin-bottom:4px}
+.method-body .formula{font-variant-numeric:tabular-nums;background:color-mix(in srgb,var(--ink) 6%,transparent);border-radius:6px;padding:6px 8px}
+.method-body .src{font-size:12px;color:var(--muted)}
+.method-body .src a{color:inherit}
+.method-body .devices{font-size:13px}
+.method-body section{scroll-margin-top:56px}
 .compare{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
 .cmp{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .cmp > i{width:6px;flex:none}
