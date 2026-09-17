@@ -20,7 +20,7 @@ export function reportedUrl(url: string, openedFromShareLink: boolean): string{
 }
 
 export function initAnalytics(openedFromShareLink: boolean): void{
-  if (import.meta.env.DEV) return;
+  if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') return;
   inject({
     mode: 'production',
     beforeSend: (event: BeforeSendEvent) => ({...event, url: reportedUrl(event.url, openedFromShareLink)}),

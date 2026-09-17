@@ -23,6 +23,8 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Social preview image and one-click screenshot | Spreading depends on links, and links need an image. One OG image; export the 3D view as PNG (`toDataURL` after `renderOnce` already works) | 1–2 h | Not started |
 | Vercel Web Analytics | Without measurement there is no way to know whether anyone uses it | 0.5 h | Done, 2026-09-17 |
 | AMD racks in the catalog | Helios (72 MI455X) and an MI355X DLC rack as catalog entries only; the model is vendor-neutral and the comparison story needs a second vendor | 1 h | Done, 2026-09-17 |
+| Playwright smoke test in CI | The 3D view and panel had no automated tests; it is also the safety net for the React migration and tutorial mode | 2 h | Done, 2026-09-17 |
+| Migrate the panel to React | Tutorial mode, the "Learn more" panel, comparison cards and the collapsible mobile panel are all UI work; move the hand-written DOM panel to React first so that code is not rewritten twice. The 3D scene stays plain three.js | 2–3 h | Next up (decided 2026-09-17) |
 
 ## Next (mid-quarter, 1 to 2 months)
 
@@ -33,7 +35,6 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Load visualization | Animated flow on links after power-on; CDUs and RPPs colored by load, so "nearest assignment" becomes visible | 2–3 h |
 | Annual electricity cost | One electricity price input; convert facility kW into money | 1 h |
 | Mobile polish | Collapsible panel, placement feedback on touch. Most share links are opened on phones | 2 h |
-| Playwright smoke test in CI | The 3D view and panel have no automated tests; regression risk grows once tutorial mode ships | 2 h |
 | Catalog data refresh | Measured GB300 power after shipping, Rubin's official naming, Kyber figures re-checked; sources go into the `catalog.json` notes | 1 h |
 
 ## Later (after the quarter, directional)

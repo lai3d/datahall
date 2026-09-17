@@ -8,5 +8,6 @@ export default defineConfig({
   server: {fs: {allow: [fileURLToPath(new URL('..', import.meta.url))]}},
   // three 0.186 as a whole is about 600 kB (including this project's code); not worth splitting out
   build: {chunkSizeWarningLimit: 700},
-  test: {environment: 'node'},
+  // Unit tests only; browser smoke tests live in e2e/ and run with Playwright
+  test: {environment: 'node', include: ['tests/**/*.test.ts']},
 });
