@@ -12,6 +12,7 @@ namespace DataHall
     //   -layout <path>          打开指定的 layout.json（默认 StreamingAssets/layout.json）
     //   -smokeTestOut <path>    搭建完成后把统计结果写成 JSON 并退出，用于自动化冒烟测试
     //   -screenshot <path>      渲染几帧后截图并退出
+    //   -nativeSmokeOut <path>  （需要窗口，不能 batchmode）检查原生插件：拖放 -nativeSmokeLayout 指定的文件、自动取消的文件对话框、打开失败时保留当前机房
     public class HallApp : MonoBehaviour
     {
         public EquipmentLibrary library;
@@ -23,35 +24,67 @@ namespace DataHall
         GameObject hall;
         EquipmentInfo selected;
         string source;
-        string error;
+        string error;                 // 没有任何机房可显示时的错误
+        string notice;                // 打开新文件失败时的提示，当前机房保留
+        bool openRequested;
+        bool dropReady;
+        int dropAttempts;
+        int dropResult;
+        float dropRefreshAt;
         readonly List<string> warnings = new List<string>();
-        GUIStyle panel, title, body, bad, warn, ok;
+        GUIStyle panel, title, body, bad, warn, ok, button;
 
         void Start()
         {
             source = Argument("-layout") ?? Path.Combine(Application.streamingAssetsPath, "layout.json");
-            try { Load(File.ReadAllText(source)); }
-            catch (Exception e) when (e is IOException || e is LayoutFormatException || e is UnauthorizedAccessException)
-            {
-                error = $"没有打开 {Path.GetFileName(source)}：{e.Message}";
-                Debug.LogError(error);
-            }
+            Open(source);
 
             var smoke = Argument("-smokeTestOut");
             if (smoke != null) { File.WriteAllText(smoke, SmokeReport()); Quit(); }
             var shot = Argument("-screenshot");
             if (shot != null) StartCoroutine(Screenshot(shot));
+            var nativeSmoke = Argument("-nativeSmokeOut");
+            if (nativeSmoke != null) StartCoroutine(NativeSmoke(nativeSmoke));
         }
 
-        public void Load(string json)
+        // 打开 layout.json。失败时如果已经有机房在显示，保留它并提示原因
+        public bool Open(string path)
         {
+            if (!LayoutFile.TryRead(path, out var next, out var reason))
+            {
+                Debug.LogWarning(reason);
+                if (layout == null) error = reason;
+                else notice = reason;
+                return false;
+            }
             if (hall) Destroy(hall);
             warnings.Clear();
             selected = null;
-            layout = LayoutData.Parse(json);
+            error = notice = null;
+            source = path;
+            layout = next;
             capacity = CapacityModel.Compute(layout);
             hall = HallBuilder.Build(layout, library, baseMaterial, warnings);
             foreach (var w in warnings.Distinct()) Debug.LogWarning(w);
+            return true;
+        }
+
+        System.Collections.IEnumerator NativeSmoke(string outPath)
+        {
+            for (int i = 0; i < 10; i++) yield return null;             // 等窗口创建、拖放注册
+            var dropLayout = Argument("-nativeSmokeLayout");
+            Debug.Log("DataHall: content view " + NativeMac.DescribeContentView());
+            var accepted = dropLayout != null && NativeMac.TestDrop(dropLayout);
+            for (int i = 0; i < 3; i++) yield return null;              // Update 里取出拖放的文件并打开
+            var afterDrop = (source: Path.GetFileName(source), equipment: layout?.equipment.Count ?? -1);
+            var dialog = NativeMac.OpenFile("冒烟测试", "json", 0.5);
+            var missingKept = !Open("/nonexistent/layout.json") && layout != null && layout.equipment.Count == afterDrop.equipment && notice != null;
+            string B(bool b) => b ? "true" : "false";
+            File.WriteAllText(outPath, "{" +
+                $"\"version\":{NativeMac.Version},\"dropReady\":{B(dropReady)},\"dropResult\":{dropResult},\"dropAttempts\":{dropAttempts},\"testDropAccepted\":{B(accepted)}," +
+                $"\"sourceAfterDrop\":\"{afterDrop.source}\",\"equipmentAfterDrop\":{afterDrop.equipment}," +
+                $"\"dialogCancelledToNull\":{B(dialog == null)},\"failedOpenKeepsHall\":{B(missingKept)}}}");
+            Quit();
         }
 
         string SmokeReport()
@@ -91,6 +124,33 @@ namespace DataHall
 
         void Update()
         {
+            // 窗口创建后才能注册拖放，前几帧可能返回 0，重试一阵；启用后每 2 秒重新注册，切换全屏重建窗口时也能继续拖放
+            if (!dropReady && dropAttempts < 300)
+            {
+                dropResult = NativeMac.EnableFileDrop();
+                dropAttempts++;
+                dropReady = dropResult == 1;
+                if (dropResult != 0)
+                {
+                    Debug.Log($"DataHall: file drop {(dropReady ? "enabled" : "unavailable")} ({dropResult}) after {dropAttempts} frames");
+                    if (!dropReady) dropAttempts = 300;
+                }
+            }
+            else if (dropReady && Time.unscaledTime > dropRefreshAt)
+            {
+                dropRefreshAt = Time.unscaledTime + 2f;
+                NativeMac.EnableFileDrop();
+            }
+            var dropped = dropReady ? NativeMac.PollDroppedFile() : null;
+            if (dropped != null) Open(dropped);
+            // 模态对话框不在 OnGUI 里弹，避免打断 IMGUI 的布局事件
+            if (openRequested)
+            {
+                openRequested = false;
+                var path = NativeMac.OpenFile("选择网页“导出给 Unity”得到的 layout.json", "json");
+                if (path != null) Open(path);
+            }
+
             if (hall == null || !Input.GetMouseButtonUp(0) || (orbit && orbit.Dragged)) return;
             if (Input.mousePosition.x > Screen.width - 380) return;        // 点在右侧面板上
             var cam = Camera.main;
@@ -105,6 +165,9 @@ namespace DataHall
             EnsureStyles();
             GUILayout.BeginArea(new Rect(Screen.width - 370, 10, 360, Screen.height - 20), panel);
             GUILayout.Label("GPU 机房", title);
+            if (NativeMac.CanOpenFiles && GUILayout.Button("打开 layout.json…", button, GUILayout.Height(30))) openRequested = true;
+            if (dropReady) GUILayout.Label("也可以把 layout.json 拖进窗口。", body);
+            if (notice != null) GUILayout.Label(notice, bad);
             if (error != null) { GUILayout.Label(error, bad); GUILayout.EndArea(); return; }
             if (layout == null) { GUILayout.EndArea(); return; }
             GUILayout.Label($"{Path.GetFileName(source)}，{layout.equipment.Count} 台设备，市电 {layout.utilityMw} MW", body);
@@ -139,15 +202,28 @@ namespace DataHall
         {
             if (panel != null) return;
             // 线性色彩空间下 IMGUI 把贴图数值当线性值显示，所以写入面板色（sRGB #16202A）的线性值
-            var background = new Texture2D(1, 1);
-            background.SetPixel(0, 0, new Color(0.086f, 0.125f, 0.165f, 0.92f).linear);
-            background.Apply();
+            Texture2D Solid(Color srgb)
+            {
+                var t = new Texture2D(1, 1);
+                t.SetPixel(0, 0, srgb.linear);
+                t.Apply();
+                return t;
+            }
+            var background = Solid(new Color(0.086f, 0.125f, 0.165f, 0.92f));
             panel = new GUIStyle(GUI.skin.box) { padding = new RectOffset(12, 12, 10, 10), normal = { background = background } };
             body = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true, normal = { textColor = new Color(0.89f, 0.92f, 0.94f) } };
             title = new GUIStyle(body) { fontSize = 16, fontStyle = FontStyle.Bold };
             bad = new GUIStyle(body) { normal = { textColor = new Color(0.95f, 0.46f, 0.42f) } };
             warn = new GUIStyle(body) { normal = { textColor = new Color(0.91f, 0.77f, 0.28f) } };
             ok = new GUIStyle(body) { normal = { textColor = new Color(0.55f, 0.76f, 0.29f) } };
+            // 按钮：冷却液青色描边感的深色底，和网页版按钮一致的浅色文字
+            button = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 14,
+                normal = { background = Solid(new Color(0.16f, 0.22f, 0.28f)), textColor = new Color(0.89f, 0.92f, 0.94f) },
+                hover = { background = Solid(new Color(0.2f, 0.29f, 0.36f)), textColor = Color.white },
+                active = { background = Solid(new Color(0.09f, 0.45f, 0.5f)), textColor = Color.white },
+            };
         }
 
         static string Argument(string name)

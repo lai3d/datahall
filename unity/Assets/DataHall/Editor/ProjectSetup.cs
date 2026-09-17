@@ -29,6 +29,7 @@ namespace DataHall.Editor
             PlayerSettings.defaultScreenHeight = 1000;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;
             ConfigureUrp();
+            ConfigureNativePlugin();
             var material = BaseMaterial();
             CreateScene(material);
             AssetDatabase.SaveAssets();
@@ -52,6 +53,23 @@ namespace DataHall.Editor
                 QualitySettings.SetQualityLevel(i, false);
                 QualitySettings.renderPipeline = pipeline;
             }
+        }
+
+        // DataHallNative.bundle 只给打包后的 macOS 程序用；编辑器不加载，避免重新编译插件时文件被占用
+        public const string NativePluginPath = "Assets/Plugins/macOS/DataHallNative.bundle";
+
+        static void ConfigureNativePlugin()
+        {
+            if (!(AssetImporter.GetAtPath(NativePluginPath) is PluginImporter importer))
+            {
+                Debug.LogWarning("DataHall: native plugin not found, run tools/build_native_mac.sh");
+                return;
+            }
+            importer.SetCompatibleWithAnyPlatform(false);
+            importer.SetCompatibleWithEditor(false);
+            importer.SetCompatibleWithPlatform(BuildTarget.StandaloneOSX, true);
+            importer.SetPlatformData(BuildTarget.StandaloneOSX, "CPU", "AnyCPU");
+            importer.SaveAndReimport();
         }
 
         static Material BaseMaterial()

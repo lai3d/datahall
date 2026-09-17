@@ -16,3 +16,6 @@
 .idea/
 .vscode/
 /TestResults*.xml
+# Unity 性能测试框架跑测试时临时创建 Assets/Resources，跑完只剩空目录和 .meta；以后真要用 Resources 目录时删掉这两行
+/Assets/Resources/PerformanceTestRun*
+/Assets/Resources.meta
