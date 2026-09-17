@@ -1,0 +1,6 @@
+{
+    "name": "DataHall.Runtime",
+    "rootNamespace": "DataHall",
+    "references": [],
+    "autoReferenced": true
+}
