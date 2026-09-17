@@ -4,8 +4,14 @@
     metersPerUnit = 1
     upAxis = "Z"
     customLayerData = {
-        string generator = "GPU Data Hall Builder"
+        string asset_name = "datahall"
+        string asset_type = "data_hall_layout"
         string "dchall:schemaVersion" = "0.2"
+        string generator = "GPU Data Hall Builder"
+        dictionary SimReady_Metadata = {
+        }
+        string source_file = "GPU Data Hall Builder web layout"
+        string usd_date_generated = "2026-09-17"
     }
 )
 
