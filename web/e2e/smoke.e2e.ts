@@ -14,6 +14,8 @@ test('loads in English with a passing capacity check and no errors', async ({pag
   await expect(page.locator('#n1')).toContainText('Not N+1 redundant');
   const canvas = await page.locator('#stage canvas').boundingBox();
   expect(canvas!.width).toBeGreaterThan(600);
+  // The stage bar and panel bar are for narrow screens only
+  await expect(page.locator('#panelBar')).toBeHidden();
   expect((await layout(page)).items).toHaveLength(GB200_COUNT);
   expect(errors).toEqual([]);
 });
@@ -177,5 +179,39 @@ test('mobile: loads without horizontal scrolling and the panel is reachable @mob
   await page.locator('#power').scrollIntoViewIfNeeded();
   await expect(page.locator('#power')).toBeVisible();
   await expect(page.locator('#issues')).toContainText('All checks pass');
+  expect(errors).toEqual([]);
+});
+
+test('mobile: tap placement shows feedback on the stage, and the selected device can be removed there @mobile', async ({page}) => {
+  const errors = await openApp(page);
+  await page.locator('#palette button[data-t="rpp"]').click();
+  await expect(page.locator('#stageBar')).toContainText('Placing RPP');
+  const p = await cellPoint(page, 2, 8);
+  await page.touchscreen.tap(p.x, p.y);
+  await expect(page.locator('#stageBar')).toContainText('Placed RPP');
+  expect((await layout(page)).items).toContain('rpp@2,8');
+  await page.locator('#barDone').click();
+  await expect(page.locator('#stageBar')).toBeHidden();
+  const top = await cellPoint(page, 2, 8, 1.2);
+  await page.touchscreen.tap(top.x, top.y);
+  await expect(page.locator('#stageBar')).toContainText('column 3, row 9');
+  await page.locator('#barRemove').click();
+  expect((await layout(page)).items).not.toContain('rpp@2,8');
+  await expect(page.locator('#stageBar')).toBeHidden();
+  expect(errors).toEqual([]);
+});
+
+test('mobile: the panel folds away to give the 3D view the screen @mobile', async ({page}) => {
+  const errors = await openApp(page);
+  await expect(page.locator('#panelStatus')).toHaveText('All checks pass');
+  const before = (await page.locator('#stage').boundingBox())!.height;
+  await page.locator('#panelToggle').click();
+  await expect(page.locator('#panelToggle')).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.locator('#power')).toBeHidden();
+  expect((await page.locator('#stage').boundingBox())!.height).toBeGreaterThan(before * 1.5);
+  await page.locator('#panelToggle').click();
+  await expect(page.locator('#power')).toBeAttached();
+  await page.locator('#power').scrollIntoViewIfNeeded();
+  await expect(page.locator('#power')).toBeVisible();
   expect(errors).toEqual([]);
 });

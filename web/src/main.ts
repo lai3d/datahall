@@ -240,7 +240,7 @@ function assignTap(key: string){
 function escape(){
   if (state.assignFrom){ state.assignFrom = null; notify(); return; }
   if (state.rowAnchor) state.rowAnchor = null;
-  else if (state.tool) state.tool = null;
+  else if (state.tool){ state.tool = null; state.ui.lastPlaced = null; }
   else if (state.selected){ select(null); return; }
   notify(); updateGhost();
 }
@@ -307,14 +307,25 @@ function tap(e: PointerEvent){
     state.rowAnchor = null;
     const tool = state.tool;
     edit(() => cells.forEach(p => place(tool, p.x, p.z, newProps())));
+    placedFeedback(e, tool, cells);
     return;
   }
   const key = view.pickItem(e);
   if (key){ select(key); return; }
   const c = view.pickCell(e);
   const tool = state.tool;
-  if (c && tool && !state.items.has(keyOf(c.x, c.z))){ edit(() => place(tool, c.x, c.z, newProps())); return; }
+  if (c && tool && !state.items.has(keyOf(c.x, c.z))){ edit(() => place(tool, c.x, c.z, newProps())); placedFeedback(e, tool, [c]); return; }
   select(null);
+}
+// Feedback for a placement tap: the new devices pop up, touch devices get a short vibration where supported,
+// and the stage bar (narrow screens) switches to "placed"
+function placedFeedback(e: PointerEvent, tool: string, cells: Pos[]){
+  const placed = cells.map(p => state.items.get(keyOf(p.x, p.z))).filter(it => it?.type === tool);
+  if (!placed.length) return;
+  placed.forEach(view.popMesh);
+  if (e.pointerType !== 'mouse') try { navigator.vibrate?.(12); } catch (err) {}
+  state.ui.lastPlaced = tool;
+  notify();
 }
 
 // ---------- export ----------
@@ -424,8 +435,11 @@ const controls = initControls(el, view.camera, {
 });
 const actions: Actions = {
   removeItem,
+  togglePanel: () => { state.ui.panelCollapsed = !state.ui.panelCollapsed; notify(); },
+  showPanel: () => { state.ui.panelCollapsed = false; notify(); },
+  stopPlacing: () => { Object.assign(state, {tool: null, rowAnchor: null}); state.ui.lastPlaced = null; updateGhost(); notify(); },
   setUtility: u => edit(() => { state.utility = u; }),
-  setTool(id){ state.tool = state.tool === id ? null : id; state.selected = null; state.rowAnchor = null; state.assignFrom = null; view.setOutline(); updateGhost(); refresh(); },
+  setTool(id){ state.tool = state.tool === id ? null : id; state.ui.lastPlaced = null; state.selected = null; state.rowAnchor = null; state.assignFrom = null; view.setOutline(); updateGhost(); refresh(); },
   setPlaceMode(mode){ state.placeMode = mode; state.rowAnchor = null; updateGhost(); refresh(); },
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),

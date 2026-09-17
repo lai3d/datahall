@@ -167,6 +167,13 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # open a layou
   - Shortcuts: ⌘Z / Ctrl+Z undo, ⇧⌘Z / Ctrl+Y redo, Delete / Backspace deletes the selected equipment, Esc steps back one level at a time: assign mode, then the row start cell, then the chosen device type, then the selection
   - Under the dev server, `window.__datahall` exposes `state`, `cellToScreen`, `visibleGhosts`, `renderOnce` for browser automation (not in production builds).
     When the automated browser window is in the background, requestAnimationFrame pauses: the view and camera matrices do not update, so call `renderOnce()` first, and take screenshots with the canvas's `toDataURL`
+- **Narrow screens** (below 900 px, where the panel sits under the 3D view): `ui.tsx`'s `StageBar` and `PanelBar` render on every size but CSS shows them only here.
+  - Stage bar (`#stageBar`), above undo / redo / reset at the bottom of the stage: what a tap does now (assign mode, then placing or row placement, then the selected device), with Done, or Details and Remove.
+    After a placement tap it says how many of that device the hall holds (`state.ui.lastPlaced`, cleared when the tool changes)
+  - Panel bar (`#panelBar`): sticks to the top of the scrolling panel (negative margins cancel the panel padding; the sticky tutorial card sits below it) with the hall status and a toggle that folds the panel down to the bar
+    (`state.ui.panelCollapsed`, view state only, via the `panel-collapsed` class on body)
+  - Placement feedback on every screen: placed devices grow up from the floor for 220 ms (`scene.ts`'s `popMesh`, skipped with reduced motion; `renderOnce` finishes it immediately so snapshots and tests never see a half-grown rack) and touch taps vibrate where supported
+  - Portrait views keep the horizontal field of view of a square view (`resize` in `scene.ts`), so the hall still fits across a phone with the panel folded away
 - **3D rendering** (three 0.186): color management is on by default; CSS colors are read as sRGB, converted to linear space for computation, and output as sRGB; no tone mapping, so palette colors do not shift.
   Lighting uses physical units, and intensities must be π times the r128 values for equivalent brightness; the sun light casts shadows (only equipment bodies cast, the floor receives, the shadow camera covers the whole hall).
   `PCFSoftShadowMap` was removed in r186; use the default `PCFShadowMap`

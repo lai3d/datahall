@@ -96,3 +96,29 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .info select{font:inherit;font-size:13px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:210px}
 .foot{font-size:12px;color:var(--muted);margin-top:14px}
 @media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+/* Narrow screens: the stage bar and the panel bar exist only here. The HUD sits at the top, undo / redo / reset at the bottom right,
+   the stage bar above them; the panel bar stays at the top of the scrolling panel and can fold the panel away */
+#stageBar,#panelBar{display:none}
+@media (max-width:899px){
+  #hud{left:8px;top:8px;gap:12px;padding:4px 8px}
+  #hud b{font-size:17px}
+  #hud span{font-size:11px}
+  #stageTools{top:auto;right:8px;bottom:8px}
+  #stageTools button{padding:4px 9px;font-size:13px}
+  #stageBar{display:flex;position:absolute;left:8px;right:8px;bottom:44px;align-items:center;justify-content:space-between;gap:8px;
+    padding:6px 6px 6px 10px;font-size:13px;line-height:1.25;border-radius:8px;border:1px solid var(--line);
+    background:color-mix(in srgb,var(--panel) 92%,transparent);box-shadow:0 4px 12px -6px rgb(0 0 0 / .35)}
+  #stageBar .row{flex:none;flex-wrap:nowrap}
+  #stageBar button{padding:5px 10px;font-size:13px;background:var(--panel)}
+  /* The panel's top padding is 12px; negative margins let the bar span the panel edge to edge and stick to its very top */
+  #panelBar{display:flex;position:sticky;top:-12px;z-index:3;align-items:center;justify-content:space-between;gap:8px;
+    margin:-12px -14px 10px;padding:6px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+  #panelStatus{font-size:14px;font-weight:600;padding-left:8px;border-left:3px solid var(--warn)}
+  #panelStatus.ok{border-color:var(--ok)}
+  #panelStatus.bad{border-color:var(--bad)}
+  #panelToggle{padding:4px 10px;font-size:13px}
+  #tutorial{top:34px}
+  body.panel-collapsed #panel{overflow:hidden;padding-bottom:env(safe-area-inset-bottom)}
+  body.panel-collapsed #panel > :not(#panelBar){display:none}
+  body.panel-collapsed #panelBar{margin-bottom:0;border-bottom:0}
+}

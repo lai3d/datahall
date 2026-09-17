@@ -18,6 +18,7 @@ let floor: THREE.Mesh | undefined, gridLines: THREE.LineSegments | undefined, li
 type Ghost = THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>;
 const ghosts: Ghost[] = [];   // Placement previews, one per cell during row placement
 const ray = new THREE.Raycaster();
+const FOV = 45;   // vertical field of view in degrees for landscape and square views
 
 const cellPos = (x: number, z: number): THREE.Vector3 => new THREE.Vector3((x - (GW - 1) / 2) * CX, 0, (z - (GD - 1) / 2) * CZ);
 
@@ -27,7 +28,7 @@ export function initScene(stage: HTMLElement): HTMLCanvasElement{
   renderer.shadowMap.enabled = true;
   stage.prepend(renderer.domElement);
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
   // Since three r155 lighting uses physical units; multiply intensity by π to match r128 brightness
   scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.75 * Math.PI));
   const sun = new THREE.DirectionalLight(0xffffff, 0.75 * Math.PI); sun.position.set(6, 14, 9);
@@ -42,7 +43,10 @@ export function initScene(stage: HTMLElement): HTMLCanvasElement{
   buildHall();
   const resize = () => {
     const w = stage.clientWidth, h = stage.clientHeight;
-    renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1);
+    // Portrait views (a phone with the panel folded away) keep the horizontal field of view of a square one, so the hall still fits across
+    camera.fov = camera.aspect >= 1 ? FOV : Math.min(2 * Math.atan(Math.tan(FOV * Math.PI / 360) / camera.aspect) * 180 / Math.PI, 100);
+    camera.updateProjectionMatrix();
   };
   new ResizeObserver(resize).observe(stage);
   resize();
@@ -231,7 +235,24 @@ export function pickCell(e: PointerEvent): Pos | null{
 }
 
 // Render one frame now: during browser automation the window is in the background and requestAnimationFrame may be paused
-export function renderOnce(): void{ camera.updateMatrixWorld(); renderer.render(scene, camera); }
+// Newly placed devices grow up from the floor for a moment, so a tap visibly lands (touch has no hover preview).
+// renderOnce finishes them at once: it is used for snapshots and by tests while the render loop may be paused
+const POP_MS = 220;
+const pops = new Map<THREE.Group, number>();
+export function popMesh(it: {mesh?: THREE.Group} | undefined): void{
+  if (!it?.mesh || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  pops.set(it.mesh, performance.now());
+  it.mesh.scale.y = .01;
+}
+function applyPops(now: number){
+  pops.forEach((t0, m) => {
+    const k = (now - t0) / POP_MS;
+    if (k >= 1 || !m.parent){ m.scale.y = 1; pops.delete(m); }
+    else m.scale.y = Math.max(.01, 1 - (1 - k) ** 3);
+  });
+}
+
+export function renderOnce(): void{ applyPops(Infinity); camera.updateMatrixWorld(); renderer.render(scene, camera); }
 
 // PNG of the 3D view at its current size. toBlob copies the canvas in the same task as the render, so the
 // renderer does not need preserveDrawingBuffer
@@ -252,6 +273,7 @@ export function startLoop(): void{
       const on = reduce ? 1 : clamp(t, 0, 1);
       m.emissiveIntensity = .12 + on * (reduce ? .9 : .8 + .12 * Math.sin(now / 350 + it.x));
     });
+    applyPops(now);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
