@@ -9,7 +9,9 @@ export function buildUsda(list, CAT, utility, g, meta){
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta?.date || '')) throw new Error('buildUsda: meta.date must be YYYY-MM-DD');
   const PALETTE = {gpu:'#76B900', net:'#9A8CE0', store:'#7FA2C4', coolant:'#3FB6C9', air:'#9AA8B5', copper:'#D08A45', rack:'#34404B', floor:'#2A3540'};
   const f = v => { const s = (Math.round(v * 10000) / 10000).toString(); return s.includes('.') || s.includes('e') ? s : s + '.0'; };
-  const rgb = h => { const n = parseInt(h.slice(1), 16); return `(${f((n >> 16 & 255) / 255)}, ${f((n >> 8 & 255) / 255)}, ${f((n & 255) / 255)})`; };
+  // USD 的 displayColor 和 UsdPreviewSurface 颜色都是线性值，调色板是 sRGB，写入前换算
+  const linear = c => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const rgb = h => { const n = parseInt(h.slice(1), 16); return `(${[n >> 16 & 255, n >> 8 & 255, n & 255].map(v => f(linear(v / 255))).join(', ')})`; };
   const str = s => '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
   const primName = equipmentName;
   const pos = it => [(it.x - (g.GW - 1) / 2) * g.CX, -((it.z - (g.GD - 1) / 2) * g.CZ)];
