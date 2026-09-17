@@ -97,6 +97,22 @@ test('opens a share link with a layout', async ({page}) => {
   expect((await layout(page)).items).toEqual(['cdu@3,5', 'rpp@4,5', 'vr200@3,3', 'vr200@4,3']);
 });
 
+test('a corrupt saved layout still loads the page, keeping the valid devices', async ({page}) => {
+  // Opened without a share link hash, so the saved layout is what loads
+  const errors = await openApp(page);
+  await page.evaluate(() => localStorage.setItem('dchall.v1', JSON.stringify({u: 3, list: [null, ['vr200', 3, 3], ['vr200', 'x', 3], ['nope', 1, 1], ['cdu', 3, 5, {phase: 99}]]})));
+  await page.goto('about:blank');
+  await page.goto('/?lang=en');
+  await expect(page.locator('#issues li').first()).toBeVisible();
+  expect((await layout(page)).items).toEqual(['cdu@3,5', 'vr200@3,3']);
+  await page.evaluate(() => localStorage.setItem('dchall.v1', '{not json'));
+  await page.goto('about:blank');
+  await page.goto('/?lang=en');
+  await expect(page.locator('#issues li').first()).toBeVisible();
+  expect((await layout(page)).items).toHaveLength(GB200_COUNT);
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

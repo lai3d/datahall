@@ -10,6 +10,9 @@ export interface PhaseResult {
   util: Record<ReasonKind, number>; tightest: {kind: ReasonKind; ratio: number}; reasons: Reason[];
 }
 
+// Highest deployment phase. The share link, the UI and imports all use this cap
+export const MAX_PHASE = 20;
+
 export const phaseOf = (it: {phase?: number}): number => it.phase || 1;
 
 // Phases present in the layout, ascending; an empty layout returns []

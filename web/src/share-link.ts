@@ -5,6 +5,7 @@
 // Version 3 also adds deployment phases: @<phase>:<col>.<row>-... (only devices with phase greater than 1).
 // Encoding uses the lowest version that can express the content: 2 without phases, 1 without manual assignments either, so links already shared and old pages are unaffected
 // Hash only, no query parameters: the hash is never sent to the server, and static hosting needs no configuration.
+import {MAX_PHASE} from './growth.ts';
 import {keyOf} from './grid.ts';
 import {tr, loc, catName} from './i18n.ts';
 import {FEEDS} from './grid.ts';
@@ -16,7 +17,6 @@ export interface DecodedLayout extends Layout {warnings: string[]}
 
 export const LINK_KEY = 'layout';
 export const LINK_VERSION = 3;   // Latest version; decoding supports 1, 2, 3
-export const MAX_PHASE = 20;
 const FEED_TAGS: Record<FeedField, string> = {coolantSource: '@c', powerFeed: '@p'};
 const FEED_FIELDS = Object.keys(FEED_TAGS) as FeedField[];
 

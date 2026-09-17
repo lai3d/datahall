@@ -11,7 +11,7 @@ import {keyOf, nearest, FEEDS} from './grid.ts';
 import {canFail, singlePointsOfFailure} from './redundancy.ts';
 import {state} from './state.ts';
 import type {Notice} from './state.ts';
-import {phasesIn, growthPlan, headroom} from './growth.ts';
+import {phasesIn, growthPlan, headroom, MAX_PHASE} from './growth.ts';
 import {LANGS, getLang, htmlLang, tr, loc, catName, catNote} from './i18n.ts';
 import type {MessageKey} from './i18n.ts';
 import {useStateVersion} from './store.ts';
@@ -130,9 +130,9 @@ function Header(){
 }
 
 function Devices(){
-  // Phase buttons: existing phases plus a "next phase" one shown as "+"
+  // Phase buttons: existing phases plus a "next phase" one shown as "+", up to MAX_PHASE
   const phases = phasesIn([...state.items.values()]), next = (phases.at(-1) || 1) + 1;
-  const phaseButtons = [...new Set([...phases, 1, state.phase])].sort((a, b) => a - b).concat(state.phase === next ? [] : [next]);
+  const phaseButtons = [...new Set([...phases, 1, state.phase])].sort((a, b) => a - b).concat(state.phase === next || next > MAX_PHASE ? [] : [next]);
   const hint = state.placeMode !== 'row' ? '' : !state.tool ? tr('rowHintTool') : tr(state.rowAnchor ? 'rowHintEnd' : 'rowHintStart');
   return (
     <>
@@ -282,7 +282,7 @@ function Info({model}: {model: HallModel}){
     const maxPhase = phasesIn([...state.items.values()]).at(-1) || 1;
     rows.push([tr('rowPhase'),
       <select id="itemPhase" aria-label={tr('rowPhase')} value={it.phase || 1} onChange={e => actions.setItemPhase(key, Number(e.target.value))}>
-        {Array.from({length: maxPhase + 1}, (_, i) => i + 1).map(n => <option key={n} value={n}>{tr('phaseN', {n})}</option>)}
+        {Array.from({length: Math.min(maxPhase + 1, MAX_PHASE)}, (_, i) => i + 1).map(n => <option key={n} value={n}>{tr('phaseN', {n})}</option>)}
       </select>]);
     rows.push(...supplyRows(t, model.supplyByKey.get(keyOf(it.x, it.z)), key));
   }

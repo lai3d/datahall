@@ -3,6 +3,7 @@
 // Supports schema 0.1 (custom attributes) and 0.2 (applied API schemas), as well as files re-saved by usdview, usdcat or Omniverse.
 import {parseUsda, UsdaSyntaxError} from './usda-parser.ts';
 import {keyOf, FEEDS, supplyLinks} from './grid.ts';
+import {MAX_PHASE} from './growth.ts';
 import {setFeed} from './feeds.ts';
 import {tr, loc, catName} from './i18n.ts';
 import type {UsdPrim} from './usda-parser.ts';
@@ -115,8 +116,9 @@ export function importUsda(text: string, CAT: Catalog, GRID: Grid): ImportResult
     }
     seen.set(key, where);
     const phase = valueOf(prim, 'dchall:phase');
-    if (phase !== undefined && !(Number.isInteger(phase) && phase >= 1)) warn(tr('usdPhase', {where, v: phase}));
-    list.push(Number.isInteger(phase) && phase > 1 ? [id, x, z, {phase}] : [id, x, z]);
+    const validPhase = Number.isInteger(phase) && phase >= 1 && phase <= MAX_PHASE;
+    if (phase !== undefined && !validPhase) warn(tr('usdPhase', {where, v: phase}));
+    list.push(validPhase && phase > 1 ? [id, x, z, {phase}] : [id, x, z]);
     rels.push({where, entry: list.at(-1)!, targets: {coolantSource: relTarget(prim, 'dchall:coolantSource'), powerFeed: relTarget(prim, 'dchall:powerFeed')}});
   }
 

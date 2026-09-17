@@ -1,4 +1,6 @@
-import type {Entry, Layout} from './types.ts';
+import {keyOf} from './grid.ts';
+import {MAX_PHASE} from './growth.ts';
+import type {Catalog, Cell, Entry, EntryProps, FeedField, Feeds, Grid, Layout} from './types.ts';
 
 const row = (type: string, xs: number[], z: number): Entry[] => xs.map(x => [type, x, z]);
 
@@ -25,7 +27,36 @@ const KEY = 'dchall.v1';
 export function saveLayout(p: Layout): void{
   try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {}
 }
-export function restoreLayout(): Layout | null{
-  try { const raw = localStorage.getItem(KEY); if (raw){ const p = JSON.parse(raw); if (p && Array.isArray(p.list)) return p; } } catch (e) {}
-  return null;
+// The saved layout, cleaned up by parseSavedLayout; null when nothing usable is saved
+export function restoreLayout(CAT: Catalog, grid: Grid): Layout | null{
+  try { const raw = localStorage.getItem(KEY); return raw ? parseSavedLayout(raw, CAT, grid) : null; } catch (e) { return null; }
+}
+
+// localStorage can hold anything: older formats, hand edits, a half-written value. Keep every entry that is
+// valid, drop the rest, and never throw, so a bad saved layout cannot stop the page from loading.
+// Returns null when the text is not a layout at all.
+export function parseSavedLayout(raw: string, CAT: Catalog, grid: Grid): Layout | null{
+  let p: unknown;
+  try { p = JSON.parse(raw); } catch (e) { return null; }
+  if (!p || typeof p !== 'object' || !Array.isArray((p as Layout).list)) return null;
+  const u = (p as Layout).u;
+  const inGrid = (x: unknown, z: unknown): x is number => Number.isInteger(x) && Number.isInteger(z) &&
+    (x as number) >= 0 && (x as number) < grid.GW && (z as number) >= 0 && (z as number) < grid.GD;
+  const cell = (c: unknown): c is Cell => Array.isArray(c) && c.length === 2 && inGrid(c[0], c[1]);
+  const seen = new Set<string>(), list: Entry[] = [];
+  for (const e of (p as Layout).list as unknown[]){
+    if (!Array.isArray(e)) continue;
+    const [type, x, z, props] = e;
+    if (typeof type !== 'string' || !CAT[type] || !inGrid(x, z) || seen.has(keyOf(x, z as number))) continue;
+    seen.add(keyOf(x, z as number));
+    // The 4th item is {feeds?, phase?}, or the short-lived bare feeds form (see entryProps in edit.ts)
+    const src = props && typeof props === 'object' ? ('coolantSource' in props || 'powerFeed' in props ? {feeds: props} : props) : {};
+    const clean: EntryProps = {};
+    const feeds: Feeds = {};
+    for (const f of ['coolantSource', 'powerFeed'] as FeedField[]) if (cell(src.feeds?.[f])) feeds[f] = [src.feeds[f][0], src.feeds[f][1]];
+    if (Object.keys(feeds).length) clean.feeds = feeds;
+    if (Number.isInteger(src.phase) && src.phase > 1 && src.phase <= MAX_PHASE) clean.phase = src.phase;
+    list.push(Object.keys(clean).length ? [type, x, z as number, clean] : [type, x, z as number]);
+  }
+  return {u: typeof u === 'number' && u > 0 && Number.isFinite(u) ? u : 2, list};
 }

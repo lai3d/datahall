@@ -1,6 +1,6 @@
 import {CAT} from './catalog.ts';
 import {GRID, keyOf, FEEDS} from './grid.ts';
-import {phasesIn} from './growth.ts';
+import {phasesIn, MAX_PHASE} from './growth.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
 import {state, itemList, snapshot} from './state.ts';
 import * as view from './scene.ts';
@@ -116,7 +116,7 @@ function changed(){
   if (state.assignFrom && !feedOf(state.items.get(state.assignFrom))) state.assignFrom = null;
   // Phase selection is capped at "current max phase + 1"; if the viewed phase no longer exists, go back to all
   const phases = phasesIn([...state.items.values()]), maxPhase = phases.at(-1) || 1;
-  state.phase = Math.min(state.phase, maxPhase + 1);
+  state.phase = Math.min(state.phase, maxPhase + 1, MAX_PHASE);
   if (state.viewPhase !== null && state.viewPhase >= maxPhase) state.viewPhase = null;
   view.rebuildLinks(); view.setOutline(); updateGhost();
   saveLayout(snapshot()); updateShareLink();
@@ -206,7 +206,8 @@ function newProps(){
 function setItemPhase(key: string, phase: number){
   const it = state.items.get(key);
   if (!it) return;
-  edit(() => { if (phase > 1) it.phase = phase; else delete it.phase; });
+  const p = Math.min(Math.max(Math.round(phase), 1), MAX_PHASE);
+  edit(() => { if (p > 1) it.phase = p; else delete it.phase; });
 }
 // View state does not change the layout: no undo entry, just recompute
 function setView(fn: () => void){ fn(); view.rebuildLinks(); refresh(); }
@@ -410,7 +411,7 @@ const actions: Actions = {
   togglePower(){ state.powered = !state.powered; state.powerStart = performance.now(); view.rebuildLinks(); refresh(); },
   loadPreset: name => loadLayout(PRESETS[name]),
   toggleFailed,
-  setPlacePhase: n => setView(() => { state.phase = n; if (state.viewPhase !== null && n > state.viewPhase) state.viewPhase = null; }),
+  setPlacePhase: n => setView(() => { n = Math.min(Math.max(n, 1), MAX_PHASE); state.phase = n; if (state.viewPhase !== null && n > state.viewPhase) state.viewPhase = null; }),
   setViewPhase: n => setView(() => { state.viewPhase = n; }),
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
   setItemPhase,
@@ -440,8 +441,8 @@ const mq = window.matchMedia('(prefers-color-scheme: dark)');
 mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
 
 // First visit (no share link, nothing saved, tutorial never started or dismissed): offer the tutorial
-state.ui.tutorialOffer = !openedFromShareLink && restoreLayout() === null && !tutorialSeen();
-if (!loadFromLink(false)) showLayout(restoreLayout() || PRESETS.gb200);
+state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
+if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || PRESETS.gb200);
 // Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
 if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce};
 view.startLoop();
