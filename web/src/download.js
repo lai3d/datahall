@@ -1,6 +1,6 @@
 // 两条下载通道：
 // - 在 claude.ai artifact 里：window.claude 的 downloads 能力，扩展名有白名单，所以打成 zip
-// - 独立部署：Blob + <a download> 直接下载 .usda
+// - 独立部署：Blob + <a download> 直接下载文件
 import {zipStore} from './zip.js';
 import {USD_README} from './usd-export.js';
 
@@ -8,13 +8,16 @@ export async function createSaver(){
   let downloads = null;
   try { downloads = window.claude && await window.claude.use('downloads'); } catch (e) {}
   if (downloads) return {
-    hint: '打包为 zip，内含 datahall.usda 和字段说明。',
-    save: usda => downloads.save({filename: 'datahall-openusd.zip',
-      data: zipStore([{name: 'datahall.usda', text: usda}, {name: 'README.md', text: USD_README}])}),
+    hint: 'OpenUSD 打包为 zip，内含 datahall.usda 和字段说明。',
+    save: (filename, text) => {
+      const usd = filename.endsWith('.usda');
+      return downloads.save({filename: usd ? 'datahall-openusd.zip' : filename.replace(/\.\w+$/, '.zip'),
+        data: zipStore([{name: filename, text}, ...(usd ? [{name: 'README.md', text: USD_README}] : [])])});
+    },
   };
   return {
-    hint: '下载 datahall.usda 文本层。',
-    save: async usda => downloadText('datahall.usda', usda),
+    hint: 'OpenUSD 下载 datahall.usda 文本层。',
+    save: async (filename, text) => downloadText(filename, text),
   };
 }
 

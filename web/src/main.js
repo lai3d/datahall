@@ -7,6 +7,7 @@ import {initUI, buildUI, refresh, renderInfo} from './ui.js';
 import {PRESETS, saveLayout, restoreLayout} from './layout.js';
 import {buildUsda} from './usd-export.js';
 import {importUsda, UsdImportError} from './usd-import.js';
+import {buildLayout, layoutToText} from './layout-export.js';
 import {createSaver} from './download.js';
 
 const $ = s => document.querySelector(s);
@@ -85,22 +86,29 @@ async function initExport(){
   msg.textContent = saver.hint + 'Z 轴向上，单位米，可直接在 Omniverse、usdview 或 Blender 中打开。';
   box.hidden = false;
   initImport(msg);
-  btn.onclick = async () => {
-    $('#usdWarnings').innerHTML = '';
-    if (!state.items.size){ msg.textContent = '机房是空的，先放设备再导出。'; return; }
-    const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
-    const usda = buildUsda(itemList(), CAT, state.utility, GRID, {date});
-    btn.disabled = true;
-    try {
-      await saver.save(usda);
-      msg.textContent = `已导出 ${state.items.size} 台设备。`;
-    } catch (e) {
-      const code = e && e.code;
-      if (code === 'declined') msg.textContent = '已取消导出。';
-      else if (code === 'rate_limited') msg.textContent = '已有一个保存确认框，处理完再试。';
-      else msg.textContent = '导出失败，当前环境可能不允许下载文件。';
-    } finally { btn.disabled = false; }
+  // 两种导出共用：OpenUSD 层，以及给 Unity 版用的 layout.json（格式见 spec/layout.schema.json）
+  const exportWith = (button, filename, build, done) => {
+    button.onclick = async () => {
+      $('#usdWarnings').innerHTML = '';
+      if (!state.items.size){ msg.textContent = '机房是空的，先放设备再导出。'; return; }
+      const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
+      const text = build({date});
+      button.disabled = true;
+      try {
+        await saver.save(filename, text);
+        msg.textContent = done();
+      } catch (e) {
+        const code = e && e.code;
+        if (code === 'declined') msg.textContent = '已取消导出。';
+        else if (code === 'rate_limited') msg.textContent = '已有一个保存确认框，处理完再试。';
+        else msg.textContent = '导出失败，当前环境可能不允许下载文件。';
+      } finally { button.disabled = false; }
+    };
   };
+  exportWith(btn, 'datahall.usda', meta => buildUsda(itemList(), CAT, state.utility, GRID, meta),
+    () => `已导出 ${state.items.size} 台设备。`);
+  exportWith($('#layoutExport'), 'layout.json', meta => layoutToText(buildLayout(itemList(), CAT, state.utility, GRID, meta)),
+    () => `已导出 layout.json（${state.items.size} 台设备），在 Unity 版里打开。`);
 }
 
 // ---------- boot ----------
