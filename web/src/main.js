@@ -55,7 +55,8 @@ async function initExport(){
   box.hidden = false;
   btn.onclick = async () => {
     if (!state.items.size){ msg.textContent = '机房是空的，先放设备再导出。'; return; }
-    const usda = buildUsda(itemList(), CAT, state.utility, GRID);
+    const now = new Date(), date = [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-');
+    const usda = buildUsda(itemList(), CAT, state.utility, GRID, {date});
     btn.disabled = true;
     try {
       await saver.save(usda);

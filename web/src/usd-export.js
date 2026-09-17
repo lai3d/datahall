@@ -4,7 +4,9 @@
 // 改属性时先改 schema，web 测试会检查两边是否一致
 import {nearest} from './grid.js';
 
-export function buildUsda(list, CAT, utility, g){
+// meta.date：生成日期 YYYY-MM-DD，由调用方传入以保持纯函数（SimReady SR.001 的 usd_date_generated）
+export function buildUsda(list, CAT, utility, g, meta){
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(meta?.date || '')) throw new Error('buildUsda: meta.date must be YYYY-MM-DD');
   const PALETTE = {gpu:'#76B900', net:'#9A8CE0', store:'#7FA2C4', coolant:'#3FB6C9', air:'#9AA8B5', copper:'#D08A45', rack:'#34404B', floor:'#2A3540'};
   const f = v => { const s = (Math.round(v * 10000) / 10000).toString(); return s.includes('.') || s.includes('e') ? s : s + '.0'; };
   const rgb = h => { const n = parseInt(h.slice(1), 16); return `(${f((n >> 16 & 255) / 255)}, ${f((n >> 8 & 255) / 255)}, ${f((n & 255) / 255)})`; };
@@ -43,8 +45,14 @@ export function buildUsda(list, CAT, utility, g){
     '    metersPerUnit = 1',
     '    upAxis = "Z"',
     '    customLayerData = {',
-    '        string generator = "GPU Data Hall Builder"',
+    '        string asset_name = "datahall"',
+    '        string asset_type = "data_hall_layout"',
     '        string "dchall:schemaVersion" = "0.2"',
+    '        string generator = "GPU Data Hall Builder"',
+    '        dictionary SimReady_Metadata = {',
+    '        }',
+    '        string source_file = "GPU Data Hall Builder web layout"',
+    `        string usd_date_generated = "${meta.date}"`,
     '    }',
     ')', '');
   L.push('def Xform "DataHall" (', '    prepend apiSchemas = ["DataHallAPI"]', '    kind = "assembly"', ')', '{');

@@ -6,6 +6,7 @@ import {GRID} from '../src/grid.js';
 import {parseSampleLayout, readSample} from '../scripts/sample.js';
 
 const SAMPLE = readSample();
+const META = {date: '2026-09-17'};
 const GENERATED_SCHEMA = readFileSync(new URL('../../schema/generatedSchema.usda', import.meta.url), 'utf8');
 
 // generatedSchema.usda → {APIName: {propName: 'double' | 'rel' | ...}}
@@ -55,14 +56,14 @@ function parseLayer(src){
 
 describe('buildUsda', () => {
   it('重新生成的样例与 samples/datahall.usda 逐字节一致', () => {
-    const {list, utility} = parseSampleLayout(SAMPLE);
+    const {list, utility, date} = parseSampleLayout(SAMPLE);
     expect(list.length).toBe(17);
-    expect(buildUsda(list, CAT, utility, GRID)).toBe(SAMPLE);
+    expect(buildUsda(list, CAT, utility, GRID, {date})).toBe(SAMPLE);
   });
 
   it('关系目标都指向存在的设备 prim', () => {
     const {list, utility} = parseSampleLayout(SAMPLE);
-    const out = buildUsda(list, CAT, utility, GRID);
+    const out = buildUsda(list, CAT, utility, GRID, META);
     const defined = new Set([...out.matchAll(/def Xform "(R\d\d_C\d\d)"/g)].map(m => m[1]));
     const targets = [...out.matchAll(/rel dchall:\w+ = <\/DataHall\/Equipment\/(\w+)>/g)].map(m => m[1]);
     expect(targets.length).toBeGreaterThan(0);
@@ -70,14 +71,14 @@ describe('buildUsda', () => {
   });
 
   it('空机房也能导出合法的层头和空 Scope', () => {
-    const out = buildUsda([], CAT, 2, GRID);
+    const out = buildUsda([], CAT, 2, GRID, META);
     expect(out).toMatch(/^#usda 1\.0\n/);
     expect(out).toContain('defaultPrim = "DataHall"');
     expect(out).toContain('def Scope "Equipment" (\n        kind = "group"\n    )\n    {\n    }');
   });
 
   it('忽略目录里不存在的设备类型', () => {
-    const out = buildUsda([{type: 'nope', x: 0, z: 0}], CAT, 2, GRID);
+    const out = buildUsda([{type: 'nope', x: 0, z: 0}], CAT, 2, GRID, META);
     expect(out).not.toContain('nope');
   });
 });
@@ -86,7 +87,7 @@ describe('导出与 schema 一致', () => {
   const schema = parseSchema(GENERATED_SCHEMA);
   // 目录里每种设备各放一台，覆盖所有原型
   const everyType = CATALOG.map((t, i) => ({type: t.id, x: i, z: 0}));
-  const prims = parseLayer(buildUsda(everyType, CAT, 5, GRID));
+  const prims = parseLayer(buildUsda(everyType, CAT, 5, GRID, META));
 
   it('schema 解析出三个 API', () => {
     expect(Object.keys(schema).sort()).toEqual(['DataHallAPI', 'DataHallEquipmentAPI', 'LiquidCooledAPI']);
@@ -114,8 +115,21 @@ describe('导出与 schema 一致', () => {
 
 describe('SimReady 约定（docs/simready-audit.md）', () => {
   const everyType = CATALOG.map((t, i) => ({type: t.id, x: i, z: 0}));
-  const prims = parseLayer(buildUsda(everyType, CAT, 5, GRID));
-  const out = buildUsda(everyType, CAT, 5, GRID);
+  const out = buildUsda(everyType, CAT, 5, GRID, META);
+  const prims = parseLayer(out);
+
+  // SR.001 的官方校验器（2026.06.0）不会真正报错，这里按规范原文检查
+  it('customLayerData 带 SR.001 要求的元数据', () => {
+    const head = out.slice(0, out.indexOf('\n)\n'));
+    ['asset_name', 'asset_type', 'source_file'].forEach(k => expect(head).toMatch(new RegExp(`string ${k} = "[^"]+"`)));
+    expect(head).toContain('string usd_date_generated = "2026-09-17"');
+    expect(head).toContain('dictionary SimReady_Metadata = {');
+  });
+
+  it('缺少或格式错误的生成日期直接报错', () => {
+    expect(() => buildUsda([], CAT, 2, GRID)).toThrow(/meta.date/);
+    expect(() => buildUsda([], CAT, 2, GRID, {date: '2026/09/17'})).toThrow(/meta.date/);
+  });
 
   it('每个几何都绑定材质，目标是 UsdPreviewSurface 材质，且在同一原型或 /DataHall/Looks 内', () => {
     const byPath = Object.fromEntries(prims.map(p => [p.path, p]));
