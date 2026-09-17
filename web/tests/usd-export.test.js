@@ -115,6 +115,22 @@ describe('导出与 schema 一致', () => {
 describe('SimReady 约定（docs/simready-audit.md）', () => {
   const everyType = CATALOG.map((t, i) => ({type: t.id, x: i, z: 0}));
   const prims = parseLayer(buildUsda(everyType, CAT, 5, GRID));
+  const out = buildUsda(everyType, CAT, 5, GRID);
+
+  it('每个几何都绑定材质，目标是 UsdPreviewSurface 材质，且在同一原型或 /DataHall/Looks 内', () => {
+    const byPath = Object.fromEntries(prims.map(p => [p.path, p]));
+    const gprims = prims.filter(p => ['Cube', 'Mesh'].includes(p.type));
+    expect(gprims.length).toBe(1 + CATALOG.length * 2);
+    for (const p of gprims){
+      const block = out.slice(out.indexOf(`"${p.name}"`, out.indexOf(`"${p.parent.name}"`)));
+      const target = block.match(/rel material:binding = <([^>]+)>/)?.[1];
+      expect(target, p.path).toBeDefined();
+      expect(byPath[target]?.type, `${p.path} -> ${target}`).toBe('Material');
+      const scope = p.path.startsWith('/DataHall/Catalog/') ? p.path.split('/').slice(0, 4).join('/') + '/Looks/' : '/DataHall/Looks/';
+      expect(target.startsWith(scope), `${p.path} -> ${target}`).toBe(true);
+      expect(out).toContain(`token outputs:surface.connect = <${target}/PreviewSurface.outputs:surface>`);
+    }
+  });
 
   it('模型层级连续：model 的祖先都是 group 或 assembly', () => {
     const models = prims.filter(p => ['component', 'group', 'assembly'].includes(p.kind));

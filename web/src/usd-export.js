@@ -13,14 +13,26 @@ export function buildUsda(list, CAT, utility, g){
   const primName = it => `R${pad(it.z + 1)}_C${pad(it.x + 1)}`;
   const pos = it => [(it.x - (g.GW - 1) / 2) * g.CX, -((it.z - (g.GD - 1) / 2) * g.CZ)];
   const EXTENT = 'float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]';
-  const cube = (ind, name, color, t, s) => [
-    `${ind}def Cube "${name}"`, `${ind}{`,
+  const cube = (ind, name, color, t, s, material) => [
+    `${ind}def Cube "${name}" (`, `${ind}    prepend apiSchemas = ["MaterialBindingAPI"]`, `${ind})`, `${ind}{`,
     `${ind}    double size = 1`, `${ind}    ${EXTENT}`,
+    `${ind}    rel material:binding = <${material}>`,
     `${ind}    color3f[] primvars:displayColor = [${rgb(color)}]`,
     `${ind}    double3 xformOp:translate = (${t.map(f).join(', ')})`,
     `${ind}    float3 xformOp:scale = (${s.map(f).join(', ')})`,
     `${ind}    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]`,
     `${ind}}`].join('\n');
+  // UsdPreviewSurface 材质，参数与网页 three.js 的 MeshStandardMaterial 对应
+  const material = (ind, path, color, roughness, metallic) => [
+    `${ind}def Material "${path.split('/').pop()}"`, `${ind}{`,
+    `${ind}    token outputs:surface.connect = <${path}/PreviewSurface.outputs:surface>`, '',
+    `${ind}    def Shader "PreviewSurface"`, `${ind}    {`,
+    `${ind}        uniform token info:id = "UsdPreviewSurface"`,
+    `${ind}        color3f inputs:diffuseColor = ${rgb(color)}`,
+    `${ind}        float inputs:metallic = ${f(metallic)}`,
+    `${ind}        float inputs:roughness = ${f(roughness)}`,
+    `${ind}        token outputs:surface`,
+    `${ind}    }`, `${ind}}`].join('\n');
 
   const used = [...new Set(list.map(i => i.type))].filter(id => CAT[id]);
   const cdus = list.filter(i => i.type === 'cdu'), rpps = list.filter(i => i.type === 'rpp');
@@ -39,12 +51,13 @@ export function buildUsda(list, CAT, utility, g){
   L.push(`    double dchall:utilityMw = ${f(utility)}`,
     `    int dchall:gridColumns = ${g.GW}`, `    int dchall:gridRows = ${g.GD}`,
     `    double dchall:cellWidthM = ${f(g.CX)}`, `    double dchall:cellDepthM = ${f(g.CZ)}`, '');
-  L.push(cube('    ', 'Floor', PALETTE.floor, [0, 0, -0.01], [g.GW * g.CX + 0.6, g.GD * g.CZ + 0.6, 0.02]), '');
+  L.push(cube('    ', 'Floor', PALETTE.floor, [0, 0, -0.01], [g.GW * g.CX + 0.6, g.GD * g.CZ + 0.6, 0.02], '/DataHall/Looks/floor'), '');
+  L.push('    def Scope "Looks"', '    {', material('        ', '/DataHall/Looks/floor', PALETTE.floor, 0.95, 0), '    }', '');
 
   L.push('    def Scope "Catalog"', '    {');
   used.forEach(id => {
     const t = CAT[id], h = t.h, accent = PALETTE[t.c.slice(2)] || PALETTE.rack;
-    const liquid = t.liq > 0;
+    const liquid = t.liq > 0, looks = `/DataHall/Catalog/${id}/Looks`;
     const apis = ['DataHallEquipmentAPI', ...(liquid ? ['LiquidCooledAPI'] : [])].map(s => `"${s}"`).join(', ');
     L.push(`        class Xform "${id}" (`, `            prepend apiSchemas = [${apis}]`, '        )', '        {',
       `            string dchall:displayName = ${str(t.name)}`,
@@ -60,8 +73,13 @@ export function buildUsda(list, CAT, utility, g){
       `            double dchall:capexMusd = ${f(t.cap || 0)}`,
       `            bool dchall:roadmap = ${t.future ? 1 : 0}`,
       `            double dchall:heightM = ${f(h)}`, '',
-      cube('            ', 'Body', PALETTE.rack, [0, 0, h / 2], [g.CX * .92, g.CZ * .94, h]),
-      cube('            ', 'Front', accent, [0, -(g.CZ * .47 + .012), h / 2], [g.CX * .78, .02, h - .3]),
+      cube('            ', 'Body', PALETTE.rack, [0, 0, h / 2], [g.CX * .92, g.CZ * .94, h], `${looks}/body`),
+      cube('            ', 'Front', accent, [0, -(g.CZ * .47 + .012), h / 2], [g.CX * .78, .02, h - .3], `${looks}/front`), '',
+      // 材质放在原型内部：实例引用原型时绑定关系随之映射到实例自己的 Looks，不跨出实例边界
+      '            def Scope "Looks"', '            {',
+      material('                ', `${looks}/body`, PALETTE.rack, 0.55, 0.35),
+      material('                ', `${looks}/front`, accent, 0.5, 0),
+      '            }',
       '        }');
   });
   L.push('    }', '');
