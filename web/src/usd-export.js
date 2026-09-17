@@ -112,6 +112,7 @@ export function buildUsda(list, CAT, utility, g, meta){
     L.push(`        def Xform "${primName(it)}" (`, '            kind = "component"', '            instanceable = true',
       `            prepend references = </DataHall/Catalog/${it.type}>`, '        )', '        {',
       `            int dchall:gridColumn = ${it.x}`, `            int dchall:gridRow = ${it.z}`);
+    if (it.phase > 1) L.push(`            int dchall:phase = ${it.phase}`);
     const {coolantSource, powerFeed} = links.get(it);
     if (coolantSource) L.push(`            rel dchall:coolantSource = </DataHall/Equipment/${primName(coolantSource)}>`);
     if (powerFeed) L.push(`            rel dchall:powerFeed = </DataHall/Equipment/${primName(powerFeed)}>`);
@@ -142,7 +143,7 @@ asset_name、asset_type、source_file、usd_date_generated、SimReady_Metadata�
 DataHallAPI           /DataHall 上：utilityMw、gridColumns、gridRows、cellWidthM、cellDepthM
 DataHallEquipmentAPI  Catalog 原型上：displayName、category、powerKw、gpuCount、liquidCoolingKw、
                       airCoolingKw、overheadKw、distributionKw、fabricPorts、capexMusd、roadmap、heightM；
-                      实例上：gridColumn、gridRow、powerFeed
+                      实例上：gridColumn、gridRow、phase（部署阶段，大于 1 才写）、powerFeed
 LiquidCooledAPI       液冷机柜原型上：liquidFraction；实例上：coolantSource
 
 没有加载 schema 插件时，文件照样能打开，属性值也都在，只是会被当成未注册的 API。

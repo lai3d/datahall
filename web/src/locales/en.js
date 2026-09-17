@@ -69,6 +69,26 @@ export default {
   overloadRpp: ({loc, n, load, cap}) => `RPP (${loc}) is overloaded: ${plural(n, 'device', 'devices')} assigned, ${load} of power, but it can distribute only ${cap}. Move some devices closer to another RPP, or add one nearby.`,
   overloadMore: ({n, label}) => n === 1 ? `1 more ${label} is overloaded.` : `${n} more ${label}s are overloaded.`,
 
+  // Growth plan (growth.js)
+  hGrowth: 'Growth plan',
+  growthIntro: 'Give each device a deployment phase. Each row checks everything installed up to that phase.',
+  placePhase: 'New devices go into phase',
+  phaseNew: 'New phase',
+  phaseN: ({n}) => `Phase ${n}`,
+  viewLabel: 'View up to phase',
+  viewAll: 'All',
+  viewIssues: ({n}) => `Showing the hall as of phase ${n}. Devices from later phases are left out.`,
+  colPhase: 'Phase',
+  colTightest: 'Tightest',
+  colStatus: 'Status',
+  statusOk: 'OK',
+  statusFail: 'Fails',
+  growthFail: ({n, reasons}) => `Phase ${n}: ${reasons}`,
+  headroomType: 'Rack type for headroom',
+  headroom: ({phase, n, limit}) => `as of phase ${phase}: room for ${n} more, limited by ${limit}.`,
+  headroomNote: 'Headroom counts hall totals only. It ignores floor space and which CDU or RPP each rack connects to.',
+  rowPhase: 'Phase',
+
   // Failure drill (redundancy.js)
   hDrill: 'Failure drill',
   drillIntro: 'Select a CDU, RPP, in-row cooler or IB switch rack and mark it failed. Its load moves to the nearest working unit.',
@@ -171,6 +191,7 @@ export default {
   usdOutside: ({where, loc}) => `${where} at ${loc} is outside the grid. Not imported.`,
   usdOverlap: ({where, other, loc}) => `${where} shares a cell with ${other} (${loc}). Not imported.`,
   usdFeedInvalid: ({where, field, target}) => `${where} has dchall:${field} pointing to ${target}, which was not imported as a matching supply. Using the nearest one.`,
+  usdPhase: ({where, v}) => `${where} has an invalid dchall:phase ${v}. Using phase 1.`,
   usdTranslate: ({where, loc}) => `${where} has an xformOp:translate that does not match ${loc}. Placed by dchall:gridColumn / gridRow.`,
 
   // usda-parser.js

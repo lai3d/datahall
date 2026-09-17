@@ -103,6 +103,10 @@ def build_layout(stage, date, warn):
 
     placed = {p.GetName() for p, *_ in equipment}
 
+    def phase(prim):
+        v = attr(prim, "dchall:phase", 1)
+        return v if isinstance(v, int) and v >= 1 else 1
+
     def target(prim, rel_name):
         rel = prim.GetRelationship(rel_name)
         targets = rel.GetTargets() if rel else []
@@ -125,7 +129,7 @@ def build_layout(stage, date, warn):
         "utilityMw": number(attr(hall, "dchall:utilityMw", 2)),
         "catalog": catalog,
         "equipment": [
-            {"name": p.GetName(), "type": t, "column": c, "row": r,
+            {"name": p.GetName(), "type": t, "column": c, "row": r, "phase": phase(p),
              "powerFeed": target(p, "dchall:powerFeed"), "coolantSource": target(p, "dchall:coolantSource")}
             for p, t, c, r in equipment
         ],

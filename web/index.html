@@ -37,6 +37,10 @@
     <h2 data-i18n="hDevices">Devices</h2>
     <div class="row seg mini" id="placeMode" role="group" data-i18n-aria="placeMode" aria-label="Placement"></div>
   </div>
+  <div class="h2row sub-row">
+    <span data-i18n="placePhase">New devices go into phase</span>
+    <div class="row seg mini" id="placePhase" role="group" data-i18n-aria="placePhase" aria-label="New devices go into phase"></div>
+  </div>
   <p class="sub" id="placeHint" hidden></p>
   <div class="palette" id="palette"></div>
 
@@ -47,6 +51,14 @@
 
   <h2 data-i18n="hInfo">Details</h2>
   <div class="info" id="info"></div>
+
+  <h2 data-i18n="hGrowth">Growth plan</h2>
+  <p class="sub" data-i18n="growthIntro">Give each device a deployment phase. Each row checks everything installed up to that phase.</p>
+  <div class="h2row sub-row" id="viewPhaseRow" hidden>
+    <span data-i18n="viewLabel">View up to phase</span>
+    <div class="row seg mini" id="viewPhase" role="group" data-i18n-aria="viewLabel" aria-label="View up to phase"></div>
+  </div>
+  <div id="growth"></div>
 
   <h2 data-i18n="hDrill">Failure drill</h2>
   <p class="sub" data-i18n="drillIntro">Select a CDU, RPP, in-row cooler or IB switch rack and mark it failed. Its load moves to the nearest working unit.</p>

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {CAT} from './catalog.js';
 import {GRID, clamp} from './grid.js';
 import {supplyLoads} from './supply.js';
-import {state} from './state.js';
+import {state, isActive, inView} from './state.js';
 
 const {GW, GD, CX, CZ} = GRID;
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -115,7 +115,7 @@ export function removeMesh(it){
 export function rebuildLinks(){
   if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => o.geometry && o.geometry.dispose()); }
   linkObj = new THREE.Group();
-  const list = [...state.items].filter(([key]) => !state.failed.has(key)).map(([, it]) => it);
+  const list = [...state.items].filter(([key, it]) => isActive(key, it)).map(([, it]) => it);
   const {supplies, links} = supplyLoads(list, CAT);
   const run = (field, y, cssVar) => {
     const pts = {ok: [], bad: [], okManual: [], badManual: []};
@@ -147,16 +147,17 @@ export function setAlerts(keys){
   state.items.forEach((it, key) => { it.mesh.userData.alert.visible = keys.has(key); });
 }
 
-// 故障演练：故障设施半透明、不投影子（红色顶盖不受影响）
-export function setFailed(keys){
+// 不参与计算的设备画成半透明、不投影子（红色顶盖不受影响）：故障演练里故障的设施，以及当前查看阶段之后的设备（更淡）
+export function setDimmed(){
   state.items.forEach((it, key) => {
-    const failed = keys.has(key), g = it.mesh;
-    if (g.userData.failed === failed) return;
-    g.userData.failed = failed;
+    const opacity = !inView(it) ? .12 : state.failed.has(key) ? .25 : 1, g = it.mesh;
+    if (g.userData.opacity === opacity) return;
+    g.userData.opacity = opacity;
+    const dim = opacity < 1;
     g.traverse(o => {
       if (!o.material || o === g.userData.alert) return;
-      Object.assign(o.material, {transparent: failed, opacity: failed ? .25 : 1, depthWrite: !failed, needsUpdate: true});
-      o.castShadow = !failed && o.userData.castsShadow;
+      Object.assign(o.material, {transparent: dim, opacity, depthWrite: !dim, needsUpdate: true});
+      o.castShadow = !dim && o.userData.castsShadow;
     });
   });
 }
@@ -230,7 +231,7 @@ export function startLoop(){
     state.items.forEach((it, key) => {
       const m = it.mesh.userData.stripeMat;
       // 故障的设施和超载、没接上的设备不亮
-      if (!state.powered || state.failed.has(key) || it.mesh.userData.alert.visible){ m.emissiveIntensity = .12; return; }
+      if (!state.powered || !isActive(key, it) || it.mesh.userData.alert.visible){ m.emissiveIntensity = .12; return; }
       const delay = (Math.abs(it.x - GW / 2) + it.z) * 70;
       const t = (now - state.powerStart - delay) / 400;
       const on = reduce ? 1 : clamp(t, 0, 1);

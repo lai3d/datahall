@@ -60,6 +60,7 @@
           "type": {"type": "string"},
           "column": {"type": "integer", "minimum": 0},
           "row": {"type": "integer", "minimum": 0},
+          "phase": {"description": "Deployment phase, starting at 1. Treat a missing value as 1.", "type": "integer", "minimum": 1},
           "powerFeed": {"description": "Name of the RPP feeding this equipment, or empty.", "type": "string", "pattern": "^(R\\d{2}_C\\d{2})?$"},
           "coolantSource": {"description": "Name of the CDU supplying coolant, or empty.", "type": "string", "pattern": "^(R\\d{2}_C\\d{2})?$"}
         }

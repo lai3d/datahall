@@ -110,6 +110,9 @@ class "DataHallEquipmentAPI" (
     int dchall:gridRow = 0 (
         doc = "Zero-based grid row, authored on the instance."
     )
+    int dchall:phase = 1 (
+        doc = "Deployment phase, starting at 1; equipment in a phase is installed after all earlier phases. Authored on the instance only when greater than 1."
+    )
     rel dchall:powerFeed (
         doc = "The RPP feeding this equipment; at most one target, which must have dchall:distributionKw > 0."
     )

@@ -143,6 +143,9 @@ def check_equipment(p, grid, occupied, errors):
     for name in NON_NEGATIVE:
         if val(name) < 0:
             errors.append(f"{where}: {name} must be >= 0, got {val(name)}")
+    phase = val("dchall:phase")
+    if not (isinstance(phase, int) and phase >= 1):
+        errors.append(f"{where}: dchall:phase must be an integer >= 1, got {phase!r}")
     if val("dchall:heightM") <= 0:
         errors.append(f"{where}: dchall:heightM must be > 0")
     if p.HasAPI(LIQUID_API):

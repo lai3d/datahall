@@ -21,6 +21,7 @@
   - `src/usd-import.js`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
   - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
   - `src/edit.js`：编辑用的纯函数（整排放置的格子、布局比较、撤销历史）
+  - `src/growth.js`：增长规划，逐阶段累计的容量检查（`growthPlan`）和还能加几台（`headroom`），纯函数
   - `src/feeds.js`：手动指定供给设备的维护（设置、失效清理、供给设备挪动时跟着改），纯函数
   - `src/redundancy.js`：故障演练和 N+1 检查，纯函数；`blockingReasons` 和界面“不能通电”的条件一一对应（有测试保证）
   - `src/ui.js`：右侧面板；`src/state.js`：共享状态；`src/layout.js`：预设与 localStorage；`src/grid.js`：网格常量
@@ -113,7 +114,8 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
   - 用 hash 不用查询参数：不发到服务器，静态托管不需要配置；每次编辑用 `history.replaceState` 更新（不产生历史记录）
   - 打开页面时链接里的布局优先于 localStorage；手动改 hash 触发 `hashchange` 重新载入；无效条目跳过并提示，不支持的版本不载入
   - 改格式要升版本号并保留旧版本解码，已经发出去的链接不能失效
-  - 版本 2：在设备分组后面加手动指定，`@c:<列>.<排>_<CDU 列>.<CDU 排>-...`（冷却液）、`@p:...`（配电）。没有手动指定时仍然编码成版本 1
+  - 版本 2：在设备分组后面加手动指定，`@c:<列>.<排>_<CDU 列>.<CDU 排>-...`（冷却液）、`@p:...`（配电）
+  - 版本 3：再加部署阶段 `@<阶段>:<列>.<排>-...`（只列大于 1 的）。编码用能表达内容的最低版本：没有阶段用 2，也没有手动指定用 1
 - **Unity 版**：`layout.json` 是 Unity 唯一读取的布局格式，网页“导出给 Unity”和 `tools/usd_to_unity.py` 产出的内容必须逐字段一致（测试比对）。
   - 设备几何来自 glb，导入后生成 prefab 变体；交互改变体，不改 `Generated/`。改了导出几何或颜色后跑 `tools/unity_sync.sh`
   - 颜色：USD 里写线性值（导出器把 sRGB 调色板换算后写入），glTF 同为线性；Unity 工程是线性色彩空间，IMGUI 贴图颜色要写 `.linear`
@@ -126,8 +128,16 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
   设备可以手动指定接哪台（`feeds: {coolantSource: [x, z], powerFeed: [x, z]}`，布局快照里是 `[type, x, z, feeds]`）。
   - 指定的格子不是对应的供给设备（被删、换类型）或在故障演练里被拿掉时，退回最近的；`edit()` 里删掉被删设备的失效指定，供给设备被拖动时指定跟着改
   - 手动指定进撤销历史、localStorage 和分享链接；USD 和 layout.json 格式不变，关系本来就逐台写出。导入 .usda 时读关系，和就近分配不同的才记成手动指定，
-    指向没导入的设备时提示并按就近处理（pxr 转换器此时写空，这种坏文件两边不一致，有效文件逐字段一致，`test_manual_assignment_matches_web_export`）
+    指向没导入的设备时提示并按就近处理（pxr 转换器此时写空，这种坏文件两边不一致，有效文件逐字段一致，`test_manual_assignment_and_phase_match_web_export`）
   - 界面：设备详情里“冷却液来自 / 配电来自”是下拉框（第一项就近）；CDU / RPP 详情里“指定接入设备”进入点选模式，点设备接上、再点恢复就近，Esc 结束。手动指定的连线画成虚线
+- **布局快照条目**：`[type, x, z]` 或 `[type, x, z, {feeds?, phase?}]`（`edit.js` 的 `toItem` / `toEntry`），撤销历史、localStorage、预设都用它。
+  2026-09-17 短暂发布过第 4 项直接是 feeds 的写法，`entryProps` 读的时候兼容
+- **增长规划**：每台设备有部署阶段（`phase`，从 1 开始，1 不写）。第 n 阶段的检查包含阶段 ≤ n 的全部设备，原因和“不能通电”的条件一致（`blockingReasons`）。
+  - 阶段进撤销历史、localStorage、分享链接（版本 3）、USD（`DataHallEquipmentAPI` 的 `int dchall:phase`，大于 1 才写在实例上）、
+    layout.json（equipment 的 `phase`，两个生成器都写，schema 里可省略、缺省为 1；Unity 版的 C# 暂时不读）
+  - 界面：新设备进哪个阶段（“+”开新阶段）；“查看到第几阶段”和点表格行是查看状态，不改布局也不进撤销历史，之后阶段的设备更淡、不参与计算和 N+1 检查；
+    设备详情里可以改阶段。查看的阶段在新放设备超出它时自动切回全部
+  - 还能加几台（`headroom`）只按全机房总量算（每台的需求增量和 `sim.js` 的 PUE 公式一致），不看地板空位和逐台 CDU / RPP 分配；有测试保证加上算出的台数仍满足、再多一台就不满足
 - **故障演练**：可以标记故障的是提供容量的设施（CDU、RPP、列间空调、IB 交换柜），GPU 机柜和存储柜不行。
   - 故障设施从计算里拿掉：不提供容量也不耗电，其余设备按 `supplyLinks` 重新就近分配；三维里半透明、不投影、不亮，连线不画
   - 故障标记（`state.failed`，按格子 key）不进布局、撤销历史、分享链接和导出；拖动时跟着设备走，撤销、重做后格子上还是可故障设施就保留；
@@ -165,6 +175,7 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
 
 ## 风格
 
+- 设了 `display` 的元素（`.row`、`.h2row`）要靠全局 `[hidden]{display:none !important}` 才能用 `hidden` 属性隐藏
 - UI 默认英文，支持简体中文。两种语言都用句子式，英文用 sentence case，不用全大写标签
 - `spec/capacity-cases.json` 里的问题文本固定生成中文（`buildCases` 临时切到中文），Unity 的 C# 容量模型逐字比对；改容量问题的中文措辞要同步改 C#
 - 导出文件（`.usda` 注释和 README、`layout.json`）的内容不随界面语言变化

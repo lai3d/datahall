@@ -4,7 +4,8 @@ import {compute, fmt} from './sim.js';
 import {supplyLoads, supplyIssues} from './supply.js';
 import {keyOf, nearest, FEEDS} from './grid.js';
 import {canFail, singlePointsOfFailure} from './redundancy.js';
-import {state, itemList} from './state.js';
+import {state, itemList, isActive, inView} from './state.js';
+import {phasesIn, growthPlan, headroom} from './growth.js';
 import {LANGS, getLang, tr, loc, catName, catNote} from './i18n.js';
 
 const $ = s => document.querySelector(s);
@@ -20,6 +21,10 @@ export function initUI(a){
   $('#power').onclick = () => actions.togglePower();
   $('#lang').onclick = e => { const b = e.target.closest('button'); if (b) actions.setLang(b.dataset.lang); };
   $('#drillRestoreAll').onclick = () => actions.restoreAll();
+  $('#placePhase').onclick = e => { const b = e.target.closest('button'); if (b) actions.setPlacePhase(+b.dataset.phase); };
+  $('#viewPhase').onclick = e => { const b = e.target.closest('button'); if (b) actions.setViewPhase(b.dataset.phase === 'all' ? null : +b.dataset.phase); };
+  $('#growth').onclick = e => { const r = e.target.closest('tr[data-phase]'); if (r) actions.setViewPhase(state.viewPhase === +r.dataset.phase ? null : +r.dataset.phase); };
+  $('#growth').onchange = e => { if (e.target.id === 'headroomType') actions.setHeadroomType(e.target.value); };
   document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => actions.loadPreset(b.dataset.preset));
 }
 
@@ -32,6 +37,13 @@ export function applyStaticText(){
 }
 
 export function buildUI(){
+  // 阶段按钮：现有阶段加一个“下一阶段”
+  const phases = phasesIn([...state.items.values()]), next = (phases.at(-1) || 1) + 1;
+  $('#placePhase').innerHTML = [...new Set([...phases, 1, state.phase])].sort((a, b) => a - b).concat(state.phase === next ? [] : [next]).map(n =>
+    `<button type="button" data-phase="${n}" aria-pressed="${state.phase === n}"${n === next && !phases.includes(n) && state.phase !== n ? ` aria-label="${tr('phaseNew')}"` : ''}>${n === next && !phases.includes(n) && state.phase !== n ? '+' : n}</button>`).join('');
+  $('#viewPhase').innerHTML = [['all', tr('viewAll')], ...phases.slice(0, -1).map(n => [n, n])].map(([v, label]) =>
+    `<button type="button" data-phase="${v}" aria-pressed="${v === 'all' ? state.viewPhase === null : state.viewPhase === v}">${label}</button>`).join('');
+  $('#viewPhaseRow').hidden = phases.length < 2;
   $('#placeMode').innerHTML = [['one', 'placeOne'], ['row', 'placeRow']].map(([mode, key]) =>
     `<button type="button" data-mode="${mode}" aria-pressed="${state.placeMode === mode}">${tr(key)}</button>`).join('');
   const hint = state.placeMode !== 'row' ? '' : !state.tool ? tr('rowHintTool') : tr(state.rowAnchor ? 'rowHintEnd' : 'rowHintStart');
@@ -56,7 +68,8 @@ function gauge(label, v, cap, cssVar){
 export function refresh(){
   // 故障演练中标记为故障的设施不参与计算
   const all = itemList();
-  const list = all.filter(it => !state.failed.has(keyOf(it.x, it.z)));
+  const list = all.filter(it => isActive(keyOf(it.x, it.z), it));
+  const planned = all.filter(inView);   // 当前查看的阶段内的设备（不管故障演练）
   const s = compute(list, CAT, state.utility);
   const loads = supplyLoads(list, CAT);
   const perDevice = supplyIssues(loads, s);
@@ -77,7 +90,10 @@ export function refresh(){
     gauge(tr('gaugeUtility'), s.facility, state.utility * 1000, '--ink') +
     `<div class="gauge"><div class="top"><span>${tr('gaugeCapex')}</span><em>${tr('capex', {m: s.capex.toFixed(1)})}</em></div></div>`;
   // 全机房总量的检查在前，逐台设备的超载在后
-  const drill = state.failed.size ? [{lvl: 'warn', txt: tr('drillIssues', {n: state.failed.size})}] : [];
+  const drill = [
+    ...(state.viewPhase !== null ? [{lvl: 'warn', txt: tr('viewIssues', {n: state.viewPhase})}] : []),
+    ...(state.failed.size ? [{lvl: 'warn', txt: tr('drillIssues', {n: state.failed.size})}] : []),
+  ];
   let html = [...drill, ...s.issues, ...perDevice].map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
   if (!s.it) html = `<li class="warn">${tr('issueEmpty')}</li>`;
   else if (!blocking) html += `<li class="ok">${tr('issueOk')}</li>`;
@@ -86,7 +102,8 @@ export function refresh(){
   btn.disabled = !s.it || (blocking && !state.powered);   // 通电后演练出问题，仍然可以断电
   btn.classList.toggle('on', state.powered);
   btn.textContent = tr(state.powered ? 'powerOff' : 'powerOn');
-  renderDrill(all);
+  renderDrill(planned);
+  renderGrowth(all, planned);
   renderInfo();
 }
 
@@ -113,6 +130,38 @@ function renderDrill(all){
     }
   }
   $('#n1').innerHTML = html;
+}
+
+// 增长规划区：逐阶段累计的表格，以及当前查看阶段之后还能加几台
+const KIND_LABEL = {dist: 'gaugeDist', liquid: 'gaugeLiquid', air: 'gaugeAir', network: 'gaugeNetwork', utility: 'gaugeUtility'};
+const pct = r => r === Infinity ? '∞' : Math.round(r * 100) + '%';
+function renderGrowth(all, planned){
+  const plan = growthPlan(all, CAT, state.utility);
+  if (!plan.length){ $('#growth').innerHTML = ''; return; }
+  const rows = plan.map(p => {
+    const ok = !p.reasons.length, current = state.viewPhase === p.phase || (state.viewPhase === null && p === plan.at(-1));
+    return `<tr data-phase="${p.phase}" class="${current ? 'current' : ''}" tabindex="0">
+      <td>${p.phase}</td><td>${p.gpus.toLocaleString()}</td><td>${fmt(p.itKw)}</td>
+      <td>${tr(KIND_LABEL[p.tightest.kind])} ${pct(p.tightest.ratio)}</td>
+      <td style="color:var(${ok ? '--ok' : '--bad'})">${tr(ok ? 'statusOk' : 'statusFail')}</td></tr>`;
+  }).join('');
+  const fails = plan.filter(p => p.reasons.length).map(p =>
+    `<li class="bad">${tr('growthFail', {n: p.phase, reasons: p.reasons.map(reasonText).join(tr('listSep'))})}</li>`).join('');
+  // 还能加几台：默认用布局里最多的 GPU 机柜类型
+  const gpuTypes = CATALOG.filter(t => t.gpus);
+  const counts = new Map(); planned.forEach(i => CAT[i.type].gpus && counts.set(i.type, (counts.get(i.type) || 0) + 1));
+  const type = state.headroomType || [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] || 'vr200';
+  const room = headroom(planned, CAT, state.utility, type);
+  const asOf = state.viewPhase ?? plan.at(-1).phase;
+  const roomText = tr('headroom', {phase: asOf, n: room.count === Infinity ? '∞' : room.count,
+    limit: room.limit ? tr(KIND_LABEL[room.limit]).toLowerCase() : '–'});
+  $('#growth').innerHTML = `<table class="growth">
+      <thead><tr><th>${tr('colPhase')}</th><th>GPU</th><th>${tr('hudIt')}</th><th>${tr('colTightest')}</th><th>${tr('colStatus')}</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    ${fails ? `<ul class="issues">${fails}</ul>` : ''}
+    <p class="room"><select id="headroomType" aria-label="${tr('headroomType')}">${gpuTypes.map(t =>
+      `<option value="${t.id}"${t.id === type ? ' selected' : ''}>${catName(t)}</option>`).join('')}</select> ${roomText}</p>
+    <p class="sub">${tr('headroomNote')}</p>`;
 }
 
 const badText = txt => `<span style="color:var(--bad)">${txt}</span>`;
@@ -170,6 +219,11 @@ export function renderInfo(){
     if (manual) rows.push([tr('rowManual'), tr('deviceCount', {n: manual})]);
   }
   if (failed) rows.push([tr('rowStatus'), badText(tr('statusFailed'))]);
+  if (it){
+    const maxPhase = phasesIn([...state.items.values()]).at(-1) || 1, cur = it.phase || 1;
+    rows.push([tr('rowPhase'), `<select id="itemPhase" aria-label="${tr('rowPhase')}">${Array.from({length: maxPhase + 1}, (_, i) => i + 1).map(n =>
+      `<option value="${n}"${n === cur ? ' selected' : ''}>${tr('phaseN', {n})}</option>`).join('')}</select>`]);
+  }
   if (it) rows.push(...supplyRows(t, supplyByKey.get(keyOf(it.x, it.z))));
   const at = it ? tr('infoAt', {x: it.x + 1, z: it.z + 1, loc: loc(it.x, it.z)}) : tr('infoPlaceHint');
   box.innerHTML = `<strong>${catName(t)}</strong><span style="color:var(--muted)">${at}</span>
@@ -180,5 +234,6 @@ export function renderInfo(){
   const d = $('#del'); if (d) d.onclick = () => actions.removeItem(state.selected);
   const f = $('#failToggle'); if (f) f.onclick = () => actions.toggleFailed(state.selected);
   const a = $('#assignToggle'); if (a) a.onclick = () => actions.toggleAssignMode(state.selected);
+  const ph = $('#itemPhase'); if (ph) ph.onchange = () => actions.setItemPhase(state.selected, +ph.value);
   box.querySelectorAll('select[data-feed]').forEach(sel => { sel.onchange = () => actions.setFeedChoice(state.selected, sel.dataset.feed, sel.value); });
 }
