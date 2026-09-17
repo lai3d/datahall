@@ -9,7 +9,9 @@
 - `web/`：网页版，TypeScript（strict）+ Vite + three.js 0.186（npm 锁版本），没有 UI 框架（面板是原生 DOM），入口 `web/index.html` → `web/src/main.ts`
   - `tsconfig.json`：`npm run typecheck`（`tsc`，TypeScript 7）只做类型检查不产出文件，打包由 Vite 负责。开了 `erasableSyntaxOnly`：
     不用 enum、参数属性这类需要编译的语法，Node 24+ 可以直接运行 `scripts/*.ts`；相对 import 都写 `.ts` 后缀
-  - `src/types.ts`：共用数据类型（目录、设备、布局条目、feeds）；`src/dom.ts`：取页面元素的 `$`
+  - `src/types.ts`：共用数据类型（目录、设备、布局条目、feeds）；`src/dom.ts`：取页面元素的 `$`，以及面板重画用的 `setHTML`
+  - 面板整块重画一律用 `setHTML(el, html)`，不要直接写 `innerHTML`：内容没变不写（保住打开的下拉框），变了就按 id / data-* / 第几个可聚焦控件把键盘焦点还回去。
+    要被找回焦点的控件带上 `id` 或 `dom.ts` 的 `KEY_ATTRS` 里的 data 属性。需要 DOM 的测试在文件头写 `// @vitest-environment happy-dom`
   - 文案类型：`zh.ts` 的类型取自 `en.ts`，`tr(key, vars)` 在编译期检查键和变量
   - `vercel.json`：Vercel 构建设置（Vite，`npm ci`、`npm run build`、输出 `dist`）
   - `src/catalog.ts`：import `spec/catalog.json`，构建时打进包里

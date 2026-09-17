@@ -8,7 +8,7 @@ import {state, itemList, isActive, inView} from './state.ts';
 import {phasesIn, growthPlan, headroom} from './growth.ts';
 import {LANGS, getLang, tr, loc, catName, catNote} from './i18n.ts';
 import type {MessageKey, Messages} from './i18n.ts';
-import {$} from './dom.ts';
+import {$, setHTML} from './dom.ts';
 import type {Loads, Supply} from './supply.ts';
 import type {Links} from './grid.ts';
 import type {Reason, ReasonKind} from './redundancy.ts';
@@ -56,6 +56,10 @@ export function initUI(a: Actions): void{
   $('#placePhase').onclick = e => { const b = closest(e, 'button'); if (b) actions.setPlacePhase(Number(b.dataset.phase)); };
   $('#viewPhase').onclick = e => { const b = closest(e, 'button'); if (b) actions.setViewPhase(b.dataset.phase === 'all' ? null : Number(b.dataset.phase)); };
   $('#growth').onclick = e => { const r = closest(e, 'tr[data-phase]'); if (r){ const n = Number(r.dataset.phase); actions.setViewPhase(state.viewPhase === n ? null : n); } };
+  $('#growth').onkeydown = e => {
+    const r = closest(e, 'tr[data-phase]');
+    if (r && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); r.click(); }
+  };
   $('#growth').onchange = e => { if (e.target instanceof HTMLSelectElement && e.target.id === 'headroomType') actions.setHeadroomType(e.target.value); };
   document.querySelectorAll<HTMLElement>('[data-preset]').forEach(b => { b.onclick = () => actions.loadPreset(b.dataset.preset as PresetName); });
 }
@@ -67,30 +71,30 @@ export function applyStaticText(): void{
   // data-i18n 里写的是纯文本文案的键（没有变量）
   document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n as TextKey); });
   document.querySelectorAll<HTMLElement>('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', tr(el.dataset.i18nAria as TextKey)));
-  $('#lang').innerHTML = LANGS.map(l =>
-    `<button type="button" data-lang="${l.id}" lang="${l.html}" aria-pressed="${l.id === getLang()}">${l.label}</button>`).join('');
+  setHTML($('#lang'), LANGS.map(l =>
+    `<button type="button" data-lang="${l.id}" lang="${l.html}" aria-pressed="${l.id === getLang()}">${l.label}</button>`).join(''));
 }
 
 export function buildUI(): void{
   // 阶段按钮：现有阶段加一个“下一阶段”
   const phases = phasesIn([...state.items.values()]), next = (phases.at(-1) || 1) + 1;
-  $('#placePhase').innerHTML = [...new Set([...phases, 1, state.phase])].sort((a, b) => a - b).concat(state.phase === next ? [] : [next]).map(n =>
-    `<button type="button" data-phase="${n}" aria-pressed="${state.phase === n}"${n === next && !phases.includes(n) && state.phase !== n ? ` aria-label="${tr('phaseNew')}"` : ''}>${n === next && !phases.includes(n) && state.phase !== n ? '+' : n}</button>`).join('');
-  $('#viewPhase').innerHTML = ([['all', tr('viewAll')], ...phases.slice(0, -1).map(n => [n, n])] as [number | 'all', string | number][]).map(([v, label]) =>
-    `<button type="button" data-phase="${v}" aria-pressed="${v === 'all' ? state.viewPhase === null : state.viewPhase === v}">${label}</button>`).join('');
+  setHTML($('#placePhase'), [...new Set([...phases, 1, state.phase])].sort((a, b) => a - b).concat(state.phase === next ? [] : [next]).map(n =>
+    `<button type="button" data-phase="${n}" aria-pressed="${state.phase === n}"${n === next && !phases.includes(n) && state.phase !== n ? ` aria-label="${tr('phaseNew')}"` : ''}>${n === next && !phases.includes(n) && state.phase !== n ? '+' : n}</button>`).join(''));
+  setHTML($('#viewPhase'), ([['all', tr('viewAll')], ...phases.slice(0, -1).map(n => [n, n])] as [number | 'all', string | number][]).map(([v, label]) =>
+    `<button type="button" data-phase="${v}" aria-pressed="${v === 'all' ? state.viewPhase === null : state.viewPhase === v}">${label}</button>`).join(''));
   $('#viewPhaseRow').hidden = phases.length < 2;
-  $('#placeMode').innerHTML = ([['one', 'placeOne'], ['row', 'placeRow']] as const).map(([mode, key]) =>
-    `<button type="button" data-mode="${mode}" aria-pressed="${state.placeMode === mode}">${tr(key)}</button>`).join('');
+  setHTML($('#placeMode'), ([['one', 'placeOne'], ['row', 'placeRow']] as const).map(([mode, key]) =>
+    `<button type="button" data-mode="${mode}" aria-pressed="${state.placeMode === mode}">${tr(key)}</button>`).join(''));
   const hint = state.placeMode !== 'row' ? '' : !state.tool ? tr('rowHintTool') : tr(state.rowAnchor ? 'rowHintEnd' : 'rowHintStart');
   $('#placeHint').textContent = hint;
   $('#placeHint').hidden = !hint;
-  $('#utility').innerHTML = UTIL.map(u => `<button type="button" data-u="${u}" aria-pressed="${u === state.utility}">${u} MW</button>`).join('');
-  $('#palette').innerHTML = CATALOG.map(t => {
+  setHTML($('#utility'), UTIL.map(u => `<button type="button" data-u="${u}" aria-pressed="${u === state.utility}">${u} MW</button>`).join(''));
+  setHTML($('#palette'), CATALOG.map(t => {
     const bits = [t.kw ? t.kw + ' kW' : '', t.gpus ? t.gpus + ' GPU' : '', t.liqCool ? tr('chipCooling', {kw: t.liqCool}) : '',
       t.airCool ? tr('chipCooling', {kw: t.airCool}) : '', t.dist ? tr('chipDist', {kw: t.dist}) : '', t.ports ? tr('chipPorts', {n: t.ports}) : ''].filter(Boolean).join(tr('listSep'));
     return `<button type="button" class="chip" data-t="${t.id}" aria-pressed="${state.tool === t.id}">
       <i style="background:var(${t.c})"></i><div><strong>${catName(t)}</strong><small>${bits}</small></div></button>`;
-  }).join('');
+  }).join(''));
 }
 
 function gauge(label: string, v: number, cap: number, cssVar: string): string{
@@ -116,14 +120,14 @@ export function refresh(): void{
   $('#hGpu').textContent = s.gpus.toLocaleString();
   $('#hIt').textContent = fmt(s.it);
   $('#hPue').textContent = s.it ? s.pue.toFixed(2) : '–';
-  $('#gauges').innerHTML =
+  setHTML($('#gauges'),
     gauge(tr('gaugeDist'), s.it, s.dist, '--copper') +
     gauge(tr('gaugeLiquid'), s.liqHeat, s.liqCap, '--coolant') +
     gauge(tr('gaugeAir'), s.airHeat, s.airCap, '--air') +
     `<div class="gauge"><div class="top"><span>${tr('gaugeNetwork')}</span><em style="color:${s.gpus > s.ports ? 'var(--bad)' : 'inherit'}">${tr('ports', {used: s.gpus, total: s.ports})}</em></div>
       <div class="bar"><i style="width:${s.ports ? Math.min(100, s.gpus / s.ports * 100) : (s.gpus ? 100 : 0)}%;background:var(${s.gpus > s.ports ? '--bad' : '--net'})"></i></div></div>` +
     gauge(tr('gaugeUtility'), s.facility, state.utility * 1000, '--ink') +
-    `<div class="gauge"><div class="top"><span>${tr('gaugeCapex')}</span><em>${tr('capex', {m: s.capex.toFixed(1)})}</em></div></div>`;
+    `<div class="gauge"><div class="top"><span>${tr('gaugeCapex')}</span><em>${tr('capex', {m: s.capex.toFixed(1)})}</em></div></div>`);
   // 全机房总量的检查在前，逐台设备的超载在后
   const drill: {lvl: string; txt: string}[] = [
     ...(state.viewPhase !== null ? [{lvl: 'warn', txt: tr('viewIssues', {n: state.viewPhase})}] : []),
@@ -132,7 +136,7 @@ export function refresh(): void{
   let html = [...drill, ...s.issues, ...perDevice].map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
   if (!s.it) html = `<li class="warn">${tr('issueEmpty')}</li>`;
   else if (!blocking) html += `<li class="ok">${tr('issueOk')}</li>`;
-  $('#issues').innerHTML = html;
+  setHTML($('#issues'), html);
   const btn = $<HTMLButtonElement>('#power');
   btn.disabled = !s.it || (blocking && !state.powered);   // 通电后演练出问题，仍然可以断电
   btn.classList.toggle('on', state.powered);
@@ -165,7 +169,7 @@ function renderDrill(all: Item[]): void{
       if (spof.length > MAX_SPOF) html += `<li class="warn">${tr('moreMessages', {n: spof.length - MAX_SPOF})}</li>`;
     }
   }
-  $('#n1').innerHTML = html;
+  setHTML($('#n1'), html);
 }
 
 // 增长规划区：逐阶段累计的表格，以及当前查看阶段之后还能加几台
@@ -173,7 +177,7 @@ const KIND_LABEL = {dist: 'gaugeDist', liquid: 'gaugeLiquid', air: 'gaugeAir', n
 const pct = (r: number): string => r === Infinity ? '∞' : Math.round(r * 100) + '%';
 function renderGrowth(all: Item[], planned: Item[]): void{
   const plan = growthPlan(all, CAT, state.utility);
-  if (!plan.length){ $('#growth').innerHTML = ''; return; }
+  if (!plan.length){ setHTML($('#growth'), ''); return; }
   const rows = plan.map(p => {
     const ok = !p.reasons.length, current = state.viewPhase === p.phase || (state.viewPhase === null && p === plan.at(-1));
     return `<tr data-phase="${p.phase}" class="${current ? 'current' : ''}" tabindex="0">
@@ -191,13 +195,13 @@ function renderGrowth(all: Item[], planned: Item[]): void{
   const asOf = state.viewPhase ?? plan[plan.length - 1].phase;
   const roomText = tr('headroom', {phase: asOf, n: room.count === Infinity ? '∞' : room.count,
     limit: room.limit ? tr(KIND_LABEL[room.limit]).toLowerCase() : '–'});
-  $('#growth').innerHTML = `<table class="growth">
+  setHTML($('#growth'), `<table class="growth">
       <thead><tr><th>${tr('colPhase')}</th><th>GPU</th><th>${tr('hudIt')}</th><th>${tr('colTightest')}</th><th>${tr('colStatus')}</th></tr></thead>
       <tbody>${rows}</tbody></table>
     ${fails ? `<ul class="issues">${fails}</ul>` : ''}
     <p class="room"><select id="headroomType" aria-label="${tr('headroomType')}">${gpuTypes.map(t =>
       `<option value="${t.id}"${t.id === type ? ' selected' : ''}>${catName(t)}</option>`).join('')}</select> ${roomText}</p>
-    <p class="sub">${tr('headroomNote')}</p>`;
+    <p class="sub">${tr('headroomNote')}</p>`);
 }
 
 const badText = (txt: string): string => `<span style="color:var(--bad)">${txt}</span>`;
@@ -238,7 +242,7 @@ export function renderInfo(): void{
   const box = $('#info');
   const key = state.selected, it = key ? state.items.get(key) : undefined;
   const t = it ? CAT[it.type] : state.tool ? CAT[state.tool] : null;
-  if (!t){ box.innerHTML = tr('infoEmpty'); return; }
+  if (!t){ setHTML(box, tr('infoEmpty')); return; }
   const rows: Row[] = [];
   if (t.kw) rows.push([tr('rowPower'), t.kw + ' kW']);
   if (t.gpus) rows.push([tr('rowGpu'), t.gpus]);
@@ -263,11 +267,11 @@ export function renderInfo(): void{
   }
   if (it) rows.push(...supplyRows(t, supplyByKey.get(keyOf(it.x, it.z))));
   const at = it ? tr('infoAt', {x: it.x + 1, z: it.z + 1, loc: loc(it.x, it.z)}) : tr('infoPlaceHint');
-  box.innerHTML = `<strong>${catName(t)}</strong><span style="color:var(--muted)">${at}</span>
+  setHTML(box, `<strong>${catName(t)}</strong><span style="color:var(--muted)">${at}</span>
     <table>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
     ${it && assigning ? `<p class="assign-hint">${tr('assignHint', {label: it.type.toUpperCase()})}</p>` : ''}
     <p>${catNote(t)}</p>
-    ${it ? `<div class="row" style="margin-top:8px">${supplyType ? `<button type="button" id="assignToggle" aria-pressed="${assigning}">${tr(assigning ? 'assignDone' : 'assignStart')}</button>` : ''}${failable ? `<button type="button" id="failToggle" title="F" aria-keyshortcuts="F">${tr(failed ? 'drillRestore' : 'drillFail')}</button>` : ''}<button type="button" id="del">${tr('remove')}</button></div>` : ''}`;
+    ${it ? `<div class="row" style="margin-top:8px">${supplyType ? `<button type="button" id="assignToggle" aria-pressed="${assigning}">${tr(assigning ? 'assignDone' : 'assignStart')}</button>` : ''}${failable ? `<button type="button" id="failToggle" title="F" aria-keyshortcuts="F">${tr(failed ? 'drillRestore' : 'drillFail')}</button>` : ''}<button type="button" id="del">${tr('remove')}</button></div>` : ''}`);
   if (!key) return;
   // 这些控件只在选中了已摆放的设备时才有
   const q = <T extends HTMLElement>(s: string) => box.querySelector<T>(s);
