@@ -79,7 +79,7 @@ tools/simready_setup.sh && .simready/venv/bin/python tools/simready_audit.py sam
    推荐 A：`layout.json`（网页版导出，或 pxr 从 usda 转换）加上每种设备一个 glb（pxr 离线转换），由 glTFast 导入。
    备选 B3：Unity USD Core（USD 23.02）在运行时直接读 usda，已实测在打包后的 macOS 程序中可用，
    但打包后必须把 `lib/usd` 的 plugInfo 资源复制进 `.app/Contents/PlugIns/ARM64/usd`，否则打开 stage 就崩溃。
-   Unity USD Importer 在 6000.6 上编译失败，不要用。开工前要确认：选 A 还是 B3、Unity 版本和渲染管线、工程是否放在 `unity/`。
+   Unity USD Importer 在 6000.6 上编译失败，不要用。已决定：方案 A，Unity 6000.6.1f1 + URP，工程放在 `unity/`。
    本机已装 Unity 6000.6.1f1 和 Unity CLI（`~/.unity/bin/unity`），编辑器路径 `/Applications/Unity/Hub/Editor/6000.6.1f1/Unity.app/Contents/MacOS/Unity`，batchmode 可用。
 
 ## 数据可信度
