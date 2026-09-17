@@ -1,6 +1,6 @@
 # GPU Data Hall Builder
 
-A simulator for laying out an AI data hall around the latest AI GPU racks: NVIDIA GB200/GB300 NVL72, Vera Rubin NVL72 and Vera Rubin Ultra NVL144 (Kyber), and AMD Helios and MI355X. Place racks, power panels, coolant units and network switches on a grid. See whether power distribution, cooling, network ports and utility capacity can carry the load. Then export the hall as OpenUSD.
+A simulator for laying out an AI data hall around the latest AI GPU racks: NVIDIA GB200/GB300 NVL72, Vera Rubin NVL72 and Vera Rubin Ultra NVL144 (Kyber), AMD Helios and MI355X, and Huawei CloudMatrix 384. Place racks, power panels, coolant units and network switches on a grid. See whether power distribution, cooling, network ports and utility capacity can carry the load. Then export the hall as OpenUSD.
 
 **Live demo:** https://datahall-eight.vercel.app ([中文界面](https://datahall-eight.vercel.app/?lang=zh))
 

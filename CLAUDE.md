@@ -1,6 +1,6 @@
 # GPU Data Hall Builder
 
-A simulator for experiencing how an AI data center is built, focused on new-generation GPU racks (NVIDIA GB200/GB300 NVL72, Vera Rubin NVL72, Kyber; AMD Helios, MI355X).
+A simulator for experiencing how an AI data center is built, focused on new-generation GPU racks (NVIDIA GB200/GB300 NVL72, Vera Rubin NVL72, Kyber; AMD Helios, MI355X; Huawei CloudMatrix 384).
 Target form: a web version (for sharing, and the capacity-planning logic) + a Unity version (immersive experience, VR, tray teardown, failure drills).
 The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady assets and the Omniverse DSX ecosystem later.
 
@@ -214,6 +214,7 @@ Last full check 2026-09-18. Choices made then:
 - Vera Rubin NVL72: NVIDIA publishes no rack power; 190 kW is Max-Q from Ming-Chi Kuo (Max-P about 230 kW, 2026-01); 100% liquid per NVIDIA; $5–7M (Tom's Hardware, 2026-03)
 - Kyber is named Vera Rubin Ultra NVL144 (Kyber): 144 GPUs by package; 600 kW is the GTC 2025 design figure, not restated for the 2026 design; reported slip to 2028; $7–8.8M reported
 - AMD Helios: 225–245 kW (StorageReview, 2026-07), $5–5.5M (Futurum via CNBC, 2026-07); MI355X rack up to 120 kW (GIGABYTE), liquid share and price are estimates
+- Huawei CloudMatrix 384 (`cm384`, the Atlas 900 A3 SuperPoD compute rack): 32 Ascend 910C NPUs counted as GPUs; the 4 air-cooled UnifiedBus switch racks are not modeled separately, so the whole system's about 559 kW (Tom's Hardware, 2025-04) and about $8M (TrendForce citing FT, 2025-07) are spread over the 12 compute racks: 47 kW, 70% liquid and $0.67M per rack are estimates. It is not an air-cooled dense rack, so the `dgx` density warning did not need to become a catalog flag yet
 - DGX B200 stays (14.3 kW per system, NVIDIA) rather than switching to B300: changing what the `dgx` id means would silently change old share links
 - Support units: CDU 800 kW within Vertiv's 600–2300 kW range; the 120 kW in-row cooler stands in for about two real units (58–70 kW each); the 800 kW RPP is a high-density panel; IB rack of 288 ports is about two Q3400 switches; all their prices are estimates
 - PUE context in the methodology dialog: weighted average annual PUE 1.54 in 2025, 1.44 for facilities of 20 MW and above (Uptime Institute Global Data Center Survey 2025)
@@ -227,5 +228,5 @@ Last full check 2026-09-18. Choices made then:
 - The UI defaults to English and supports Simplified Chinese. Both languages use sentence-style copy; English uses sentence case, no all-caps labels
 - Issue text in `spec/capacity-cases.json` is always generated in Chinese (`buildCases` temporarily switches to Chinese), and Unity's C# capacity model compares it verbatim; when changing the Chinese wording of capacity issues, update the C# as well
 - The content of exported files (`.usda` comments and README, `layout.json`) does not change with the UI language
-- Fixed color semantics: NVIDIA GPU green, AMD GPU rose (`--amd`), coolant cyan, power distribution copper, network purple. Rose was chosen over AMD red so racks never look like the red overload marker
+- Fixed color semantics: NVIDIA GPU green, AMD GPU rose (`--amd`), Huawei blue (`--huawei`), coolant cyan, power distribution copper, network purple. Rose was chosen over AMD red and blue over Huawei red so racks never look like the red overload marker. A new color also needs an entry in `usd-export.ts`'s `PALETTE` and in the color test in `sim.test.ts`
 - Answer directly, no pleasantries.
