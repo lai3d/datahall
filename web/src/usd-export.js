@@ -155,19 +155,29 @@ dchall:powerFeed     → 为该设备配电的 RPP（DataHallEquipmentAPI）
 NVIDIA AI Factory 设备资产约定正面朝 +X，本文件正面朝 -Y，所以不要直接对原型加 reference，
 而是停用简化几何，在原型下建子 Xform 引用资产并转 -90°，kind 设为 subcomponent：
 
-    over "DataHall" { over "Catalog" { over "vr200"
+    over "DataHall"
     {
-        over "Body" ( active = false ) {}
-        over "Front" ( active = false ) {}
-        def Xform "simready_model" (
-            prepend references = @./vendor/rack.usd@
-            kind = "subcomponent"
-        )
+        over "Catalog"
         {
-            float3 xformOp:rotateXYZ = (0, 0, -90)
-            uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+            over "vr200"
+            {
+                over "Body" (active = false)
+                {
+                }
+                over "Front" (active = false)
+                {
+                }
+                def Xform "simready_model" (
+                    prepend references = @./vendor/rack.usd@
+                    kind = "subcomponent"
+                )
+                {
+                    float3 xformOp:rotateXYZ = (0, 0, -90)
+                    uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+                }
+            }
         }
-    } } }
+    }
 
 数值为公开报道与估算的粗略值，不可作为工程设计依据。
 `;

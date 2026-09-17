@@ -149,20 +149,32 @@ class Xform "vr200" ( prepend apiSchemas = ["DataHallEquipmentAPI", "LiquidCoole
 **推荐写法 B：**
 
 ```usda
-over "DataHall" { over "Catalog" { over "vr200"
+over "DataHall"
 {
-    over "Body" ( active = false ) {}
-    over "Front" ( active = false ) {}
-    def Xform "simready_model" (
-        prepend references = @./vendor/gb300_rack/gb300_rack.usd@
-        kind = "subcomponent"
-    )
+    over "Catalog"
     {
-        float3 xformOp:rotateXYZ = (0, 0, -90)
-        uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+        over "vr200"
+        {
+            over "Body" (active = false)
+            {
+            }
+            over "Front" (active = false)
+            {
+            }
+            def Xform "simready_model" (
+                prepend references = @./vendor/gb300_rack/gb300_rack.usd@
+                kind = "subcomponent"
+            )
+            {
+                float3 xformOp:rotateXYZ = (0, 0, -90)
+                uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+            }
+        }
     }
-} } }
+}
 ```
+
+usda 要求每个 prim 的 `{` 另起一行，不能把多层 `over` 压缩写在同一行，否则 USD 报 `Expected }`。`tools/test_usd_to_unity.py` 用这段做回归测试。
 
 上面这段就是在实验里验证过的写法（只写 rotateXYZ，结果和写法 B 相同）。
 
