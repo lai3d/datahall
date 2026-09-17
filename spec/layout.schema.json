@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/lai3d/datahall/spec/layout.schema.json",
   "title": "GPU Data Hall layout",
-  "description": "Hall layout exchanged with the Unity app. Produced by the web page (web/src/layout-export.js) and by tools/usd_to_unity.py from a .usda file. Units: kW, m, million USD.",
+  "description": "Hall layout exchanged with the Unity app. Produced by the web page (web/src/layout-export.ts) and by tools/usd_to_unity.py from a .usda file. Units: kW, m, million USD.",
   "type": "object",
   "additionalProperties": false,
   "required": ["format", "version", "generator", "generated", "grid", "utilityMw", "catalog", "equipment"],

@@ -8,8 +8,8 @@ out="$root/build/native-smoke.json"
 drop="$root/build/native-smoke-layout.json"
 (cd "$root/web" && node --input-type=module -e "
 import {writeFileSync} from 'node:fs';
-import {buildLayout, layoutToText} from './src/layout-export.js';
-import {CAT} from './src/catalog.js'; import {GRID} from './src/grid.js'; import {PRESETS} from './src/layout.js';
+import {buildLayout, layoutToText} from './src/layout-export.ts';
+import {CAT} from './src/catalog.ts'; import {GRID} from './src/grid.ts'; import {PRESETS} from './src/layout.ts';
 const p = PRESETS.rubin;
 writeFileSync('$drop', layoutToText(buildLayout(p.list.map(([type, x, z]) => ({type, x, z})), CAT, p.u, GRID, {date: '2026-09-17'})));")
 rm -f "$out"

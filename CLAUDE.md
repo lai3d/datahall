@@ -6,32 +6,36 @@
 
 ## 目录
 
-- `web/`：网页版，Vite + three.js 0.186（npm 锁版本），入口 `web/index.html` → `web/src/main.js`
+- `web/`：网页版，TypeScript（strict）+ Vite + three.js 0.186（npm 锁版本），没有 UI 框架（面板是原生 DOM），入口 `web/index.html` → `web/src/main.ts`
+  - `tsconfig.json`：`npm run typecheck`（`tsc`，TypeScript 7）只做类型检查不产出文件，打包由 Vite 负责。开了 `erasableSyntaxOnly`：
+    不用 enum、参数属性这类需要编译的语法，Node 24+ 可以直接运行 `scripts/*.ts`；相对 import 都写 `.ts` 后缀
+  - `src/types.ts`：共用数据类型（目录、设备、布局条目、feeds）；`src/dom.ts`：取页面元素的 `$`
+  - 文案类型：`zh.ts` 的类型取自 `en.ts`，`tr(key, vars)` 在编译期检查键和变量
   - `vercel.json`：Vercel 构建设置（Vite，`npm ci`、`npm run build`、输出 `dist`）
-  - `src/catalog.js`：import `spec/catalog.json`，构建时打进包里
-  - `src/sim.js`：容量模型与 PUE，纯函数
-  - `src/i18n.js` + `src/locales/en.js`、`zh.js`：界面语言，默认英文，可切换简体中文（右上角切换，记在 localStorage，`?lang=zh` 可直接指定）。
-    所有界面文案、容量问题、导入提示都走 `tr(key, vars)`；新增文案要两个文件同时加，`tests/i18n.test.js` 检查键一致、不漏变量
-  - `src/supply.js`：按设备的容量检查，每台 CDU、RPP 按 `supplyLinks` 就近分到的负载和自身容量比较，纯函数。只在网页版，Unity 的 `CapacityModel` 没有对应实现
-  - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
-  - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载文件
-  - `src/share-link.js`：分享链接，布局编码进网址 hash，纯函数
-  - `src/layout-export.js`：`buildLayout`，给 Unity 版的 `layout.json`，纯函数；拓扑和设备名与 USD 导出共用 `grid.js` 的 `supplyLinks`、`equipmentName`
-  - `src/usda-parser.js`：usda 文本的精简解析器（prim、属性、元数据、值），不做组合
-  - `src/usd-import.js`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
-  - `src/scene.js` / `src/controls.js`：three 场景、拾取、轨道相机与指针输入
-  - `src/edit.js`：编辑用的纯函数（整排放置的格子、布局比较、撤销历史）
-  - `src/growth.js`：增长规划，逐阶段累计的容量检查（`growthPlan`）和还能加几台（`headroom`），纯函数
-  - `src/feeds.js`：手动指定供给设备的维护（设置、失效清理、供给设备挪动时跟着改），纯函数
-  - `src/redundancy.js`：故障演练和 N+1 检查，纯函数；`blockingReasons` 和界面“不能通电”的条件一一对应（有测试保证）
-  - `src/ui.js`：右侧面板；`src/state.js`：共享状态；`src/layout.js`：预设与 localStorage；`src/grid.js`：网格常量
-  - `tests/`：vitest；`usd-export.test.js` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致，
+  - `src/catalog.ts`：import `spec/catalog.json`，构建时打进包里
+  - `src/sim.ts`：容量模型与 PUE，纯函数
+  - `src/i18n.ts` + `src/locales/en.ts`、`zh.ts`：界面语言，默认英文，可切换简体中文（右上角切换，记在 localStorage，`?lang=zh` 可直接指定）。
+    所有界面文案、容量问题、导入提示都走 `tr(key, vars)`；新增文案要两个文件同时加，`tests/i18n.test.ts` 检查键一致、不漏变量
+  - `src/supply.ts`：按设备的容量检查，每台 CDU、RPP 按 `supplyLinks` 就近分到的负载和自身容量比较，纯函数。只在网页版，Unity 的 `CapacityModel` 没有对应实现
+  - `src/usd-export.ts`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
+  - `src/download.ts`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载文件
+  - `src/share-link.ts`：分享链接，布局编码进网址 hash，纯函数
+  - `src/layout-export.ts`：`buildLayout`，给 Unity 版的 `layout.json`，纯函数；拓扑和设备名与 USD 导出共用 `grid.ts` 的 `supplyLinks`、`equipmentName`
+  - `src/usda-parser.ts`：usda 文本的精简解析器（prim、属性、元数据、值），不做组合
+  - `src/usd-import.ts`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
+  - `src/scene.ts` / `src/controls.ts`：three 场景、拾取、轨道相机与指针输入
+  - `src/edit.ts`：编辑用的纯函数（整排放置的格子、布局比较、撤销历史）
+  - `src/growth.ts`：增长规划，逐阶段累计的容量检查（`growthPlan`）和还能加几台（`headroom`），纯函数
+  - `src/feeds.ts`：手动指定供给设备的维护（设置、失效清理、供给设备挪动时跟着改），纯函数
+  - `src/redundancy.ts`：故障演练和 N+1 检查，纯函数；`blockingReasons` 和界面“不能通电”的条件一一对应（有测试保证）
+  - `src/ui.ts`：右侧面板；`src/state.ts`：共享状态；`src/layout.ts`：预设与 localStorage；`src/grid.ts`：网格常量
+  - `tests/`：vitest；`usd-export.test.ts` 从样例反解设备清单再生成，要求与 `samples/datahall.usda` 逐字节一致，
     并解析 `schema/generatedSchema.usda` 检查导出的每个 `dchall:` 属性都由应用的 schema 定义、类型一致（不需要 pxr）
-  - `scripts/update-sample.js`：`npm run sample`，导出格式有意变更后按样例原布局重新生成 `samples/datahall.usda`
-  - `scripts/capacity-cases.js`：`npm run capacity-cases`，从 `sim.js` 生成 `spec/capacity-cases.json`（Unity 的 C# 容量模型用它核对）
-  - `scripts/layout-from-usda.js`、`scripts/validate-gltf.js`：给 `tools/test_usd_to_unity.py` 做对照和 glTF-Validator 检查
+  - `scripts/update-sample.ts`：`npm run sample`，导出格式有意变更后按样例原布局重新生成 `samples/datahall.usda`
+  - `scripts/capacity-cases.ts`：`npm run capacity-cases`，从 `sim.ts` 生成 `spec/capacity-cases.json`（Unity 的 C# 容量模型用它核对）
+  - `scripts/layout-from-usda.ts`、`scripts/validate-gltf.ts`：给 `tools/test_usd_to_unity.py` 做对照和 glTF-Validator 检查
   - `tests/fixtures/`：导入测试用的文件。`pxr-resaved`、`pxr-edited` 由 `tools/make_import_fixtures.py` 生成；
-    `schema-0.1` 取自提交 `2cdd465` 的样例。导出格式变化后要重新生成，并更新 `usd-import.test.js` 里的预期
+    `schema-0.1` 取自提交 `2cdd465` 的样例。导出格式变化后要重新生成，并更新 `usd-import.test.ts` 里的预期
 - `spec/catalog.json`：设备目录，**唯一数据源**。`name`、`note` 是中文原文，导出的 USD `displayName` 和 `layout.json` 沿用它；
   英文写在每项的 `i18n.en` 下（缺的字段回退原文）。改 note 的数值或来源时中英文一起改
 - `spec/layout.schema.json`：`layout.json` 格式；`spec/capacity-cases.json`：容量模型共用测试用例（生成文件，不要手改）
@@ -48,7 +52,7 @@
 - `tools/usd_to_unity.py`：`.usda` → 布局包（`layout.json` + `assets/<id>.glb`），测试 `tools/test_usd_to_unity.py`
 - `unity/`：Unity 6000.6.1f1 + URP + glTFast 6.20.0 的 macOS 程序
   - `Assets/DataHall/Runtime`：`LayoutData`（解析校验）、`HallCoordinates`（USD (x, y, z) → Unity (-x, z, -y)）、
-    `CapacityModel`（`sim.js` 的 C# 移植）、`HallBuilder`、`HallApp`（入口和中文 IMGUI 面板）、`OrbitCamera`
+    `CapacityModel`（`sim.ts` 的 C# 移植）、`HallBuilder`、`HallApp`（入口和中文 IMGUI 面板）、`OrbitCamera`
   - `Assets/DataHall/Editor`：`ProjectSetup`（URP、场景、播放器设置）、`BundleImporter`（导入布局包、生成 prefab 变体）、`BuildMac`
   - `Assets/DataHall/Generated`：导入生成的模型和设备库，由 `tools/unity_sync.sh` 更新；`Assets/DataHall/Prefabs`：模型的 prefab 变体，交互加在这里
   - `Assets/DataHall/Tests/EditMode`：EditMode 测试；`Fixtures/axis_probe.glb` 由 `tools/make_unity_fixtures.py` 生成
@@ -61,6 +65,7 @@
 brew install git-lfs && git lfs install   # 仓库用 Git LFS 存二进制资产（规则见 .gitattributes），克隆前装好；已克隆的运行 git lfs pull
 cd web && npm i
 npm run dev        # 开发服务器
+npm run typecheck  # tsc 类型检查（CI 也跑）
 npm test           # vitest
 npm run build      # 产物在 web/dist，base 为相对路径，可部署到任意子路径
 # 部署：Vercel 项目 lai3ds-projects/datahall 关联本仓库，Root Directory 为 web；合并到 main 发布正式版，PR 自动生成预览
@@ -86,10 +91,10 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
 
 - **容量模型**：配电（RPP）、液冷（CDU）、风冷（列间空调）、后端网络端口、市电五项约束，任一不满足不能通电。
   PUE 估算：`(IT + 设备自耗 + 液冷热量×0.08 + 风冷热量×0.30 + IT×0.05) / IT`，是教学用简化公式。
-  - 网页版另有逐台检查（`supply.js`）：总量够时，就近分到某台 CDU 的液冷热量或某台 RPP 的功率超过它的容量，也不能通电。
+  - 网页版另有逐台检查（`supply.ts`）：总量够时，就近分到某台 CDU 的液冷热量或某台 RPP 的功率超过它的容量，也不能通电。
     总量已经不够时只报总量，不逐台重复。三维视图里超载的 CDU、RPP 和没接上的设备顶上显示红色，接到超载设备的连线画成红色。
     `compute()` 和 `spec/capacity-cases.json` 不含逐台检查（和 Unity 共用的契约不变）。
-  - 预设必须同时通过总量和逐台检查（`sim.test.js`）。Rubin 预设的设施按 CDU、RPP、IB、空调循环摆放就是为此。
+  - 预设必须同时通过总量和逐台检查（`sim.test.ts`）。Rubin 预设的设施按 CDU、RPP、IB、空调循环摆放就是为此。
 - **OpenUSD 约定**：Z 轴向上，metersPerUnit = 1，defaultPrim = `/DataHall`。
   - `/DataHall/Catalog/<id>`：`class` 原型，带参数、简化几何和自己的 `Looks`（UsdPreviewSurface），几何绑定原型内的材质
   - `/DataHall/Equipment`：`kind = "group"`；`/DataHall/Equipment/Rxx_Cyy`：`kind = "component"`、`instanceable` 实例，引用 Catalog 原型
@@ -102,7 +107,7 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
     - `LiquidCooledAPI`：只应用在 `liq > 0` 的原型上；`dchall:liquidFraction`、`dchall:coolantSource`→CDU
   - 属性名和类型与 0.1 的自定义属性保持一致；没加载插件时文件照样能打开、属性值照样可读。0.1 的文件没有 `apiSchemas`，校验会要求重新导出
   - schema 的 doc 用英文：usdGenSchema 会把第一句截成 `userDocBrief` 并补英文句点，中文句号会变成"。."
-  - 改属性的顺序：`schema/schema.usda` → `tools/gen_schema.sh` → `web/src/usd-export.js` → `npm run sample` → `validate_usd.py`
+  - 改属性的顺序：`schema/schema.usda` → `tools/gen_schema.sh` → `web/src/usd-export.ts` → `npm run sample` → `validate_usd.py`
   - 替换高精度模型的方式：在更强的层对 Catalog 原型写 `over`，但**不能直接对原型加 reference**：AIF 设备资产正面朝 +X，本项目正面朝 -Y；
     要在原型下建子 Xform 引用资产、`rotateXYZ = (0, 0, -90)`、`kind = "subcomponent"`，详见 `docs/simready-audit.md`
 - **导入 .usda**：只读根层，不展开 sublayer 和外部引用，不支持二进制 usdc（提示用 usdcat 转换）。
@@ -124,27 +129,27 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
     拖放是在 Unity 的 `PlayerWindowView` 类上添加拖放方法：NSView 自带默认实现，所以只检查 NSView 以下 Unity 自己的类，有实现就不接管。
     系统拖拽手势和对话框点选无法自动化，冒烟测试用伪造的拖放对象调用真实视图的 `performDragOperation:`
   - 重跑 `ProjectSetup` 会重建场景（fileID 变化）并可能改动 `UniversalRenderPipelineGlobalSettings.asset`，内容没变的话不要提交这些变动
-- **供给关系**（`grid.js` 的 `supplyLinks`，USD 导出、layout.json、逐台容量检查、连线共用）：默认接最近的 CDU / RPP（跨排距离加倍）；
+- **供给关系**（`grid.ts` 的 `supplyLinks`，USD 导出、layout.json、逐台容量检查、连线共用）：默认接最近的 CDU / RPP（跨排距离加倍）；
   设备可以手动指定接哪台（`feeds: {coolantSource: [x, z], powerFeed: [x, z]}`，布局快照里是 `[type, x, z, feeds]`）。
   - 指定的格子不是对应的供给设备（被删、换类型）或在故障演练里被拿掉时，退回最近的；`edit()` 里删掉被删设备的失效指定，供给设备被拖动时指定跟着改
   - 手动指定进撤销历史、localStorage 和分享链接；USD 和 layout.json 格式不变，关系本来就逐台写出。导入 .usda 时读关系，和就近分配不同的才记成手动指定，
     指向没导入的设备时提示并按就近处理（pxr 转换器此时写空，这种坏文件两边不一致，有效文件逐字段一致，`test_manual_assignment_and_phase_match_web_export`）
   - 界面：设备详情里“冷却液来自 / 配电来自”是下拉框（第一项就近）；CDU / RPP 详情里“指定接入设备”进入点选模式，点设备接上、再点恢复就近，Esc 结束。手动指定的连线画成虚线
-- **布局快照条目**：`[type, x, z]` 或 `[type, x, z, {feeds?, phase?}]`（`edit.js` 的 `toItem` / `toEntry`），撤销历史、localStorage、预设都用它。
+- **布局快照条目**：`[type, x, z]` 或 `[type, x, z, {feeds?, phase?}]`（`edit.ts` 的 `toItem` / `toEntry`），撤销历史、localStorage、预设都用它。
   2026-09-17 短暂发布过第 4 项直接是 feeds 的写法，`entryProps` 读的时候兼容
 - **增长规划**：每台设备有部署阶段（`phase`，从 1 开始，1 不写）。第 n 阶段的检查包含阶段 ≤ n 的全部设备，原因和“不能通电”的条件一致（`blockingReasons`）。
   - 阶段进撤销历史、localStorage、分享链接（版本 3）、USD（`DataHallEquipmentAPI` 的 `int dchall:phase`，大于 1 才写在实例上）、
     layout.json（equipment 的 `phase`，两个生成器都写，schema 里可省略、缺省为 1；Unity 版的 C# 暂时不读）
   - 界面：新设备进哪个阶段（“+”开新阶段）；“查看到第几阶段”和点表格行是查看状态，不改布局也不进撤销历史，之后阶段的设备更淡、不参与计算和 N+1 检查；
     设备详情里可以改阶段。查看的阶段在新放设备超出它时自动切回全部
-  - 还能加几台（`headroom`）只按全机房总量算（每台的需求增量和 `sim.js` 的 PUE 公式一致），不看地板空位和逐台 CDU / RPP 分配；有测试保证加上算出的台数仍满足、再多一台就不满足
+  - 还能加几台（`headroom`）只按全机房总量算（每台的需求增量和 `sim.ts` 的 PUE 公式一致），不看地板空位和逐台 CDU / RPP 分配；有测试保证加上算出的台数仍满足、再多一台就不满足
 - **故障演练**：可以标记故障的是提供容量的设施（CDU、RPP、列间空调、IB 交换柜），GPU 机柜和存储柜不行。
   - 故障设施从计算里拿掉：不提供容量也不耗电，其余设备按 `supplyLinks` 重新就近分配；三维里半透明、不投影、不亮，连线不画
   - 故障标记（`state.failed`，按格子 key）不进布局、撤销历史、分享链接和导出；拖动时跟着设备走，撤销、重做后格子上还是可故障设施就保留；
     载入预设、导入文件、打开分享链接清空。标记故障不断电，已通电时即使演练出问题也能断电
   - N+1 检查针对完整布局（不看当前演练）：依次让每台设施单独故障，列出会让机房不满足容量检查的设备和原因；布局本身不满足时不检查
   - `gb200n1` 预设是 N+1 的示范；其他预设不要求 N+1
-- **编辑**：所有改布局的操作都经过 `main.js` 的 `edit()`，布局真的变了才记一条撤销历史（最多 100 条），
+- **编辑**：所有改布局的操作都经过 `main.ts` 的 `edit()`，布局真的变了才记一条撤销历史（最多 100 条），
   包括放置、删除、整排放置、拖动、改市电、载入预设、导入文件、打开分享链接；启动时的载入和撤销、重做本身不记。
   - 拖动：按下的位置有设备就移动设备，否则旋转视角。按设备侧面时指针下的地板是后面的格子，所以按指针移动的格数挪，不是挪到指针下的格子；
     经过的空格立即生效（连线和容量检查跟着变），占用的格子跳过，松手记一条历史；第二根手指落下取消这次拖动

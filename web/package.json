@@ -7,15 +7,19 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "sample": "node scripts/update-sample.js",
-    "capacity-cases": "node scripts/capacity-cases.js"
+    "typecheck": "tsc -p .",
+    "sample": "node scripts/update-sample.ts",
+    "capacity-cases": "node scripts/capacity-cases.ts"
   },
   "dependencies": {
     "three": "0.186.0"
   },
   "devDependencies": {
+    "@types/node": "^24.13.5",
+    "@types/three": "^0.186.0",
     "ajv": "^8.20.0",
     "gltf-validator": "^2.0.0-dev.3.10",
+    "typescript": "^7.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.1"
   }

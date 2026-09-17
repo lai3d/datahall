@@ -91,7 +91,7 @@ macOS 上没有主流 VR 运行时（SteamVR 2020 年起停止支持 macOS），
 
 **Unity 侧：**
 - **编辑器工具：** 导入 glb，生成或更新 prefab。交互（托盘、碰撞体、高亮）做在 prefab 变体上，重新导入几何时不会被覆盖。
-- **运行时：** 打开 `layout.json`，按网格位置实例化；容量模型参照 `web/src/sim.js` 移植成 C#，和网页版共用一份 JSON 测试用例。
+- **运行时：** 打开 `layout.json`，按网格位置实例化；容量模型参照 `web/src/sim.ts` 移植成 C#，和网页版共用一份 JSON 测试用例。
 
 **缺点：**
 - 不是实时的，改了 USD 要重新转换。
@@ -172,7 +172,7 @@ macOS 上没有主流 VR 运行时（SteamVR 2020 年起停止支持 macOS），
 | A1 `layout.json` 格式 | 1 | JSON Schema；网页版导出按钮和纯函数导出器；vitest 用例 |
 | A2 转换器 | 2–3 | `tools/usd_to_unity.py`：原型转 glb、`.usda` 转 `layout.json`、坐标转换；pytest 加 glTF-Validator；样例和 SimReady 替换写法做回归 |
 | A3 Unity 工程 | 2–3 | 编辑器导入 glb 生成 prefab、运行时打开 `layout.json` 并实例化；EditMode 测试 |
-| A4 容量模型移植 | 1–2 | `sim.js` 移植为 C#，和网页版共用 JSON 测试用例 |
+| A4 容量模型移植 | 1–2 | `sim.ts` 移植为 C#，和网页版共用 JSON 测试用例 |
 | A5 高精度资产 | 3–5（视资产而定） | 真实 SimReady 资产：payload、大网格、MDL 到 PBR 的近似、贴图 |
 
 **需要你自己完成的步骤（耗时不在 Claude 控制范围内）：**

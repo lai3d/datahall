@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace DataHall
 {
-    // 容量模型，逐行移植自 web/src/sim.js。结果和提示文案必须与网页版一致，
+    // 容量模型，逐行移植自 web/src/sim.ts。结果和提示文案必须与网页版一致，
     // 由 spec/capacity-cases.json 核对（CapacityModelTests）。
     [Serializable]
     public class CapacityIssue

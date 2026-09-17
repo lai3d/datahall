@@ -5,7 +5,7 @@ Usage: .venv/bin/python tools/make_import_fixtures.py   (needs usd-core)
 
 pxr-resaved.usda  the sample re-saved by Sdf: canonical field order and number formatting
 pxr-edited.usda   the sample edited through the Usd API the way a user might in usdview or Omniverse;
-                  web/tests/usd-import.test.js asserts the expected import result for each edit
+                  web/tests/usd-import.test.ts asserts the expected import result for each edit
 """
 import os
 import sys
