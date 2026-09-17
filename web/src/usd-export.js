@@ -66,7 +66,8 @@ export function buildUsda(list, CAT, utility, g){
   });
   L.push('    }', '');
 
-  L.push('    def Scope "Equipment"', '    {');
+  // component 的祖先必须都是 group 类 kind，否则实例不在模型层级里（OAV KindChecker）
+  L.push('    def Scope "Equipment" (', '        kind = "group"', '    )', '    {');
   list.forEach(it => {
     const t = CAT[it.type]; if (!t) return;
     const [px, py] = pos(it);

@@ -288,7 +288,9 @@ def Xform "DataHall" (
         }
     }
 
-    def Scope "Equipment"
+    def Scope "Equipment" (
+        kind = "group"
+    )
     {
         def Xform "R04_C04" (
             kind = "component"
