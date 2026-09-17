@@ -76,6 +76,7 @@ function select(key: string | null){ state.selected = key; state.assignFrom = nu
 function refresh(){
   const model = hallModel();
   view.setAlerts(model.alerts);
+  view.setLoads(model.loads);
   view.setDimmed();
   if (state.tutorial !== null) stepTutorial(model, false);
   notify();
@@ -478,6 +479,6 @@ mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
 state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
 if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || PRESETS.gb200);
 // Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
-if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce};
+if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce, meters: view.meters, flowDots: view.flowDots};
 view.startLoop();
 initAnalytics(openedFromShareLink);
