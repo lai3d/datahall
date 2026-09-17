@@ -1,0 +1,708 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>GPU 机房搭建模拟器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6ECF0;--panel:#F5F8FA;--ink:#17212B;--muted:#56646F;--line:#C5D0D8;
+  --hall:#D3DCE2;--floor:#C4CFD7;--grid:#A9B7C1;--rack:#2B343D;
+  --gpu:#5E9400;--coolant:#177F92;--copper:#A8621F;--net:#5F50AE;--air:#5F707E;--store:#4E6A86;
+  --warn:#8A6700;--bad:#B3261E;--ok:#3F7D20;
+  --font:"Barlow Semi Condensed","PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#10171E;--panel:#16202A;--ink:#E4EAEF;--muted:#91A0AC;--line:#2A3743;
+  --hall:#0D1318;--floor:#17212A;--grid:#283640;--rack:#34404B;
+  --gpu:#76B900;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
+  --warn:#E8C547;--bad:#F2766B;--ok:#8BC34A;
+}}
+:root[data-theme="dark"]{
+  --bg:#10171E;--panel:#16202A;--ink:#E4EAEF;--muted:#91A0AC;--line:#2A3743;
+  --hall:#0D1318;--floor:#17212A;--grid:#283640;--rack:#34404B;
+  --gpu:#76B900;--coolant:#3FB6C9;--copper:#D08A45;--net:#9A8CE0;--air:#9AA8B5;--store:#7FA2C4;
+  --warn:#E8C547;--bad:#F2766B;--ok:#8BC34A;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.4;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+#stage{position:relative;flex:1;min-height:42vh;background:var(--hall)}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;left:12px;top:10px;display:flex;gap:14px;pointer-events:none;
+  background:color-mix(in srgb,var(--panel) 82%,transparent);padding:6px 10px;border-radius:6px;border:1px solid var(--line)}
+#hud b{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;display:block;line-height:1.1}
+#hud span{font-size:12px;color:var(--muted)}
+#camReset{position:absolute;right:10px;top:10px}
+#panel{background:var(--panel);border-top:1px solid var(--line);max-height:56vh;overflow-y:auto;padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
+@media (min-width:900px){
+  body{flex-direction:row}
+  #panel{width:380px;max-height:none;height:100%;border-top:0;border-left:1px solid var(--line);padding:18px}
+}
+h1{font-size:22px;font-weight:700;margin:0 0 2px;letter-spacing:.2px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+h2{font-size:15px;font-weight:600;margin:16px 0 8px;color:var(--muted)}
+button{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:6px;padding:6px 10px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--coolant);outline-offset:2px}
+button:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+.palette{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.chip{display:flex;text-align:left;padding:0;overflow:hidden;min-height:48px}
+.chip i{width:6px;flex:none}
+.chip div{padding:5px 8px}
+.chip strong{display:block;font-weight:600;font-size:14px}
+.chip small{color:var(--muted);font-size:12px}
+.chip[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.gauge{margin:6px 0}
+.gauge .top{display:flex;justify-content:space-between;font-size:13px}
+.gauge .top em{font-style:normal;font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;width:0;transition:width .25s}
+.issues{list-style:none;padding:0;margin:8px 0 0;font-size:13px}
+.issues li{padding:4px 0 4px 10px;border-left:3px solid var(--warn);margin-bottom:4px}
+.issues li.bad{border-color:var(--bad)}
+.issues li.ok{border-color:var(--ok)}
+#power{width:100%;margin-top:10px;padding:10px;font-weight:700;font-size:16px;border-color:var(--gpu)}
+#power.on{background:var(--gpu);color:#0b1200}
+.info{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:10px;margin-top:4px}
+.info table{width:100%;border-collapse:collapse;margin:6px 0}
+.info td{padding:2px 0}
+.info td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.info p{margin:6px 0 0;color:var(--muted);font-size:13px}
+.foot{font-size:12px;color:var(--muted);margin-top:14px}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<main id="stage">
+  <div id="hud" aria-live="polite">
+    <div><b id="hGpu">0</b><span>GPU</span></div>
+    <div><b id="hIt">0 kW</b><span>IT 负载</span></div>
+    <div><b id="hPue">–</b><span>PUE 估算</span></div>
+  </div>
+  <button id="camReset" type="button">重置视角</button>
+</main>
+
+<aside id="panel">
+  <h1>GPU 机房搭建模拟器</h1>
+  <p class="sub">选设备，点地板空位放置。拖动旋转视角，双指或滚轮缩放。</p>
+
+  <h2>市电容量</h2>
+  <div class="row seg" id="utility"></div>
+
+  <h2>设备</h2>
+  <div class="palette" id="palette"></div>
+
+  <h2>容量检查</h2>
+  <div id="gauges"></div>
+  <ul class="issues" id="issues"></ul>
+  <button id="power" type="button" disabled>通电</button>
+
+  <h2>详情</h2>
+  <div class="info" id="info"></div>
+
+  <h2>预设场景</h2>
+  <div class="row">
+    <button type="button" data-preset="empty">清空机房</button>
+    <button type="button" data-preset="gb200">GB200 集群</button>
+    <button type="button" data-preset="rubin">Vera Rubin 一排</button>
+  </div>
+
+  <div id="usdBox" hidden>
+    <h2>导出</h2>
+    <button type="button" id="usdExport">导出 OpenUSD</button>
+    <p class="sub" id="usdMsg" style="margin-top:6px">打包为 zip，内含 datahall.usda 和字段说明。Z 轴向上，单位米，可直接在 Omniverse、usdview 或 Blender 中打开。</p>
+  </div>
+  <p class="foot">功耗、价格为公开报道与供应链估算的粗略值，用于体验和教学，不可作为工程设计依据。Vera Rubin NVL72 功耗按 Max-Q 约 190 kW 计。</p>
+</aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const col = n => new THREE.Color(css(n));
+
+// ---------- catalog ----------
+const CATALOG = [
+  {id:'gb200', name:'GB200 NVL72', group:'gpu', c:'--gpu', gpus:72, kw:125, liq:.85, cap:3.2, h:2.3,
+   note:'72 颗 Blackwell GPU + 36 颗 Grace CPU，Oberon 机柜，NVLink 72 卡全互联。计算和交换托盘液冷，其余部分仍需风冷。'},
+  {id:'gb300', name:'GB300 NVL72', group:'gpu', c:'--gpu', gpus:72, kw:140, liq:.85, cap:3.8, h:2.3,
+   note:'Blackwell Ultra 版本，机柜形态与 GB200 相同，单柜约 132–142 kW。'},
+  {id:'vr200', name:'Vera Rubin NVL72', group:'gpu', c:'--gpu', gpus:72, kw:190, liq:.95, cap:6.0, h:2.3,
+   note:'72 颗 Rubin GPU + 36 颗 Vera CPU，HBM4 与 NVLink 6，2026 下半年出货。Max-Q 约 190 kW，Max-P 约 230 kW（供应链估算）。'},
+  {id:'dgx', name:'DGX B200 ×4', group:'gpu', c:'--gpu', gpus:32, kw:57, liq:0, cap:2.0, h:2.2,
+   note:'一柜 4 台 10U DGX B200，每台 8 GPU、约 14.3 kW。纯风冷，单柜接近 60 kW，实际常需背板换热器。'},
+  {id:'kyber', name:'Rubin Ultra Kyber', group:'gpu', c:'--gpu', gpus:144, kw:600, liq:1, cap:9.0, h:2.6, future:true,
+   note:'2027 路线图产品，单柜约 600 kW，全液冷，配电需要 800 VDC 架构。价格为推测值。'},
+  {id:'ib', name:'Quantum-X800 IB', group:'net', c:'--net', kw:24, liq:0, ports:288, cap:0.9, h:2.2,
+   note:'800G InfiniBand 交换机柜。简化模型：每柜可接 288 个 GPU 后端网络端口。'},
+  {id:'stor', name:'存储柜', group:'net', c:'--store', kw:18, liq:0, cap:0.6, h:2.2,
+   note:'全闪存储，承载数据集与检查点。'},
+  {id:'cdu', name:'CDU 冷量分配', group:'fac', c:'--coolant', liqCool:800, ovh:12, cap:0.35, h:2.1,
+   note:'列间 CDU，把机柜冷板回路接到设施水。每台带走约 800 kW 液冷热量，自身泵耗约 12 kW。'},
+  {id:'crah', name:'列间空调', group:'fac', c:'--air', airCool:120, ovh:9, cap:0.08, h:2.1,
+   note:'列间风冷单元，每台约 120 kW 显冷量，风机耗电约 9 kW。'},
+  {id:'rpp', name:'配电柜 RPP', group:'fac', c:'--copper', dist:800, cap:0.25, h:2.1,
+   note:'远程配电柜，每台可为机柜分配约 800 kW。'},
+];
+const CAT = Object.fromEntries(CATALOG.map(t => [t.id, t]));
+const UTIL = [2, 5, 10];
+
+// ---------- state ----------
+const GW = 16, GD = 10, CX = 0.6, CZ = 1.2;
+let items = new Map();      // key -> {type,x,z,mesh}
+let utility = 2;
+let tool = null;
+let selected = null;
+let powered = false, powerStart = 0;
+
+// ---------- three ----------
+const stage = $('#stage');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+stage.prepend(renderer.domElement);
+const el = renderer.domElement;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.75));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(6, 14, 9); scene.add(sun);
+
+const itemRoot = new THREE.Group(); scene.add(itemRoot);
+let floor, gridLines, linkObj, ghost, outline;
+
+const cellPos = (x, z) => new THREE.Vector3((x - (GW - 1) / 2) * CX, 0, (z - (GD - 1) / 2) * CZ);
+
+function buildHall(){
+  [floor, gridLines].forEach(o => o && scene.remove(o));
+  scene.background = col('--hall');
+  floor = new THREE.Mesh(new THREE.PlaneGeometry(GW * CX + .6, GD * CZ + .6),
+    new THREE.MeshStandardMaterial({color: col('--floor'), roughness: .95}));
+  floor.rotation.x = -Math.PI / 2; scene.add(floor);
+  const pts = [], w = GW * CX / 2, d = GD * CZ / 2;
+  for (let i = 0; i <= GW; i++){ const x = -w + i * CX; pts.push(new THREE.Vector3(x, .002, -d), new THREE.Vector3(x, .002, d)); }
+  for (let j = 0; j <= GD; j++){ const z = -d + j * CZ; pts.push(new THREE.Vector3(-w, .002, z), new THREE.Vector3(w, .002, z)); }
+  gridLines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({color: col('--grid')}));
+  scene.add(gridLines);
+}
+
+function makeMesh(key, it){
+  const t = CAT[it.type], h = t.h, g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, h, CZ * .94),
+    new THREE.MeshStandardMaterial({color: col('--rack'), roughness: .55, metalness: .35}));
+  body.position.y = h / 2; g.add(body);
+  const accent = col(t.c);
+  const stripeMat = new THREE.MeshStandardMaterial({color: accent, emissive: accent, emissiveIntensity: .12});
+  const n = t.group === 'gpu' ? 9 : 3;
+  const sGeo = new THREE.BoxGeometry(CX * .78, t.group === 'gpu' ? .04 : .12, .02);
+  for (let i = 0; i < n; i++){
+    const s = new THREE.Mesh(sGeo, stripeMat);
+    s.position.set(0, .3 + i * (h - .5) / Math.max(n - 1, 1), CZ * .47 + .012);
+    g.add(s);
+  }
+  if (t.liq || t.liqCool){
+    const pipeMat = new THREE.MeshStandardMaterial({color: col('--coolant'), roughness: .3});
+    [-.12, .12].forEach(dx => {
+      const p = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, CZ * .8, 10), pipeMat);
+      p.rotation.x = Math.PI / 2; p.position.set(dx, h + .05, 0); g.add(p);
+    });
+  }
+  if (t.future){
+    const tag = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, .06, CZ * .94),
+      new THREE.MeshStandardMaterial({color: col('--warn')}));
+    tag.position.y = h + .02; g.add(tag);
+  }
+  g.position.copy(cellPos(it.x, it.z));
+  g.userData = {key, stripeMat};
+  g.traverse(o => o.userData.key = key);
+  return g;
+}
+
+function rebuildLinks(){
+  if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => o.geometry && o.geometry.dispose()); }
+  linkObj = new THREE.Group();
+  const list = [...items.values()];
+  const cdus = list.filter(i => i.type === 'cdu'), rpps = list.filter(i => i.type === 'rpp');
+  const near = (it, arr) => arr.reduce((b, a) => {
+    const d = Math.hypot(a.x - it.x, (a.z - it.z) * 2); return !b || d < b.d ? {a, d} : b; }, null);
+  const run = (arr, filter, y, cssVar) => {
+    const pts = [];
+    list.filter(filter).forEach(it => {
+      const n = near(it, arr); if (!n) return;
+      const A = cellPos(it.x, it.z), B = cellPos(n.a.x, n.a.z);
+      const ha = CAT[it.type].h, hb = CAT[n.a.type].h;
+      pts.push(A.clone().setY(ha), A.clone().setY(y), A.clone().setY(y), B.clone().setY(y), B.clone().setY(y), B.clone().setY(hb));
+    });
+    if (!pts.length) return;
+    const m = new THREE.LineBasicMaterial({color: col(cssVar), transparent: true, opacity: powered ? .95 : .35});
+    linkObj.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), m));
+  };
+  run(cdus, i => CAT[i.type].liq > 0, 2.85, '--coolant');
+  run(rpps, i => CAT[i.type].kw > 0, 3.15, '--copper');
+  scene.add(linkObj);
+}
+
+function setOutline(){
+  if (outline){ scene.remove(outline); outline = null; }
+  const it = selected && items.get(selected); if (!it) return;
+  const h = CAT[it.type].h;
+  outline = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(CX * .98, h + .1, CZ)),
+    new THREE.LineBasicMaterial({color: col('--warn')}));
+  outline.position.copy(cellPos(it.x, it.z)).setY((h + .1) / 2);
+  scene.add(outline);
+}
+
+function setGhost(cell){
+  if (!ghost){
+    ghost = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, 1, CZ * .94),
+      new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: .25, depthWrite: false}));
+    scene.add(ghost);
+  }
+  const show = tool && cell && !items.has(cell.x + ',' + cell.z);
+  ghost.visible = !!show;
+  if (!show) return;
+  const h = CAT[tool].h;
+  ghost.scale.y = h;
+  ghost.material.color = col(CAT[tool].c);
+  ghost.position.copy(cellPos(cell.x, cell.z)).setY(h / 2);
+}
+
+// ---------- camera orbit ----------
+const orb = {theta: .75, phi: .95, r: 17, target: new THREE.Vector3(0, .8, 0)};
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function updCam(){
+  const sp = Math.sin(orb.phi);
+  camera.position.set(orb.target.x + orb.r * sp * Math.sin(orb.theta),
+    orb.target.y + orb.r * Math.cos(orb.phi), orb.target.z + orb.r * sp * Math.cos(orb.theta));
+  camera.lookAt(orb.target);
+}
+$('#camReset').onclick = () => { orb.theta = .75; orb.phi = .95; orb.r = 17; updCam(); };
+
+const ray = new THREE.Raycaster();
+function ndc(e){
+  const r = el.getBoundingClientRect();
+  return new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+}
+function pickItem(e){
+  ray.setFromCamera(ndc(e), camera);
+  const hit = ray.intersectObjects(itemRoot.children, true)[0];
+  return hit ? hit.object.userData.key : null;
+}
+function pickCell(e){
+  ray.setFromCamera(ndc(e), camera);
+  const hit = ray.intersectObject(floor)[0]; if (!hit) return null;
+  const x = Math.round(hit.point.x / CX + (GW - 1) / 2), z = Math.round(hit.point.z / CZ + (GD - 1) / 2);
+  return x >= 0 && x < GW && z >= 0 && z < GD ? {x, z} : null;
+}
+
+const ptrs = new Map(); let down = null, pinch0 = 0, r0 = 0;
+el.addEventListener('pointerdown', e => {
+  el.setPointerCapture(e.pointerId);
+  ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (ptrs.size === 1) down = {x: e.clientX, y: e.clientY, moved: false};
+  if (ptrs.size === 2){
+    const [a, b] = [...ptrs.values()];
+    pinch0 = Math.hypot(a.x - b.x, a.y - b.y); r0 = orb.r;
+    if (down) down.moved = true;
+  }
+});
+el.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId);
+  if (!p){ if (e.pointerType === 'mouse') setGhost(pickCell(e)); return; }
+  const dx = e.clientX - p.x, dy = e.clientY - p.y;
+  p.x = e.clientX; p.y = e.clientY;
+  if (ptrs.size === 1 && down){
+    if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) down.moved = true;
+    if (down.moved){ orb.theta -= dx * .006; orb.phi = clamp(orb.phi - dy * .006, .2, 1.45); updCam(); }
+  } else if (ptrs.size === 2){
+    const [a, b] = [...ptrs.values()];
+    const d = Math.hypot(a.x - b.x, a.y - b.y);
+    if (d > 0){ orb.r = clamp(r0 * pinch0 / d, 5, 34); updCam(); }
+  }
+});
+const endPtr = e => {
+  const wasTap = down && !down.moved && ptrs.size === 1;
+  ptrs.delete(e.pointerId);
+  if (wasTap && e.type === 'pointerup') tap(e);
+  if (!ptrs.size) down = null;
+};
+el.addEventListener('pointerup', endPtr);
+el.addEventListener('pointercancel', endPtr);
+el.addEventListener('pointerleave', () => ghost && (ghost.visible = false));
+el.addEventListener('wheel', e => { e.preventDefault(); orb.r = clamp(orb.r * (1 + e.deltaY * .001), 5, 34); updCam(); }, {passive: false});
+
+function tap(e){
+  const key = pickItem(e);
+  if (key){ select(key); return; }
+  const c = pickCell(e);
+  if (c && tool && !items.has(c.x + ',' + c.z)){ place(tool, c.x, c.z); return; }
+  select(null);
+}
+
+// ---------- mutations ----------
+function place(type, x, z, quiet){
+  const key = x + ',' + z;
+  if (items.has(key)) return;
+  const it = {type, x, z};
+  it.mesh = makeMesh(key, it);
+  itemRoot.add(it.mesh);
+  items.set(key, it);
+  if (!quiet){ powered = false; changed(); }
+}
+function removeItem(key){
+  const it = items.get(key); if (!it) return;
+  itemRoot.remove(it.mesh);
+  it.mesh.traverse(o => { o.geometry && o.geometry.dispose(); });
+  items.delete(key);
+  if (selected === key) selected = null;
+  powered = false; changed();
+}
+function clearAll(){
+  [...items.keys()].forEach(k => { const it = items.get(k); itemRoot.remove(it.mesh); });
+  items.clear(); selected = null; powered = false;
+}
+function select(key){ selected = key; setOutline(); renderInfo(); }
+function changed(){ rebuildLinks(); setOutline(); refresh(); save(); }
+
+// ---------- simulation ----------
+function compute(){
+  const s = {it:0, gpus:0, liqHeat:0, airHeat:0, liqCap:0, airCap:0, dist:0, ports:0, ovh:0, capex:0, future:false, dense:false};
+  items.forEach(i => {
+    const t = CAT[i.type], kw = t.kw || 0;
+    s.it += kw; s.gpus += t.gpus || 0;
+    s.liqHeat += kw * (t.liq || 0); s.airHeat += kw * (1 - (t.liq || 0));
+    s.liqCap += t.liqCool || 0; s.airCap += t.airCool || 0;
+    s.dist += t.dist || 0; s.ports += t.ports || 0; s.ovh += t.ovh || 0; s.capex += t.cap || 0;
+    if (t.future) s.future = true;
+    if (i.type === 'dgx') s.dense = true;
+  });
+  const chiller = s.liqHeat * .08 + s.airHeat * .30;
+  const losses = s.it * .05;
+  s.facility = s.it + s.ovh + chiller + losses;
+  s.pue = s.it ? s.facility / s.it : 0;
+  s.issues = [];
+  const add = (lvl, txt) => s.issues.push({lvl, txt});
+  if (s.it > s.dist) add('bad', `配电不足：机柜需要 ${fmt(s.it)}，配电柜只能分配 ${fmt(s.dist)}。加 RPP。`);
+  if (s.liqHeat > s.liqCap) add('bad', `液冷不足：${fmt(s.liqHeat)} 热量，CDU 只能带走 ${fmt(s.liqCap)}。加 CDU。`);
+  if (s.airHeat > s.airCap) add('bad', `风冷不足：${fmt(s.airHeat)} 热量，空调只能带走 ${fmt(s.airCap)}。加列间空调。`);
+  if (s.gpus > s.ports) add('bad', `后端网络不足：${s.gpus} 颗 GPU，只有 ${s.ports} 个端口。加 IB 交换机柜。`);
+  if (s.facility > utility * 1000) add('bad', `超出市电：设施总功耗 ${fmt(s.facility)}，市电只有 ${utility} MW。`);
+  if (s.future) add('warn', 'Kyber 机柜需要 800 VDC 配电，目前还只是路线图产品。');
+  if (s.dense) add('warn', 'DGX B200 整柜约 57 kW 纯风冷，现实中通常要配背板换热器。');
+  return s;
+}
+function fmt(kw){ return kw >= 1000 ? (kw / 1000).toFixed(2) + ' MW' : Math.round(kw) + ' kW'; }
+
+// ---------- UI ----------
+function buildUI(){
+  $('#utility').innerHTML = UTIL.map(u => `<button type="button" data-u="${u}" aria-pressed="${u === utility}">${u} MW</button>`).join('');
+  $('#palette').innerHTML = CATALOG.map(t => {
+    const bits = [t.kw ? t.kw + ' kW' : '', t.gpus ? t.gpus + ' GPU' : '', t.liqCool ? '冷量 ' + t.liqCool + ' kW' : '',
+      t.airCool ? '冷量 ' + t.airCool + ' kW' : '', t.dist ? '分配 ' + t.dist + ' kW' : '', t.ports ? t.ports + ' 端口' : ''].filter(Boolean).join('，');
+    return `<button type="button" class="chip" data-t="${t.id}" aria-pressed="${tool === t.id}">
+      <i style="background:var(${t.c})"></i><div><strong>${t.name}</strong><small>${bits}</small></div></button>`;
+  }).join('');
+}
+$('#utility').onclick = e => { const b = e.target.closest('button'); if (!b) return; utility = +b.dataset.u; powered = false; buildUI(); changed(); };
+$('#palette').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  tool = tool === b.dataset.t ? null : b.dataset.t;
+  selected = null; setOutline(); buildUI(); renderInfo();
+};
+
+function gauge(label, v, cap, cssVar){
+  const pct = cap ? Math.min(100, v / cap * 100) : (v ? 100 : 0);
+  const over = v > cap;
+  return `<div class="gauge"><div class="top"><span>${label}</span><em style="color:${over ? 'var(--bad)' : 'inherit'}">${fmt(v)} / ${fmt(cap)}</em></div>
+    <div class="bar"><i style="width:${pct}%;background:var(${over ? '--bad' : cssVar})"></i></div></div>`;
+}
+
+let last;
+function refresh(){
+  const s = last = compute();
+  $('#hGpu').textContent = s.gpus.toLocaleString();
+  $('#hIt').textContent = fmt(s.it);
+  $('#hPue').textContent = s.it ? s.pue.toFixed(2) : '–';
+  $('#gauges').innerHTML =
+    gauge('配电', s.it, s.dist, '--copper') +
+    gauge('液冷', s.liqHeat, s.liqCap, '--coolant') +
+    gauge('风冷', s.airHeat, s.airCap, '--air') +
+    `<div class="gauge"><div class="top"><span>后端网络</span><em style="color:${s.gpus > s.ports ? 'var(--bad)' : 'inherit'}">${s.gpus} / ${s.ports} 端口</em></div>
+      <div class="bar"><i style="width:${s.ports ? Math.min(100, s.gpus / s.ports * 100) : (s.gpus ? 100 : 0)}%;background:var(${s.gpus > s.ports ? '--bad' : '--net'})"></i></div></div>` +
+    gauge('市电', s.facility, utility * 1000, '--ink') +
+    `<div class="gauge"><div class="top"><span>硬件投入估算</span><em>约 $${s.capex.toFixed(1)}M</em></div></div>`;
+  const blocking = s.issues.some(i => i.lvl === 'bad');
+  let html = s.issues.map(i => `<li class="${i.lvl}">${i.txt}</li>`).join('');
+  if (!s.it) html = '<li class="warn">机房是空的。先放一个 GPU 机柜，再补齐配电、冷却和网络。</li>';
+  else if (!blocking) html += `<li class="ok">检查通过，可以通电。</li>`;
+  $('#issues').innerHTML = html;
+  const btn = $('#power');
+  btn.disabled = !s.it || blocking;
+  btn.classList.toggle('on', powered);
+  btn.textContent = powered ? '已通电，点击断电' : '通电';
+  renderInfo();
+}
+
+$('#power').onclick = () => {
+  powered = !powered; powerStart = performance.now();
+  rebuildLinks(); refresh();
+};
+
+function renderInfo(){
+  const box = $('#info');
+  const it = selected && items.get(selected);
+  const t = it ? CAT[it.type] : tool ? CAT[tool] : null;
+  if (!t){ box.innerHTML = '点一个设备查看参数，或者从上面选设备开始摆放。'; return; }
+  const rows = [];
+  if (t.kw) rows.push(['功耗', t.kw + ' kW']);
+  if (t.gpus) rows.push(['GPU', t.gpus]);
+  if (t.kw) rows.push(['散热', t.liq ? `液冷 ${Math.round(t.liq * 100)}%` : '风冷']);
+  if (t.liqCool) rows.push(['液冷能力', t.liqCool + ' kW']);
+  if (t.airCool) rows.push(['风冷能力', t.airCool + ' kW']);
+  if (t.dist) rows.push(['配电能力', t.dist + ' kW']);
+  if (t.ports) rows.push(['GPU 端口', t.ports]);
+  rows.push(['价格估算', '$' + t.cap + 'M']);
+  box.innerHTML = `<strong>${t.name}</strong>${it ? `<span style="color:var(--muted)">，位置 ${it.x + 1} 列 ${it.z + 1} 排</span>` : '<span style="color:var(--muted)">，点地板空位放置</span>'}
+    <table>${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>
+    <p>${t.note}</p>
+    ${it ? '<div class="row" style="margin-top:8px"><button type="button" id="del">移除设备</button></div>' : ''}`;
+  const d = $('#del'); if (d) d.onclick = () => removeItem(selected);
+}
+
+// ---------- presets & storage ----------
+const PRESETS = {
+  empty: {u: 2, list: []},
+  gb200: {u: 2, list: [
+    ...[4,5,6,7,8,9,10,11].map(x => ['gb200', x, 3]),
+    ['cdu',4,5],['cdu',5,5],['ib',6,5],['ib',7,5],['rpp',8,5],['rpp',9,5],['crah',10,5],['crah',11,5]]},
+  rubin: {u: 5, list: [
+    ...[3,4,5,6,7,8,9,10,11,12].map(x => ['vr200', x, 3]),
+    ['cdu',3,5],['cdu',4,5],['cdu',5,5],['rpp',6,5],['rpp',7,5],['rpp',8,5],
+    ['ib',9,5],['ib',10,5],['ib',11,5],['crah',12,5],['crah',13,5],['stor',2,3]]},
+};
+document.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => loadLayout(PRESETS[b.dataset.preset]));
+function loadLayout(p){
+  clearAll(); utility = p.u;
+  p.list.forEach(([t, x, z]) => CAT[t] && place(t, x, z, true));
+  buildUI(); changed();
+}
+function save(){
+  try { localStorage.setItem('dchall.v1', JSON.stringify({u: utility, list: [...items.values()].map(i => [i.type, i.x, i.z])})); } catch (e) {}
+}
+function restore(){
+  try { const raw = localStorage.getItem('dchall.v1'); if (raw){ const p = JSON.parse(raw); if (p && Array.isArray(p.list)) return p; } } catch (e) {}
+  return null;
+}
+
+// ---------- OpenUSD export ----------
+// USD-BEGIN
+function buildUsda(list, CAT, utility, g){
+  const PALETTE = {gpu:'#76B900', net:'#9A8CE0', store:'#7FA2C4', coolant:'#3FB6C9', air:'#9AA8B5', copper:'#D08A45', rack:'#34404B', floor:'#2A3540'};
+  const f = v => { const s = (Math.round(v * 10000) / 10000).toString(); return s.includes('.') || s.includes('e') ? s : s + '.0'; };
+  const rgb = h => { const n = parseInt(h.slice(1), 16); return `(${f((n >> 16 & 255) / 255)}, ${f((n >> 8 & 255) / 255)}, ${f((n & 255) / 255)})`; };
+  const str = s => '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  const pad = n => String(n).padStart(2, '0');
+  const primName = it => `R${pad(it.z + 1)}_C${pad(it.x + 1)}`;
+  const pos = it => [(it.x - (g.GW - 1) / 2) * g.CX, -((it.z - (g.GD - 1) / 2) * g.CZ)];
+  const EXTENT = 'float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]';
+  const cube = (ind, name, color, t, s) => [
+    `${ind}def Cube "${name}"`, `${ind}{`,
+    `${ind}    double size = 1`, `${ind}    ${EXTENT}`,
+    `${ind}    color3f[] primvars:displayColor = [${rgb(color)}]`,
+    `${ind}    double3 xformOp:translate = (${t.map(f).join(', ')})`,
+    `${ind}    float3 xformOp:scale = (${s.map(f).join(', ')})`,
+    `${ind}    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]`,
+    `${ind}}`].join('\n');
+
+  const used = [...new Set(list.map(i => i.type))].filter(id => CAT[id]);
+  const nearest = (it, arr) => arr.reduce((b, a) => {
+    const d = Math.hypot(a.x - it.x, (a.z - it.z) * 2); return !b || d < b.d ? {a, d} : b; }, null);
+  const cdus = list.filter(i => i.type === 'cdu'), rpps = list.filter(i => i.type === 'rpp');
+
+  const L = [];
+  L.push('#usda 1.0', '(',
+    '    defaultPrim = "DataHall"',
+    '    metersPerUnit = 1',
+    '    upAxis = "Z"',
+    '    customLayerData = {',
+    '        string generator = "GPU Data Hall Builder"',
+    '        string "dchall:schemaVersion" = "0.1"',
+    '    }',
+    ')', '');
+  L.push('def Xform "DataHall" (', '    kind = "assembly"', ')', '{');
+  L.push(`    custom double dchall:utilityMw = ${f(utility)}`,
+    `    custom int dchall:gridColumns = ${g.GW}`, `    custom int dchall:gridRows = ${g.GD}`,
+    `    custom double dchall:cellWidthM = ${f(g.CX)}`, `    custom double dchall:cellDepthM = ${f(g.CZ)}`, '');
+  L.push(cube('    ', 'Floor', PALETTE.floor, [0, 0, -0.01], [g.GW * g.CX + 0.6, g.GD * g.CZ + 0.6, 0.02]), '');
+
+  L.push('    def Scope "Catalog"', '    {');
+  used.forEach(id => {
+    const t = CAT[id], h = t.h, accent = PALETTE[t.c.slice(2)] || PALETTE.rack;
+    L.push(`        class Xform "${id}"`, '        {',
+      `            custom string dchall:displayName = ${str(t.name)}`,
+      `            custom token dchall:category = "${t.group}"`,
+      `            custom double dchall:powerKw = ${f(t.kw || 0)}`,
+      `            custom int dchall:gpuCount = ${t.gpus || 0}`,
+      `            custom double dchall:liquidFraction = ${f(t.liq || 0)}`,
+      `            custom double dchall:liquidCoolingKw = ${f(t.liqCool || 0)}`,
+      `            custom double dchall:airCoolingKw = ${f(t.airCool || 0)}`,
+      `            custom double dchall:overheadKw = ${f(t.ovh || 0)}`,
+      `            custom double dchall:distributionKw = ${f(t.dist || 0)}`,
+      `            custom int dchall:fabricPorts = ${t.ports || 0}`,
+      `            custom double dchall:capexMusd = ${f(t.cap || 0)}`,
+      `            custom bool dchall:roadmap = ${t.future ? 1 : 0}`,
+      `            custom double dchall:heightM = ${f(h)}`, '',
+      cube('            ', 'Body', PALETTE.rack, [0, 0, h / 2], [g.CX * .92, g.CZ * .94, h]),
+      cube('            ', 'Front', accent, [0, -(g.CZ * .47 + .012), h / 2], [g.CX * .78, .02, h - .3]),
+      '        }');
+  });
+  L.push('    }', '');
+
+  L.push('    def Scope "Equipment"', '    {');
+  list.forEach(it => {
+    const t = CAT[it.type]; if (!t) return;
+    const [px, py] = pos(it);
+    L.push(`        def Xform "${primName(it)}" (`, '            kind = "component"', '            instanceable = true',
+      `            prepend references = </DataHall/Catalog/${it.type}>`, '        )', '        {',
+      `            custom int dchall:gridColumn = ${it.x}`, `            custom int dchall:gridRow = ${it.z}`);
+    if (t.liq > 0){ const n = nearest(it, cdus); if (n) L.push(`            custom rel dchall:coolantSource = </DataHall/Equipment/${primName(n.a)}>`); }
+    if (t.kw > 0){ const n = nearest(it, rpps); if (n) L.push(`            custom rel dchall:powerFeed = </DataHall/Equipment/${primName(n.a)}>`); }
+    L.push(`            double3 xformOp:translate = (${f(px)}, ${f(py)}, 0.0)`,
+      '            uniform token[] xformOpOrder = ["xformOp:translate"]', '        }');
+  });
+  L.push('    }', '}', '');
+  return L.join('\n');
+}
+// USD-END
+
+const USD_README = `# GPU Data Hall 导出说明
+
+datahall.usda 是 OpenUSD 文本层，Z 轴向上，单位米。
+
+## 结构
+/DataHall                  kind=assembly，机房级属性（市电 MW、网格尺寸）
+/DataHall/Floor            地板
+/DataHall/Catalog/<id>     class 原型，带设备参数和简化几何
+/DataHall/Equipment/Rxx_Cyy 摆放的设备，instanceable，引用 Catalog 原型
+
+## 自定义属性（dchall: 命名空间，schema 0.1）
+powerKw、gpuCount、liquidFraction、liquidCoolingKw、airCoolingKw、
+overheadKw、distributionKw、fabricPorts、capexMusd、roadmap、heightM
+
+## 拓扑关系
+dchall:coolantSource → 为该机柜供液的 CDU
+dchall:powerFeed     → 为该机柜配电的 RPP
+
+## 替换为高精度模型
+在更强的层里对 /DataHall/Catalog/<id> 写 over，把几何替换成厂商 SimReady 资产的引用，
+所有摆放实例会自动跟着换，参数和拓扑不受影响。
+
+数值为公开报道与估算的粗略值，不可作为工程设计依据。
+`;
+
+function crc32(buf){
+  let crc = 0xFFFFFFFF;
+  for (let n = 0; n < buf.length; n++){
+    let c = (crc ^ buf[n]) & 0xFF;
+    for (let k = 0; k < 8; k++) c = c & 1 ? (c >>> 1) ^ 0xEDB88320 : c >>> 1;
+    crc = (crc >>> 8) ^ c;
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function zipStore(files){
+  const enc = new TextEncoder(), parts = [], central = [];
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  let offset = 0;
+  files.forEach(file => {
+    const name = enc.encode(file.name), data = enc.encode(file.text), crc = crc32(data);
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true);
+    lh.setUint16(8, 0, true); lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true);
+    lh.setUint32(14, crc, true); lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true);
+    lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(new Uint8Array(lh.buffer), name, data);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true);
+    ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true); ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true);
+    ch.setUint32(16, crc, true); ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true);
+    ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+    central.push(new Uint8Array(ch.buffer), name);
+    offset += 30 + name.length + data.length;
+  });
+  const cdSize = central.reduce((a, b) => a + b.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, new Uint8Array(end.buffer)]);
+}
+
+(async () => {
+  let downloads = null;
+  try { downloads = window.claude && await window.claude.use('downloads'); } catch (e) {}
+  if (!downloads) return;
+  $('#usdBox').hidden = false;
+  const msg = $('#usdMsg'), btn = $('#usdExport');
+  btn.onclick = async () => {
+    if (!items.size){ msg.textContent = '机房是空的，先放设备再导出。'; return; }
+    const usda = buildUsda([...items.values()].map(i => ({type: i.type, x: i.x, z: i.z})), CAT, utility, {GW, GD, CX, CZ});
+    const blob = zipStore([{name: 'datahall.usda', text: usda}, {name: 'README.md', text: USD_README}]);
+    btn.disabled = true;
+    try {
+      await downloads.save({filename: 'datahall-openusd.zip', data: blob});
+      msg.textContent = `已导出 ${items.size} 台设备。`;
+    } catch (e) {
+      const code = e && e.code;
+      if (code === 'declined') msg.textContent = '已取消导出。';
+      else if (code === 'rate_limited') msg.textContent = '已有一个保存确认框，处理完再试。';
+      else { msg.textContent = '当前环境不支持导出文件。'; $('#usdBox').hidden = true; }
+    } finally { btn.disabled = false; }
+  };
+})();
+
+// ---------- theme ----------
+function retheme(){
+  buildHall();
+  const snap = [...items.values()].map(i => [i.type, i.x, i.z]);
+  clearAll(); snap.forEach(([t, x, z]) => place(t, x, z, true));
+  if (ghost){ scene.remove(ghost); ghost = null; }
+  rebuildLinks(); setOutline(); refresh();
+}
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+mq.addEventListener && mq.addEventListener('change', retheme);
+
+// ---------- loop ----------
+function resize(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / Math.max(h, 1); camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage);
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(now){
+  items.forEach(it => {
+    const m = it.mesh.userData.stripeMat;
+    if (!powered){ m.emissiveIntensity = .12; return; }
+    const delay = (Math.abs(it.x - GW / 2) + it.z) * 70;
+    const t = (now - powerStart - delay) / 400;
+    const on = reduce ? 1 : clamp(t, 0, 1);
+    m.emissiveIntensity = .12 + on * (reduce ? .9 : .8 + .12 * Math.sin(now / 350 + it.x));
+  });
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+buildHall(); updCam(); buildUI();
+const saved = restore();
+loadLayout(saved || PRESETS.gb200);
+resize(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

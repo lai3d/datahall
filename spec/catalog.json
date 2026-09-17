@@ -1,0 +1,126 @@
+{
+  "schemaVersion": "0.1",
+  "units": {
+    "power": "kW",
+    "length": "m",
+    "capex": "MUSD"
+  },
+  "items": [
+    {
+      "id": "gb200",
+      "name": "GB200 NVL72",
+      "group": "gpu",
+      "c": "--gpu",
+      "gpus": 72,
+      "kw": 125,
+      "liq": 0.85,
+      "cap": 3.2,
+      "h": 2.3,
+      "note": "72 颗 Blackwell GPU + 36 颗 Grace CPU，Oberon 机柜，NVLink 72 卡全互联。计算和交换托盘液冷，其余部分仍需风冷。"
+    },
+    {
+      "id": "gb300",
+      "name": "GB300 NVL72",
+      "group": "gpu",
+      "c": "--gpu",
+      "gpus": 72,
+      "kw": 140,
+      "liq": 0.85,
+      "cap": 3.8,
+      "h": 2.3,
+      "note": "Blackwell Ultra 版本，机柜形态与 GB200 相同，单柜约 132–142 kW。"
+    },
+    {
+      "id": "vr200",
+      "name": "Vera Rubin NVL72",
+      "group": "gpu",
+      "c": "--gpu",
+      "gpus": 72,
+      "kw": 190,
+      "liq": 0.95,
+      "cap": 6,
+      "h": 2.3,
+      "note": "72 颗 Rubin GPU + 36 颗 Vera CPU，HBM4 与 NVLink 6，2026 下半年出货。Max-Q 约 190 kW，Max-P 约 230 kW（供应链估算）。"
+    },
+    {
+      "id": "dgx",
+      "name": "DGX B200 ×4",
+      "group": "gpu",
+      "c": "--gpu",
+      "gpus": 32,
+      "kw": 57,
+      "liq": 0,
+      "cap": 2,
+      "h": 2.2,
+      "note": "一柜 4 台 10U DGX B200，每台 8 GPU、约 14.3 kW。纯风冷，单柜接近 60 kW，实际常需背板换热器。"
+    },
+    {
+      "id": "kyber",
+      "name": "Rubin Ultra Kyber",
+      "group": "gpu",
+      "c": "--gpu",
+      "gpus": 144,
+      "kw": 600,
+      "liq": 1,
+      "cap": 9,
+      "h": 2.6,
+      "future": true,
+      "note": "2027 路线图产品，单柜约 600 kW，全液冷，配电需要 800 VDC 架构。价格为推测值。"
+    },
+    {
+      "id": "ib",
+      "name": "Quantum-X800 IB",
+      "group": "net",
+      "c": "--net",
+      "kw": 24,
+      "liq": 0,
+      "ports": 288,
+      "cap": 0.9,
+      "h": 2.2,
+      "note": "800G InfiniBand 交换机柜。简化模型：每柜可接 288 个 GPU 后端网络端口。"
+    },
+    {
+      "id": "stor",
+      "name": "存储柜",
+      "group": "net",
+      "c": "--store",
+      "kw": 18,
+      "liq": 0,
+      "cap": 0.6,
+      "h": 2.2,
+      "note": "全闪存储，承载数据集与检查点。"
+    },
+    {
+      "id": "cdu",
+      "name": "CDU 冷量分配",
+      "group": "fac",
+      "c": "--coolant",
+      "liqCool": 800,
+      "ovh": 12,
+      "cap": 0.35,
+      "h": 2.1,
+      "note": "列间 CDU，把机柜冷板回路接到设施水。每台带走约 800 kW 液冷热量，自身泵耗约 12 kW。"
+    },
+    {
+      "id": "crah",
+      "name": "列间空调",
+      "group": "fac",
+      "c": "--air",
+      "airCool": 120,
+      "ovh": 9,
+      "cap": 0.08,
+      "h": 2.1,
+      "note": "列间风冷单元，每台约 120 kW 显冷量，风机耗电约 9 kW。"
+    },
+    {
+      "id": "rpp",
+      "name": "配电柜 RPP",
+      "group": "fac",
+      "c": "--copper",
+      "dist": 800,
+      "cap": 0.25,
+      "h": 2.1,
+      "note": "远程配电柜，每台可为机柜分配约 800 kW。"
+    }
+  ]
+}
