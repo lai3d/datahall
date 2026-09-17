@@ -57,9 +57,14 @@ namespace DataHall.Editor
         static Material BaseMaterial()
         {
             var material = AssetDatabase.LoadAssetAtPath<Material>(BaseMaterialPath);
-            if (material) return material;
-            material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            AssetDatabase.CreateAsset(material, BaseMaterialPath);
+            if (!material)
+            {
+                material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                AssetDatabase.CreateAsset(material, BaseMaterialPath);
+            }
+            // 地板和占位方块是哑光表面，默认光滑度 0.5 会在大面积地板上出现明显高光
+            material.SetFloat("_Smoothness", 0.15f);
+            EditorUtility.SetDirty(material);
             return material;
         }
 
@@ -81,12 +86,12 @@ namespace DataHall.Editor
             var lightGo = new GameObject("Sun");
             var light = lightGo.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.intensity = 1.2f;
+            light.intensity = 1.3f;
             lightGo.transform.rotation = Quaternion.Euler(50, -30, 0);
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.75f, 0.78f, 0.82f);
-            RenderSettings.ambientEquatorColor = new Color(0.45f, 0.47f, 0.5f);
-            RenderSettings.ambientGroundColor = new Color(0.2f, 0.2f, 0.22f);
+            RenderSettings.ambientSkyColor = new Color(0.7f, 0.73f, 0.78f);
+            RenderSettings.ambientEquatorColor = new Color(0.42f, 0.44f, 0.47f);
+            RenderSettings.ambientGroundColor = new Color(0.16f, 0.16f, 0.18f);
 
             var app = new GameObject("HallApp").AddComponent<HallApp>();
             app.orbit = orbit;
