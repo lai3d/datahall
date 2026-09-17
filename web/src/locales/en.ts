@@ -86,6 +86,14 @@ export default {
 
   // Growth plan (growth.ts)
   hGrowth: 'Growth plan',
+  hCompare: 'Compare racks',
+  compareIntro: ({u}: {u: number}) => `The largest hall ${u} MW of utility power can run with each rack type, with just enough CDUs, RPPs, in-row coolers and IB racks. Newer racks put more power into each rack, so the same power needs fewer racks and less floor. GPU counts drop because each GPU draws more power; performance per GPU is not modeled.`,
+  compareRacks: ({n, gpus}: {n: number; gpus: string}) => `${plural(n, 'rack', 'racks')}, ${gpus} GPUs`,
+  compareCells: ({cells}: {cells: number}) => `${cells} floor cells with support equipment`,
+  compareDetail: ({kw, cells, pue, m}: {kw: number; cells: number; pue: string; m: string}) => `${cells} floor cells with support · ${kw} kW per rack · PUE ${pue} · about $${m}M`,
+  compareFloor: 'Limited by floor space, not power.',
+  compareNote: 'Hall-wide totals only, like the headroom estimate: CDU and RPP assignment by distance is not checked.',
+  hudScale: ({sparks, homes}: {sparks: string; homes: string}) => `≈ ${sparks} DGX Sparks or ${homes} US homes`,
   growthIntro: 'Give each device a deployment phase. Each row checks everything installed up to that phase.',
   placePhase: 'New devices go into phase',
   phaseNew: 'New phase',

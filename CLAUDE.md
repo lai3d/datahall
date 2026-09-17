@@ -32,6 +32,9 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
   - `src/edit.ts`: pure functions for editing (cells for row placement, layout comparison, undo history)
   - `src/tutorial.ts`: guided tutorial steps (pick GB200 → place 8 in a row → why it cannot power on → RPP → CDU → in-row cooler → IB → utility if needed → power on), pure. `main.ts` holds `state.tutorial` (step index) and advances it inside `refresh()` on every change, so any action that can complete a step must go through `refresh()`. Steps complete on hall conditions (shortages and per-device overloads from `blockingReasons`), never go backwards, and several can complete at once; the "why" step waits for Next. The card is sticky at the top of the panel and outlines the current step's control (`.tut-target`). Loading a preset, import or share link ends the tutorial. First visits (no share link, nothing saved, not dismissed; `localStorage` `datahall.tutorial.seen`) get an offer; finishing reports the virtual page `/tutorial-done`
   - `src/growth.ts`: growth planning, cumulative per-phase capacity check (`growthPlan`) and how many more units fit (`headroom`), pure functions
+  - `src/compare.ts`: rack comparison, the largest hall each GPU rack type can run on the current utility feed with the fewest support devices (`largestHall`, `supportFor`), pure functions.
+    Totals only, like `headroom`: no per-device nearest assignment check, and the floor limit is the cell count, not a real placement. The panel section explains that GPU counts drop for newer racks because per-GPU performance is not modeled
+  - `src/scale.ts`: everyday scale references for the IT load in the HUD (DGX Sparks, US homes), rounded to two significant figures
   - `src/feeds.ts`: maintenance of manually assigned supply equipment (setting, cleaning up stale assignments, following supply equipment when it moves), pure functions
   - `src/redundancy.ts`: failure drills and N+1 check, pure functions; `blockingReasons` maps one-to-one to the UI's "cannot power on" conditions (guaranteed by tests)
   - `src/ui.tsx`: right-hand panel and 3D overlay (React); `src/store.ts`: change notification; `src/model.ts`: derived hall model; `src/state.ts`: shared state; `src/layout.ts`: presets and localStorage; `src/grid.ts`: grid constants
@@ -196,6 +199,7 @@ Power and price figures come from public reports and supply-chain estimates, **n
 - AMD Helios: 72 MI455X, about 225–245 kW, fully liquid-cooled (StorageReview, 2026-07); about $5–5.5M per rack (Futurum via CNBC, 2026-07); a 1.2 m wide Open Rack Wide, simplified to one cell
 - MI355X DLC rack: 8 servers × 8 GPUs, about 120 kW (GIGABYTE GIGAPOD); the 80% liquid fraction and the price are estimates
 - The IB switch rack's "288 ports" is a simplified model, not a real topology
+- Scale references (`scale.ts`): DGX Spark 240 W (its power adapter rating), US home about 1.2 kW average (about 10,500 kWh a year, US EIA). A Mac Studio reference waits for a sourced power figure
 
 ## Style
 

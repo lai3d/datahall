@@ -115,6 +115,17 @@ test('a corrupt saved layout still loads the page, keeping the valid devices', a
   expect(errors).toEqual([]);
 });
 
+test('rack comparison follows the utility feed, and the HUD shows a scale reference', async ({page}) => {
+  const errors = await openApp(page);
+  await expect(page.locator('#hScale')).toHaveText('≈ 4,400 DGX Sparks or 870 US homes');
+  await expect(page.locator('#compare .cmp[data-t="gb200"]')).toContainText('12 racks, 864 GPUs');
+  await expect(page.locator('#compare .cmp[data-t="gb200"]')).toHaveAttribute('aria-current', 'true');
+  await page.locator('#utility button[data-u="5"]').click();
+  await expect(page.locator('#compare .cmp[data-t="gb200"]')).toContainText('31 racks, 2,232 GPUs');
+  await expect(page.locator('#compare .cmp[data-t="kyber"]')).toContainText('7 racks, 1,008 GPUs');
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);
