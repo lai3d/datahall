@@ -1,10 +1,10 @@
-// 分享链接：把机房布局编码进网址 hash，打开链接即可看到同一个机房。纯函数，不依赖 DOM。
-// 格式：#layout=<版本>,<市电 MW>,<类型>:<列>.<排>-<列>.<排>,<类型>:...
-// 例如 #layout=1,5,vr200:3.3-4.3,cdu:3.5   列、排从 0 开始，与 layout.json、USD 的 gridColumn/gridRow 一致。
-// 版本 2 在后面多出手动指定的供给设备：@c:<列>.<排>_<CDU 列>.<CDU 排>-...（冷却液）、@p:...（配电）。
-// 版本 3 再加部署阶段：@<阶段>:<列>.<排>-...（只列阶段大于 1 的设备）。
-// 编码时用能表达内容的最低版本：没有阶段用 2，也没有手动指定用 1，已经发出去的链接和旧页面都不受影响
-// 只用 hash 不用查询参数：hash 不会发到服务器，静态托管也不需要任何配置。
+// Share links: encode the hall layout into the URL hash, so opening the link shows the same hall. Pure functions, no DOM dependency.
+// Format: #layout=<version>,<utility MW>,<type>:<col>.<row>-<col>.<row>,<type>:...
+// e.g. #layout=1,5,vr200:3.3-4.3,cdu:3.5   columns and rows start at 0, matching gridColumn/gridRow in layout.json and USD.
+// Version 2 appends manually assigned supply equipment: @c:<col>.<row>_<CDU col>.<CDU row>-... (coolant), @p:... (power).
+// Version 3 also adds deployment phases: @<phase>:<col>.<row>-... (only devices with phase greater than 1).
+// Encoding uses the lowest version that can express the content: 2 without phases, 1 without manual assignments either, so links already shared and old pages are unaffected
+// Hash only, no query parameters: the hash is never sent to the server, and static hosting needs no configuration.
 import {keyOf} from './grid.ts';
 import {tr, loc, catName} from './i18n.ts';
 import {FEEDS} from './grid.ts';
@@ -15,12 +15,12 @@ import type {Catalog, Entry, FeedField, Grid, Layout} from './types.ts';
 export interface DecodedLayout extends Layout {warnings: string[]}
 
 export const LINK_KEY = 'layout';
-export const LINK_VERSION = 3;   // 最新版本；解码支持 1、2、3
+export const LINK_VERSION = 3;   // Latest version; decoding supports 1, 2, 3
 export const MAX_PHASE = 20;
 const FEED_TAGS: Record<FeedField, string> = {coolantSource: '@c', powerFeed: '@p'};
 const FEED_FIELDS = Object.keys(FEED_TAGS) as FeedField[];
 
-// p：{u: 市电 MW, list: [[type, x, z, props?], ...]}，返回不带 # 的 hash 内容；空机房返回空字符串
+// p: {u: utility MW, list: [[type, x, z, props?], ...]}; returns the hash content without #; an empty hall returns an empty string
 export function encodeLayout(p: Layout): string{
   if (!p.list.length) return '';
   const groups = new Map<string, string[]>();
@@ -40,7 +40,7 @@ export function encodeLayout(p: Layout): string{
   return `${LINK_KEY}=${[version, p.u, ...parts, ...assigned, ...phased].join(',')}`;
 }
 
-// hash：location.hash（可带 #）。返回 null 表示 hash 里没有布局；否则返回 {u, list, warnings}
+// hash: location.hash (# optional). Returns null if the hash has no layout; otherwise {u, list, warnings}
 export function decodeLayout(hash: string, CAT: Catalog, GRID: Grid): DecodedLayout | null{
   const params = new URLSearchParams(hash.replace(/^#/, ''));
   const raw = params.get(LINK_KEY);
@@ -69,11 +69,11 @@ export function decodeLayout(hash: string, CAT: Catalog, GRID: Grid): DecodedLay
       list.push([type, x, z]);
     }
   }
-  // 手动指定：两端都要是链接里载入了的设备，供给设备类型对，设备也需要这种供给
+  // Manual assignments: both ends must be devices loaded from the link, the supply type must match, and the device must need that supply
   const byKey = new Map(list.map(e => [keyOf(e[1], e[2]), e]));
   const propsOf = (e: Entry) => entryProps(e);
   for (const [tag, pairs] of assigned){
-    // 部署阶段（版本 3）
+    // Deployment phase (version 3)
     const phase = v === 3 && /^@\d+$/.test(tag) ? Number(tag.slice(1)) : null;
     if (phase !== null){
       if (phase < 2 || phase > MAX_PHASE){ warnings.push(tr('linkType', {type: tag})); continue; }

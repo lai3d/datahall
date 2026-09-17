@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 打包 macOS 程序到 build/DataHall.app，并用 batchmode 运行冒烟测试：打开默认 layout.json，输出统计后退出
+# Build the macOS app to build/DataHall.app and run a batchmode smoke test: open the default layout.json, print stats, exit
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 "$root/tools/check_lfs.sh" || exit 1
@@ -22,7 +22,7 @@ print(json.dumps(report, ensure_ascii=False))
 problems = []
 if report.get("error"): problems.append(f"error: {report['error']}")
 if report.get("renderPipeline") != "UniversalRenderPipelineAsset": problems.append("URP is not active")
-if not sys.argv[2]:                                   # 默认布局就是 samples/datahall.usda
+if not sys.argv[2]:                                   # the default layout is samples/datahall.usda
     expected = {"equipment": 17, "placeholders": 0, "renderers": 35, "gpus": 864, "itKw": 2542}
     problems += [f"{k}: want {v}, got {report.get(k)}" for k, v in expected.items() if report.get(k) != v]
     first = report.get("first") or {}

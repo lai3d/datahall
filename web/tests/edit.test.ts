@@ -4,22 +4,22 @@ import {keyOf} from '../src/grid.ts';
 import type {Layout} from '../src/types.ts';
 
 describe('lineCells', () => {
-  it('同一格', () => expect(lineCells({x: 2, z: 3}, {x: 2, z: 3})).toEqual([{x: 2, z: 3}]));
-  it('沿排方向，起点在右边也按起点到终点排列', () => {
+  it('same cell', () => expect(lineCells({x: 2, z: 3}, {x: 2, z: 3})).toEqual([{x: 2, z: 3}]));
+  it('along the row, ordered from start to end even when the start is on the right', () => {
     expect(lineCells({x: 5, z: 3}, {x: 2, z: 4})).toEqual([{x: 5, z: 3}, {x: 4, z: 3}, {x: 3, z: 3}, {x: 2, z: 3}]);
   });
-  it('列方向差得多时沿列', () => {
+  it('along the column when the column difference is larger', () => {
     expect(lineCells({x: 1, z: 0}, {x: 2, z: 3})).toEqual([{x: 1, z: 0}, {x: 1, z: 1}, {x: 1, z: 2}, {x: 1, z: 3}]);
   });
-  it('差相等时沿排', () => expect(lineCells({x: 0, z: 0}, {x: 2, z: 2}).map(c => c.z)).toEqual([0, 0, 0]));
+  it('along the row when the differences are equal', () => expect(lineCells({x: 0, z: 0}, {x: 2, z: 2}).map(c => c.z)).toEqual([0, 0, 0]));
 });
 
-it('freeCells 跳过已占用的格子', () => {
+it('freeCells skips occupied cells', () => {
   const occupied = new Set([keyOf(1, 0)]);
   expect(freeCells(lineCells({x: 0, z: 0}, {x: 2, z: 0}), occupied)).toEqual([{x: 0, z: 0}, {x: 2, z: 0}]);
 });
 
-it('sameLayout 不看顺序，看市电和设备', () => {
+it('sameLayout ignores order, compares utility power and equipment', () => {
   const a: Layout = {u: 2, list: [['gb200', 0, 0], ['cdu', 1, 0]]};
   expect(sameLayout(a, {u: 2, list: [['cdu', 1, 0], ['gb200', 0, 0]]})).toBe(true);
   expect(sameLayout(a, {u: 5, list: a.list})).toBe(false);
@@ -27,7 +27,7 @@ it('sameLayout 不看顺序，看市电和设备', () => {
 });
 
 describe('createHistory', () => {
-  it('撤销、重做，新的编辑清空重做', () => {
+  it('undo, redo, and a new edit clears redo', () => {
     const h = createHistory<string>();
     expect(h.canUndo).toBe(false);
     h.record('A');                        // A → B
@@ -42,7 +42,7 @@ describe('createHistory', () => {
     expect(h.undo('D')).toBe('B');
     expect(h.undo('B')).toBe('A');
   });
-  it('超过上限丢弃最早的', () => {
+  it('drops the oldest entries past the limit', () => {
     const h = createHistory<string>(2);
     ['A', 'B', 'C'].forEach(s => h.record(s));
     expect(h.undo('D')).toBe('C');

@@ -6,11 +6,11 @@ using UnityEngine;
 
 namespace DataHall.Editor
 {
-    // 导入 tools/usd_to_unity.py 生成的布局包（layout.json + assets/<id>.glb）：
-    //   glb 复制到 Generated/Models，由 glTFast 导入；每种设备第一次导入时生成 Prefabs/<id>.prefab（模型的变体），
-    //   以后重新导入只更新模型，变体上加的交互保留；EquipmentLibrary 记录 id → prefab；
-    //   layout.json 复制到 StreamingAssets，作为程序默认打开的机房。
-    // 命令行：Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.BundleImporter.ImportFromCommandLine -bundle <dir> [-noLayout] -quit
+    // Imports a layout bundle produced by tools/usd_to_unity.py (layout.json + assets/<id>.glb):
+    //   glb files are copied to Generated/Models and imported by glTFast; the first import of each type creates Prefabs/<id>.prefab (a model variant),
+    //   later reimports only update the model and keep interaction added on the variant; EquipmentLibrary records id → prefab;
+    //   layout.json is copied to StreamingAssets as the hall the app opens by default.
+    // Command line: Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.BundleImporter.ImportFromCommandLine -bundle <dir> [-noLayout] -quit
     public static class BundleImporter
     {
         public const string ModelsDir = "Assets/DataHall/Generated/Models";
@@ -18,13 +18,13 @@ namespace DataHall.Editor
         public const string LibraryPath = "Assets/DataHall/Generated/EquipmentLibrary.asset";
         public const string StreamingLayout = "Assets/StreamingAssets/layout.json";
 
-        [MenuItem("DataHall/导入布局包…")]
+        [MenuItem("DataHall/Import Layout Bundle…")]
         static void ImportFromMenu()
         {
-            var dir = EditorUtility.OpenFolderPanel("选择 usd_to_unity.py 生成的布局包", "", "");
+            var dir = EditorUtility.OpenFolderPanel("Choose a layout bundle produced by usd_to_unity.py", "", "");
             if (string.IsNullOrEmpty(dir)) return;
             var library = ImportBundle(dir);
-            EditorUtility.DisplayDialog("DataHall", $"已导入 {library.entries.Count} 种设备。", "好");
+            EditorUtility.DisplayDialog("DataHall", $"Imported {library.entries.Count} equipment types.", "OK");
         }
 
         public static void ImportFromCommandLine()
@@ -68,7 +68,7 @@ namespace DataHall.Editor
                 var prefabPath = $"{PrefabsDir}/{entry.id}.prefab";
                 if (!AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath))
                 {
-                    // 模型资产的实例存成 prefab 即为变体；不支持变体时退回普通 prefab
+                    // Saving an instance of a model asset as a prefab makes a variant; fall back to a regular prefab if variants are unsupported
                     var instance = PrefabUtility.InstantiatePrefab(model) as GameObject ?? UnityEngine.Object.Instantiate(model);
                     instance.name = entry.id;
                     PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
@@ -79,7 +79,7 @@ namespace DataHall.Editor
             EditorUtility.SetDirty(library);
             AssetDatabase.SaveAssets();
 
-            // 场景里的 HallApp 引用设备库。单场景方式打开会卸载未被引用的资产，所以打开后重新加载库
+            // HallApp in the scene references the equipment library. Opening a scene in Single mode unloads unreferenced assets, so reload the library afterwards
             if (File.Exists(ProjectSetup.ScenePath))
             {
                 var scene = EditorSceneManager.OpenScene(ProjectSetup.ScenePath, OpenSceneMode.Single);

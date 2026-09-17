@@ -1,8 +1,8 @@
-// 用 Khronos glTF-Validator 检查 glb，按文件输出错误和警告数；有错误时退出码为 1。
-// 用法：node scripts/validate-gltf.ts <file.glb>...
+// Checks glb files with the Khronos glTF-Validator and prints error and warning counts per file; exits with code 1 on errors.
+// Usage: node scripts/validate-gltf.ts <file.glb>...
 import {readFileSync} from 'node:fs';
 import {basename} from 'node:path';
-// gltf-validator 没有类型声明，只用到 validateBytes
+// gltf-validator has no type declarations; only validateBytes is used
 // @ts-expect-error untyped package
 import validatorModule from 'gltf-validator';
 

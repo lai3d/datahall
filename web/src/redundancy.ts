@@ -1,5 +1,5 @@
-// 故障演练和 N+1 冗余检查。纯函数，不依赖 DOM。
-// 故障设备直接从计算里拿掉：不再提供容量，也不再耗电；其余设备按 supplyLinks 重新就近分配。
+// Failure drills and N+1 redundancy checks. Pure functions, no DOM dependency.
+// Failed devices are removed from the computation: they provide no capacity and draw no power; remaining devices are reassigned to the nearest unit via supplyLinks.
 import {compute} from './sim.ts';
 import {supplyLoads, reportedOverloads} from './supply.ts';
 import type {Catalog, CatalogItem, Item} from './types.ts';
@@ -7,11 +7,11 @@ import type {Catalog, CatalogItem, Item} from './types.ts';
 export type ReasonKind = 'dist' | 'liquid' | 'air' | 'network' | 'utility';
 export type Reason<T extends Item = Item> = {kind: ReasonKind} | {kind: 'overload'; item: T};
 
-// 可以标记故障的设施：提供液冷、配电、风冷或网络端口的设备（GPU 机柜和存储柜不算）
+// Facilities that can be marked failed: devices providing liquid cooling, distribution, air cooling or network ports (GPU racks and storage racks do not count)
 export const canFail = (t: CatalogItem | undefined): boolean => !!(t && (t.liqCool || t.dist || t.airCool || t.ports));
 
-// 不满足容量检查的原因，和界面上“不能通电”的条件一一对应：
-// {kind: 'dist' | 'liquid' | 'air' | 'network' | 'utility'} 或 {kind: 'overload', item}
+// Reasons for failing the capacity check, one-to-one with the UI's "cannot power on" conditions:
+// {kind: 'dist' | 'liquid' | 'air' | 'network' | 'utility'} or {kind: 'overload', item}
 export function blockingReasons<T extends Item>(list: T[], CAT: Catalog, utility: number): Reason<T>[]{
   const s = compute(list, CAT, utility);
   const reasons: Reason<T>[] = [];
@@ -25,8 +25,8 @@ export function blockingReasons<T extends Item>(list: T[], CAT: Catalog, utility
   return reasons;
 }
 
-// 依次让每台可故障设施单独故障，返回会让机房不满足容量检查的设备 [{item, reasons}]（按排、列排序）。
-// 布局本身就不满足容量检查时返回 null：这时谈不上冗余
+// Fail each failable facility on its own and return the devices whose failure makes the hall fail the capacity check [{item, reasons}] (sorted by row, then column).
+// Returns null when the layout itself fails the capacity check: redundancy is moot then
 export function singlePointsOfFailure<T extends Item>(list: T[], CAT: Catalog, utility: number): {item: T; reasons: Reason<T>[]}[] | null{
   if (blockingReasons(list, CAT, utility).length) return null;
   return list.filter(i => canFail(CAT[i.type]))

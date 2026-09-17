@@ -1,4 +1,4 @@
-// 唯一数据源是 spec/catalog.json，构建时打进包里
+// The single source of truth is spec/catalog.json, bundled at build time
 import data from '../../spec/catalog.json' with {type: 'json'};
 import type {Catalog, CatalogItem} from './types.ts';
 

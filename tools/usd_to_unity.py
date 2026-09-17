@@ -319,7 +319,7 @@ def build_glb(instance, entry, warn):
         if children:
             builder.gltf["nodes"][index]["children"] = children
         elif "mesh" not in fields and not is_root and index == len(builder.gltf["nodes"]) - 1:
-            builder.gltf["nodes"].pop()                              # 没有几何的空分组（例如材质 Scope）不输出
+            builder.gltf["nodes"].pop()                              # empty groups without geometry (e.g. a material Scope) are not emitted
             return None
         return index
 

@@ -1,4 +1,4 @@
-// three.js 场景：地板网格、设备模型、管线连线、选中框、放置预览、拾取、渲染循环
+// three.js scene: floor grid, device models, supply links, selection box, placement preview, picking, render loop
 import * as THREE from 'three';
 import {CAT} from './catalog.ts';
 import {GRID, clamp} from './grid.ts';
@@ -11,12 +11,12 @@ const {GW, GD, CX, CZ} = GRID;
 const css = (n: string): string => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const col = (n: string): THREE.Color => new THREE.Color(css(n));
 
-// initScene 之后才有值
+// Set only after initScene
 export let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer, scene: THREE.Scene, itemRoot: THREE.Group;
 let floor: THREE.Mesh | undefined, gridLines: THREE.LineSegments | undefined, linkObj: THREE.Group | undefined, outline: THREE.LineSegments | null = null;
 type Ghost = THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>;
-const ghosts: Ghost[] = [];   // 放置预览，整排放置时每格一个
+const ghosts: Ghost[] = [];   // Placement previews, one per cell during row placement
 const ray = new THREE.Raycaster();
 
 const cellPos = (x: number, z: number): THREE.Vector3 => new THREE.Vector3((x - (GW - 1) / 2) * CX, 0, (z - (GD - 1) / 2) * CZ);
@@ -28,10 +28,10 @@ export function initScene(stage: HTMLElement): HTMLCanvasElement{
   stage.prepend(renderer.domElement);
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-  // three r155 起光照按物理单位计算，强度乘 π 才和 r128 时的亮度相当
+  // Since three r155 lighting uses physical units; multiply intensity by π to match r128 brightness
   scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.75 * Math.PI));
   const sun = new THREE.DirectionalLight(0xffffff, 0.75 * Math.PI); sun.position.set(6, 14, 9);
-  // 设备投到地板上的影子：阴影相机盖住整个机房
+  // Device shadows on the floor: the shadow camera covers the whole hall
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, {left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 40});
@@ -89,7 +89,7 @@ function makeMesh(key: string, it: Item): THREE.Group{
       new THREE.MeshStandardMaterial({color: col('--warn')}));
     tag.position.y = h + .02; g.add(tag);
   }
-  // 超载或没接上时显示的红色顶盖，由 setAlerts 控制
+  // Red cap shown when overloaded or unconnected, controlled by setAlerts
   const bad = col('--bad');
   const alert = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, .08, CZ * .94),
     new THREE.MeshStandardMaterial({color: bad, emissive: bad, emissiveIntensity: .45}));
@@ -102,12 +102,12 @@ function makeMesh(key: string, it: Item): THREE.Group{
   return g;
 }
 
-// it 放进 state.items 之前先建模型，所以参数类型里 mesh 可以还没有
+// The model is built before it goes into state.items, so mesh may not exist yet in the parameter type
 export function addMesh(key: string, it: Item & {mesh?: THREE.Group}): void{
   it.mesh = makeMesh(key, it);
   itemRoot.add(it.mesh);
 }
-// 拖动移动：设备已经在 state 里换了位置和 key，这里只挪模型
+// Drag move: the device already has its new position and key in state; only move the model here
 export function moveMesh(it: PlacedItem, key: string): void{
   it.mesh.position.copy(cellPos(it.x, it.z));
   it.mesh.traverse(o => o.userData.key = key);
@@ -117,7 +117,7 @@ export function removeMesh(it: PlacedItem): void{
   it.mesh.traverse(o => { if (o instanceof THREE.Mesh) o.geometry.dispose(); });
 }
 
-// 供液、配电连线，拓扑与 USD 导出一致（supplyLinks）。接到超载 CDU、RPP 的连线画成红色，手动指定的画成虚线
+// Coolant and power links, same topology as the USD export (supplyLinks). Links to overloaded CDUs/RPPs are drawn red, manual assignments dashed
 export function rebuildLinks(): void{
   if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => { if (o instanceof THREE.LineSegments) o.geometry.dispose(); }); }
   linkObj = new THREE.Group();
@@ -149,12 +149,12 @@ export function rebuildLinks(): void{
   scene.add(linkObj);
 }
 
-// keys：需要显示红色顶盖的设备（超载的 CDU、RPP，没接上的设备）
+// keys: devices that should show the red cap (overloaded CDUs/RPPs, unconnected devices)
 export function setAlerts(keys: Set<string>): void{
   state.items.forEach((it, key) => { it.mesh.userData.alert.visible = keys.has(key); });
 }
 
-// 不参与计算的设备画成半透明、不投影子（红色顶盖不受影响）：故障演练里故障的设施，以及当前查看阶段之后的设备（更淡）
+// Devices excluded from computation are drawn semi-transparent without shadows (red caps unaffected): failed facilities in the failure drill, and devices after the viewed phase (fainter)
 export function setDimmed(): void{
   state.items.forEach((it, key) => {
     const opacity = !inView(it) ? .12 : state.failed.has(key) ? .25 : 1, g = it.mesh;
@@ -180,7 +180,7 @@ export function setOutline(): void{
 }
 
 export const visibleGhosts = (): Pos[] => ghosts.filter(g => g.visible).map(g => ({x: +g.position.x.toFixed(2), z: +g.position.z.toFixed(2)}));
-// cells：要预览的空格子；type：设备类型，为空时隐藏全部预览
+// cells: empty cells to preview; type: device type, empty hides all previews
 export function setGhost(cells: Pos[], type: string | null): void{
   if (!type) cells = [];
   while (ghosts.length < cells.length){
@@ -199,7 +199,7 @@ export function setGhost(cells: Pos[], type: string | null): void{
   });
 }
 
-// 配色切换：地板和所有设备按新的 CSS 变量重建
+// Theme switch: rebuild the floor and all devices from the new CSS variables
 export function retheme(): void{
   buildHall();
   state.items.forEach((it, key) => { removeMesh(it); addMesh(key, it); });
@@ -216,7 +216,7 @@ export function pickItem(e: PointerEvent): string | null{
   const hit = ray.intersectObjects(itemRoot.children, true)[0];
   return hit ? hit.object.userData.key as string : null;
 }
-// 格子中心在页面上的坐标（clientX/Y），y 是离地高度
+// Page coordinates (clientX/Y) of a cell center; y is the height above the floor
 export function cellToScreen(x: number, z: number, y = 0): {x: number; y: number}{
   const v = cellPos(x, z).setY(y).project(camera);
   const r = renderer.domElement.getBoundingClientRect();
@@ -230,7 +230,7 @@ export function pickCell(e: PointerEvent): Pos | null{
   return x >= 0 && x < GW && z >= 0 && z < GD ? {x, z} : null;
 }
 
-// 立即画一帧：浏览器自动化时窗口在后台，requestAnimationFrame 可能暂停
+// Render one frame now: during browser automation the window is in the background and requestAnimationFrame may be paused
 export function renderOnce(): void{ camera.updateMatrixWorld(); renderer.render(scene, camera); }
 
 export function startLoop(): void{
@@ -238,7 +238,7 @@ export function startLoop(): void{
   function frame(now: number){
     state.items.forEach((it, key) => {
       const m = it.mesh.userData.stripeMat;
-      // 故障的设施和超载、没接上的设备不亮
+      // Failed facilities and overloaded or unconnected devices do not light up
       if (!state.powered || !isActive(key, it) || it.mesh.userData.alert.visible){ m.emissiveIntensity = .12; return; }
       const delay = (Math.abs(it.x - GW / 2) + it.z) * 70;
       const t = (now - state.powerStart - delay) / 400;

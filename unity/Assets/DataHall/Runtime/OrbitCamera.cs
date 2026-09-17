@@ -2,12 +2,12 @@ using UnityEngine;
 
 namespace DataHall
 {
-    // 轨道相机：右键或左键拖动旋转，滚轮缩放，与网页版的操作一致
+    // Orbit camera: drag with the right or left button to rotate, scroll to zoom, same controls as the web version
     public class OrbitCamera : MonoBehaviour
     {
         public Vector3 target = new Vector3(0, 0.8f, 0);
         public float distance = 17f;
-        public float yaw = 137f;           // 从设备正面（+Z）一侧斜看，和网页版初始视角一致
+        public float yaw = 137f;           // oblique view from the equipment front (+Z) side, matching the web version's initial view
         public float pitch = 35f;
         public float minDistance = 5f, maxDistance = 34f;
 

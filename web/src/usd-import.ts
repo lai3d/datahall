@@ -1,6 +1,6 @@
-// 导入本项目导出的 OpenUSD 布局（usd-export.ts 的逆过程）。纯函数，不依赖 DOM。
-// 只读根层，不展开 sublayer 和外部引用；设备参数一律以 catalog.json 为准，文件里的参数只用来提示差异。
-// 支持 schema 0.1（custom 属性）和 0.2（applied API schema），以及被 usdview、usdcat、Omniverse 重新保存过的文件。
+// Imports OpenUSD layouts exported by this project (the inverse of usd-export.ts). Pure functions, no DOM dependency.
+// Reads the root layer only, without expanding sublayers or external references; device parameters always come from catalog.json, and parameters in the file only produce difference warnings.
+// Supports schema 0.1 (custom attributes) and 0.2 (applied API schemas), as well as files re-saved by usdview, usdcat or Omniverse.
 import {parseUsda, UsdaSyntaxError} from './usda-parser.ts';
 import {keyOf, FEEDS, supplyLinks} from './grid.ts';
 import {setFeed} from './feeds.ts';
@@ -12,27 +12,27 @@ export interface ImportResult {u: number; list: Entry[]; warnings: string[]; ski
 
 export class UsdImportError extends Error {}
 
-// Catalog 原型上的 dchall 属性 → catalog.json 字段
+// dchall attributes on Catalog prototypes → catalog.json fields
 const PARAMS: Record<string, keyof CatalogItem> = {
   'dchall:powerKw': 'kw', 'dchall:gpuCount': 'gpus', 'dchall:liquidFraction': 'liq',
   'dchall:liquidCoolingKw': 'liqCool', 'dchall:airCoolingKw': 'airCool', 'dchall:overheadKw': 'ovh',
   'dchall:distributionKw': 'dist', 'dchall:fabricPorts': 'ports', 'dchall:capexMusd': 'cap', 'dchall:heightM': 'h',
 };
 
-// 文件里的值形状不可信，读出来是 any，用到的地方逐个做运行时检查
+// Value shapes in the file are untrusted, so they are read as any and checked at runtime wherever used
 const valueOf = (prim: UsdPrim | undefined, name: string): any => prim?.props[name]?.value;
 const child = (prim: UsdPrim | undefined, name: string): UsdPrim | undefined => prim?.children.find(c => c.name === name);
 const plain = (v: any): any => (v && typeof v === 'object' && 'op' in v) ? v.value : v;
 const isActive = (prim: UsdPrim): boolean => plain(prim.metadata.active) !== false;
 
-// 关系的目标 prim 名：只认本层的 </DataHall/Equipment/<name>>，多个目标时取第一个
+// Target prim name of a relationship: only </DataHall/Equipment/<name>> in this layer is accepted; with multiple targets, take the first
 function relTarget(prim: UsdPrim, name: string): string | null{
   const v = plain(valueOf(prim, name));
   const path = (Array.isArray(v) ? v[0] : v)?.path;
   return path?.match(/^\/DataHall\/Equipment\/(\w+)$/)?.[1] ?? null;
 }
 
-// references 可能是单个值或列表，带或不带列表操作；只认本层内的 </DataHall/Catalog/<id>>
+// references may be a single value or a list, with or without a list op; only </DataHall/Catalog/<id>> within this layer is accepted
 function catalogIdOf(prim: UsdPrim): string | null{
   const refs = [plain(prim.metadata.references)].flat().filter(Boolean);
   for (const r of refs){
@@ -58,7 +58,7 @@ export function importUsda(text: string, CAT: Catalog, GRID: Grid): ImportResult
   const hall = layer.prims.find(p => p.name === hallName && p.specifier === 'def');
   if (!hall || hallName !== 'DataHall') throw new UsdImportError(tr('usdNoHall'));
 
-  // 位置只看 gridColumn/gridRow，和坐标轴无关；坐标轴只用来核对 translate
+  // Position comes only from gridColumn/gridRow, independent of the up axis; the up axis is used only to verify translate
   const zUpMeters = meta.upAxis === 'Z' && meta.metersPerUnit === 1;
 
   const grid: Record<keyof Grid, string> = {GW: 'dchall:gridColumns', GD: 'dchall:gridRows', CX: 'dchall:cellWidthM', CZ: 'dchall:cellDepthM'};
@@ -74,7 +74,7 @@ export function importUsda(text: string, CAT: Catalog, GRID: Grid): ImportResult
     utility = 2;
   }
 
-  // 文件里的原型参数和当前目录不一致时提示
+  // Warn when prototype parameters in the file differ from the current catalog
   for (const proto of child(hall, 'Catalog')?.children || []){
     const t = CAT[proto.name];
     if (!t) continue;
@@ -107,7 +107,7 @@ export function importUsda(text: string, CAT: Catalog, GRID: Grid): ImportResult
     const key = keyOf(x, z);
     if (seen.has(key)){ skip(tr('usdOverlap', {where, other: seen.get(key)!, loc: loc(x, z)})); continue; }
 
-    // 在 usdview、Omniverse 里拖动过的设备，translate 会和网格位置对不上
+    // Devices dragged in usdview or Omniverse will have a translate that does not match the grid position
     const t = valueOf(prim, 'xformOp:translate');
     if (zUpMeters && Array.isArray(t)){
       const ex = (x - (GRID.GW - 1) / 2) * GRID.CX, ey = -((z - (GRID.GD - 1) / 2) * GRID.CZ);
@@ -120,8 +120,8 @@ export function importUsda(text: string, CAT: Catalog, GRID: Grid): ImportResult
     rels.push({where, entry: list.at(-1)!, targets: {coolantSource: relTarget(prim, 'dchall:coolantSource'), powerFeed: relTarget(prim, 'dchall:powerFeed')}});
   }
 
-  // 供给关系：文件里的 dchall:coolantSource / powerFeed 和就近分配不同的，记成手动指定；
-  // 指向没导入的设备或类型不对的，提示后按就近处理
+  // Supply relations: dchall:coolantSource / powerFeed values in the file that differ from nearest assignment are recorded as manual assignments;
+  // those pointing to devices not imported or of the wrong type produce a warning and fall back to nearest
   const byName = new Map(rels.map(r => [r.where, r.entry]));
   const auto = supplyLinks(list.map(([type, x, z]) => ({type, x, z})), CAT);
   const autoOf = [...auto.values()];

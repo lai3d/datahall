@@ -7,21 +7,21 @@ using UnityEngine.Rendering.Universal;
 
 namespace DataHall.Editor
 {
-    // 一次性工程配置：URP 管线资产、基础材质、Hall 场景和打包场景列表。
-    // 命令行：Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.ProjectSetup.Run -quit
+    // One-time project setup: URP pipeline asset, base material, Hall scene and the build scene list.
+    // Command line: Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.ProjectSetup.Run -quit
     public static class ProjectSetup
     {
         public const string SettingsDir = "Assets/DataHall/Settings";
         public const string ScenePath = "Assets/DataHall/Scenes/Hall.unity";
         public const string BaseMaterialPath = SettingsDir + "/Base.mat";
 
-        [MenuItem("DataHall/重新生成工程配置")]
+        [MenuItem("DataHall/Regenerate Project Setup")]
         public static void Run()
         {
             Directory.CreateDirectory(SettingsDir);
-            // 桌面模拟程序切到后台时继续运行；从终端启动做截图、冒烟测试时程序不在前台，关掉会停住主循环
+            // Keep the desktop simulator running in the background; when launched from a terminal for screenshots or smoke tests the app is not frontmost, and turning this off stalls the main loop
             PlayerSettings.runInBackground = true;
-            // URP 按线性色彩空间工作；glTF 的颜色因子本身也是线性值
+            // URP works in linear color space; glTF color factors are linear values too
             PlayerSettings.colorSpace = ColorSpace.Linear;
             PlayerSettings.productName = "GPU 机房";
             PlayerSettings.companyName = "DataHall";
@@ -55,7 +55,7 @@ namespace DataHall.Editor
             }
         }
 
-        // DataHallNative.bundle 只给打包后的 macOS 程序用；编辑器不加载，避免重新编译插件时文件被占用
+        // DataHallNative.bundle is only for the built macOS app; the editor does not load it, so the file is not locked when rebuilding the plugin
         public const string NativePluginPath = "Assets/Plugins/macOS/DataHallNative.bundle";
 
         static void ConfigureNativePlugin()
@@ -80,7 +80,7 @@ namespace DataHall.Editor
                 material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
                 AssetDatabase.CreateAsset(material, BaseMaterialPath);
             }
-            // 地板和占位方块是哑光表面，默认光滑度 0.5 会在大面积地板上出现明显高光
+            // The floor and placeholder boxes are matte; the default smoothness of 0.5 gives obvious highlights across the large floor
             material.SetFloat("_Smoothness", 0.15f);
             EditorUtility.SetDirty(material);
             return material;

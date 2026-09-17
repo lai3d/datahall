@@ -19,7 +19,8 @@ SAMPLE = os.path.join(ROOT, "samples", "datahall.usda")
 WEB = os.path.join(ROOT, "web")
 HAS_WEB = os.path.isdir(os.path.join(WEB, "node_modules")) and shutil.which("node")
 
-# 按 AIF 约定建模的机柜：原点在底面中心，深 1.2 m 沿 +X，正面标记在 +X（docs/simready-audit.md 的实验资产）
+# A rack modeled per the AIF convention: origin at the bottom center, 1.2 m deep along +X, front marker at +X
+# (the experimental asset from docs/simready-audit.md)
 RACK_ASSET = """#usda 1.0
 (
     defaultPrim = "rack"
@@ -179,7 +180,8 @@ class UsdToUnityTest(unittest.TestCase):
 
     @unittest.skipUnless(HAS_WEB, "web/node_modules not installed")
     def test_manual_assignment_and_phase_match_web_export(self):
-        # 手动指定的供给设备（不是最近的那台）和部署阶段：pxr 转换器读文件里的关系和 dchall:phase，网页版导入后重建，结果要一致
+        # Manually assigned supply equipment (not the nearest one) and deployment phase: the pxr converter reads the relationships
+        # and dchall:phase from the file, the web version rebuilds them on import, and the results must match
         path = os.path.join(self.tmp, "props.usda")
         subprocess.run(["node", "scripts/layout-props-usda.ts", path], cwd=WEB, check=True)
         layout, _ = self.convert(path)
@@ -207,14 +209,14 @@ class UsdToUnityTest(unittest.TestCase):
         self.assertEqual(node_names(g), ["vr200", "Body", "Front"])
         self.assertEqual(g["nodes"][0]["extras"]["dchall"]["powerKw"], 190)
         lo, hi = world_bounds(g, {"Body"})
-        for got, want in zip(lo + hi, [-0.276, 0.0, -0.564, 0.276, 2.3, 0.564]):     # 0.6×0.92 宽、2.3 高、1.2×0.94 深
+        for got, want in zip(lo + hi, [-0.276, 0.0, -0.564, 0.276, 2.3, 0.564]):     # 0.6×0.92 wide, 2.3 tall, 1.2×0.94 deep
             self.assertAlmostEqual(got, want, places=4)
         lo, hi = world_bounds(g, {"Front"})
-        self.assertGreater((lo[2] + hi[2]) / 2, 0.5)                                  # 正面面板在 +Z
+        self.assertGreater((lo[2] + hi[2]) / 2, 0.5)                                  # front panel at +Z
         mats = {m["name"]: m["pbrMetallicRoughness"] for m in g["materials"]}
         self.assertEqual(sorted(mats), ["body", "front"])
         self.assertAlmostEqual(mats["body"]["roughnessFactor"], 0.55, places=5)
-        self.assertAlmostEqual(mats["front"]["baseColorFactor"][1], 0.4851, places=4)                 # #76B900 的 G，换算成线性值
+        self.assertAlmostEqual(mats["front"]["baseColorFactor"][1], 0.4851, places=4)                 # G of #76B900, converted to linear
         prim = g["meshes"][g["nodes"][1]["mesh"]]["primitives"][0]
         self.assertEqual((g["accessors"][prim["attributes"]["POSITION"]]["count"], g["accessors"][prim["indices"]]["count"]), (24, 36))
 
@@ -226,15 +228,15 @@ class UsdToUnityTest(unittest.TestCase):
         _, out = self.convert(swap)
         g = read_glb(os.path.join(out, "assets", "vr200.glb"))
         names = node_names(g)
-        self.assertNotIn("Body", names)                                              # 停用的简化几何
+        self.assertNotIn("Body", names)                                              # deactivated simplified geometry
         self.assertNotIn("connection_point", names)                                  # guide purpose
         self.assertIn("chassis", names)
         lo, hi = world_bounds(g, {"chassis"})
-        self.assertAlmostEqual(hi[0] - lo[0], 0.6, places=4)                          # 宽沿 X
-        self.assertAlmostEqual(hi[2] - lo[2], 1.2, places=4)                          # 深沿 Z
+        self.assertAlmostEqual(hi[0] - lo[0], 0.6, places=4)                          # width along X
+        self.assertAlmostEqual(hi[2] - lo[2], 1.2, places=4)                          # depth along Z
         self.assertAlmostEqual(hi[1], 2.3, places=4)
         lo, hi = world_bounds(g, {"front_marker"})
-        self.assertAlmostEqual((lo[2] + hi[2]) / 2, 0.61, places=4)                   # 正面在 +Z
+        self.assertAlmostEqual((lo[2] + hi[2]) / 2, 0.61, places=4)                   # front at +Z
         self.assertTrue(any("only UsdPreviewSurface" in w for w in self.warnings), self.warnings)
         self.assertEqual(next(m for m in g["materials"] if m["name"] == "displayColor")["pbrMetallicRoughness"]["baseColorFactor"], [0.5, 0.5, 0.5, 1.0])
 

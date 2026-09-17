@@ -3,12 +3,12 @@ using UnityEngine;
 
 namespace DataHall
 {
-    // 按 layout.json 搭建机房：地板、设备实例。没有 prefab 的类型用按高度和大类着色的方块代替
+    // Builds the hall from layout.json: floor and equipment instances. Types without a prefab get a box sized by height and colored by category
     public static class HallBuilder
     {
         public const string RootName = "DataHall";
 
-        // baseMaterial：地板和占位方块用的材质模板。打包后的程序里 Shader.Find 找不到没被引用的着色器，所以由场景传入
+        // baseMaterial: material template for the floor and placeholder boxes. In a built app Shader.Find cannot find unreferenced shaders, so the scene passes it in
         public static GameObject Build(LayoutData layout, EquipmentLibrary library, Material baseMaterial = null, List<string> warnings = null)
         {
             var root = new GameObject(RootName);
@@ -62,7 +62,7 @@ namespace DataHall
             return go;
         }
 
-        // 选中用：按渲染包围盒给设备根节点加一个盒子碰撞体
+        // For selection: add a box collider to the equipment root, sized to the renderer bounds
         static void EnsureCollider(GameObject go)
         {
             if (go.GetComponent<Collider>()) return;

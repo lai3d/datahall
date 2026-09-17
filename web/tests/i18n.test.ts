@@ -13,21 +13,21 @@ import {readFileSync} from 'node:fs';
 
 afterEach(() => setLang(DEFAULT_LANG));
 
-// 所有函数文案用同一组变量调用，检查不会漏变量（输出里不出现 undefined）
+// Call every function message with the same variables to check none is missed (no undefined in the output)
 const VARS = {x: 3, z: 4, loc: 'L', n: 2, u: 5, kw: 800, used: 1, total: 2, m: '1.0', need: 'A', cap: 'B', heat: 'C',
   gpus: 7, ports: 8, facility: 'D', load: 'E', label: 'CDU', pct: 85, file: 'f.usda', reason: 'R', v: 'V', type: 'T', cell: 'T:c',
   name: 'N', msg: 'M', gw: 16, gd: 10, cx: .6, cz: 1.2, cur: 'K', diffs: 'P', where: 'W', id: 'I', other: 'O', line: 9,
   c: '"?"', expected: 'X', got: 'Y', open: '(', close: ')', reasons: 'Q', field: 'F', target: 'T', source: 'S', phase: 2, limit: 'L'};
 
-describe('文案表', () => {
-  it('默认英文', () => expect(DEFAULT_LANG).toBe('en'));
+describe('message tables', () => {
+  it('defaults to English', () => expect(DEFAULT_LANG).toBe('en'));
 
-  it('中英文的键相同，类型一致', () => {
+  it('Chinese and English have the same keys and types', () => {
     expect(Object.keys(zh).sort()).toEqual(Object.keys(en).sort());
     for (const k of Object.keys(en) as (keyof typeof en)[]) expect(typeof zh[k], k).toBe(typeof en[k]);
   });
 
-  it.each([['en', en], ['zh', zh]] as const)('%s 的函数文案不漏变量', (lang, table) => {
+  it.each([['en', en], ['zh', zh]] as const)('%s function messages do not miss variables', (lang, table) => {
     for (const [k, v] of Object.entries(table)){
       const text = typeof v === 'function' ? (v as (vars: typeof VARS) => string)(VARS) : v;
       expect(text, k).not.toMatch(/undefined|NaN|\[object/);
@@ -35,26 +35,26 @@ describe('文案表', () => {
     }
   });
 
-  it('英文文案里没有中文', () => {
+  it('English messages contain no Chinese', () => {
     for (const [k, v] of Object.entries(en)) expect(typeof v === 'function' ? (v as (vars: typeof VARS) => string)(VARS) : v, k).not.toMatch(/[一-鿿]/);
   });
 
-  it('缺键时报错，未知语言不切换', () => {
-    // @ts-expect-error 不存在的键，编译期就会报错
+  it('throws on a missing key, does not switch to an unknown language', () => {
+    // @ts-expect-error nonexistent key, rejected at compile time
     expect(() => tr('nope')).toThrow(/nope/);
     setLang('fr');
     expect(getLang()).toBe('en');
   });
 });
 
-describe('英文输出', () => {
-  it('位置、单复数', () => {
+describe('English output', () => {
+  it('positions, singular and plural', () => {
     expect(loc(0, 2)).toBe('column 1, row 3');
     expect(tr('shareCopied', {n: 1})).toBe('Link copied (1 device).');
     expect(tr('overloadMore', {n: 2, label: 'RPP'})).toBe('2 more RPPs are overloaded.');
   });
 
-  it('容量问题', () => {
+  it('capacity issues', () => {
     const s = compute([{type: 'vr200', x: 0, z: 0}], CAT, 2);
     expect(s.issues.map(i => i.txt)).toEqual([
       'Not enough power distribution: racks need 190 kW, RPPs can distribute only 0 kW. Add an RPP.',
@@ -64,22 +64,22 @@ describe('英文输出', () => {
     ]);
   });
 
-  it('逐台超载', () => {
+  it('per-device overload', () => {
     const list = [0, 1, 2, 3, 4].map(x => ({type: 'vr200', x, z: 3}));
     list.push({type: 'cdu', x: 0, z: 5}, {type: 'cdu', x: 15, z: 5}, {type: 'rpp', x: 2, z: 5}, {type: 'rpp', x: 3, z: 5});
     const [issue] = supplyIssues(supplyLoads(list, CAT), compute(list, CAT, 5));
     expect(issue.txt).toMatch(/^CDU \(column 1, row 6\) is overloaded: 5 devices assigned, .+ of liquid-cooling heat, but it can remove only 800 kW\./);
   });
 
-  it('分享链接和导入的提示', () => {
+  it('share link and import warnings', () => {
     expect(decodeLayout('#layout=1,5,vr200:99.0', CAT, GRID)!.warnings).toEqual(['Vera Rubin NVL72 at column 100, row 1 is outside the grid. Skipped.']);
     expect(() => importUsda('#usda 1.0\ndef Xform "DataHall" {', CAT, GRID)).toThrow(UsdImportError);
     try { importUsda('#usda 1.0\ndef Xform "DataHall" {', CAT, GRID); } catch (e) { expect((e as Error).message).toMatch(/^the file is malformed\. Line \d+: /); }
   });
 });
 
-describe('设备目录', () => {
-  it('每个设备都有英文说明，名称和说明都不含中文', () => {
+describe('equipment catalog', () => {
+  it('every device has an English note, and neither name nor note contains Chinese', () => {
     for (const t of CATALOG){
       expect(t.i18n?.en?.note, t.id).toBeTruthy();
       expect(catName(t), t.id).not.toMatch(/[一-鿿]/);
@@ -87,14 +87,14 @@ describe('设备目录', () => {
     }
   });
 
-  it('中文回退到原文', () => {
+  it('Chinese falls back to the original text', () => {
     setLang('zh');
     expect(catName(CAT.stor)).toBe(CAT.stor.name);
     expect(catNote(CAT.cdu)).toBe(CAT.cdu.note);
   });
 });
 
-it('容量用例保持中文，和 spec/capacity-cases.json 一致（Unity 逐字比对）', () => {
+it('capacity cases stay in Chinese and match spec/capacity-cases.json (Unity compares them verbatim)', () => {
   const cases = buildCases();
   expect(getLang()).toBe('en');
   const file = JSON.parse(readFileSync(new URL('../../spec/capacity-cases.json', import.meta.url), 'utf8'));

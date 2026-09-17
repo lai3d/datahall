@@ -1,25 +1,25 @@
-// OpenUSD 导出：纯函数，不依赖 DOM 和 three，可以在 node 里直接测试
-// 坐标换算：(x, y, z)_three → (x, -z, y)_usd，Z 轴向上，单位米
-// 属性由 schema/schema.usda 里的 DataHallAPI、DataHallEquipmentAPI、LiquidCooledAPI 定义，
-// 改属性时先改 schema，web 测试会检查两边是否一致
+// OpenUSD export: pure functions, no DOM or three dependency, testable directly in node
+// Coordinate conversion: (x, y, z)_three → (x, -z, y)_usd, Z up, meters
+// Attributes are defined by DataHallAPI, DataHallEquipmentAPI and LiquidCooledAPI in schema/schema.usda;
+// when changing attributes, change the schema first; web tests check that both sides agree
 import {equipmentName, supplyLinks} from './grid.ts';
 import type {Catalog, Grid, Item} from './types.ts';
 
 export interface ExportMeta {date: string}
 type Vec3 = [number, number, number];
 
-// meta.date：生成日期 YYYY-MM-DD，由调用方传入以保持纯函数（SimReady SR.001 的 usd_date_generated）
+// meta.date: generation date YYYY-MM-DD, passed in by the caller to keep the function pure (usd_date_generated for SimReady SR.001)
 export function buildUsda(list: Item[], CAT: Catalog, utility: number, g: Grid, meta: ExportMeta): string{
   if (!/^\d{4}-\d{2}-\d{2}$/.test(meta?.date || '')) throw new Error('buildUsda: meta.date must be YYYY-MM-DD');
   const PALETTE: Record<string, string> = {gpu:'#76B900', net:'#9A8CE0', store:'#7FA2C4', coolant:'#3FB6C9', air:'#9AA8B5', copper:'#D08A45', rack:'#34404B', floor:'#2A3540'};
   const f = (v: number): string => { const s = (Math.round(v * 10000) / 10000).toString(); return s.includes('.') || s.includes('e') ? s : s + '.0'; };
-  // USD 的 displayColor 和 UsdPreviewSurface 颜色都是线性值，调色板是 sRGB，写入前换算
+  // USD displayColor and UsdPreviewSurface colors are linear; the palette is sRGB, so convert before writing
   const linear = (c: number): number => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   const rgb = (h: string): string => { const n = parseInt(h.slice(1), 16); return `(${[n >> 16 & 255, n >> 8 & 255, n & 255].map(v => f(linear(v / 255))).join(', ')})`; };
   const str = (s: string): string => '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
   const primName = equipmentName;
   const pos = (it: Item): [number, number] => [(it.x - (g.GW - 1) / 2) * g.CX, -((it.z - (g.GD - 1) / 2) * g.CZ)];
-  // 单位立方体网格：SimReady VG.MESH.001 要求非细分 Mesh。面从外侧看逆时针（rightHanded），法线按面给出
+  // Unit cube mesh: SimReady VG.MESH.001 requires non-subdivided Meshes. Faces are counter-clockwise seen from outside (rightHanded), normals given per face
   const BOX = [
     'float3[] extent = [(-0.5, -0.5, -0.5), (0.5, 0.5, 0.5)]',
     'int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]',
@@ -40,7 +40,7 @@ export function buildUsda(list: Item[], CAT: Catalog, utility: number, g: Grid, 
     `${ind}    float3 xformOp:scale = (${s.map(f).join(', ')})`,
     `${ind}    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]`,
     `${ind}}`].join('\n');
-  // UsdPreviewSurface 材质，参数与网页 three.js 的 MeshStandardMaterial 对应
+  // UsdPreviewSurface material; parameters correspond to the web three.js MeshStandardMaterial
   const material = (ind: string, path: string, color: string, roughness: number, metallic: number): string => [
     `${ind}def Material "${path.split('/').pop()}"`, `${ind}{`,
     `${ind}    token outputs:surface.connect = <${path}/PreviewSurface.outputs:surface>`, '',
@@ -99,7 +99,7 @@ export function buildUsda(list: Item[], CAT: Catalog, utility: number, g: Grid, 
       `            double dchall:heightM = ${f(h)}`, '',
       cube('            ', 'Body', PALETTE.rack, [0, 0, h / 2], [g.CX * .92, g.CZ * .94, h], `${looks}/body`),
       cube('            ', 'Front', accent, [0, -(g.CZ * .47 + .012), h / 2], [g.CX * .78, .02, h - .3], `${looks}/front`), '',
-      // 材质放在原型内部：实例引用原型时绑定关系随之映射到实例自己的 Looks，不跨出实例边界
+      // Materials live inside the prototype: when an instance references the prototype, bindings map to the instance's own Looks without crossing the instance boundary
       '            def Scope "Looks"', '            {',
       material('                ', `${looks}/body`, PALETTE.rack, 0.55, 0.35),
       material('                ', `${looks}/front`, accent, 0.5, 0),
@@ -108,7 +108,7 @@ export function buildUsda(list: Item[], CAT: Catalog, utility: number, g: Grid, 
   });
   L.push('    }', '');
 
-  // component 的祖先必须都是 group 类 kind，否则实例不在模型层级里（OAV KindChecker）
+  // All ancestors of a component must have group-type kinds, otherwise instances are not in the model hierarchy (OAV KindChecker)
   L.push('    def Scope "Equipment" (', '        kind = "group"', '    )', '    {');
   list.forEach(it => {
     const t = CAT[it.type]; if (!t) return;
@@ -127,40 +127,40 @@ export function buildUsda(list: Item[], CAT: Catalog, utility: number, g: Grid, 
   return L.join('\n');
 }
 
-export const USD_README = `# GPU Data Hall 导出说明
+export const USD_README = `# GPU Data Hall export notes
 
-datahall.usda 是 OpenUSD 文本层，Z 轴向上，单位米。
+datahall.usda is an OpenUSD text layer, Z up, in meters.
 
-## 结构
-/DataHall                   kind=assembly，机房级属性（市电 MW、网格尺寸）
-/DataHall/Floor             地板，绑定 /DataHall/Looks/floor
-/DataHall/Catalog/<id>      class 原型，带设备参数、简化几何（Mesh）和自己的 Looks 材质
+## Structure
+/DataHall                   kind=assembly, hall-level attributes (utility MW, grid size)
+/DataHall/Floor             floor, bound to /DataHall/Looks/floor
+/DataHall/Catalog/<id>      class prototype with device parameters, simplified geometry (Mesh) and its own Looks materials
 /DataHall/Equipment         kind=group
-/DataHall/Equipment/Rxx_Cyy 摆放的设备，kind=component，instanceable，引用 Catalog 原型
+/DataHall/Equipment/Rxx_Cyy placed device, kind=component, instanceable, references a Catalog prototype
 
-几何是非细分 Mesh，材质是 UsdPreviewSurface，层元数据带 SimReady SR.001 要求的
-asset_name、asset_type、source_file、usd_date_generated、SimReady_Metadata。
-设备原点在底面中心，正面朝 -Y。
+Geometry is non-subdivided Mesh, materials are UsdPreviewSurface, and the layer metadata carries the fields
+required by SimReady SR.001: asset_name, asset_type, source_file, usd_date_generated, SimReady_Metadata.
+Device origin is at the bottom center, front facing -Y.
 
-## 属性 schema（dchall: 命名空间，schema 0.2）
-属性由三个 codeless applied API schema 定义：
-DataHallAPI           /DataHall 上：utilityMw、gridColumns、gridRows、cellWidthM、cellDepthM
-DataHallEquipmentAPI  Catalog 原型上：displayName、category、powerKw、gpuCount、liquidCoolingKw、
-                      airCoolingKw、overheadKw、distributionKw、fabricPorts、capexMusd、roadmap、heightM；
-                      实例上：gridColumn、gridRow、phase（部署阶段，大于 1 才写）、powerFeed
-LiquidCooledAPI       液冷机柜原型上：liquidFraction；实例上：coolantSource
+## Attribute schema (dchall: namespace, schema 0.2)
+Attributes are defined by three codeless applied API schemas:
+DataHallAPI           on /DataHall: utilityMw, gridColumns, gridRows, cellWidthM, cellDepthM
+DataHallEquipmentAPI  on Catalog prototypes: displayName, category, powerKw, gpuCount, liquidCoolingKw,
+                      airCoolingKw, overheadKw, distributionKw, fabricPorts, capexMusd, roadmap, heightM;
+                      on instances: gridColumn, gridRow, phase (deployment phase, written only when greater than 1), powerFeed
+LiquidCooledAPI       on liquid-cooled rack prototypes: liquidFraction; on instances: coolantSource
 
-没有加载 schema 插件时，文件照样能打开，属性值也都在，只是会被当成未注册的 API。
-要让 usdview 或 Omniverse 识别 schema，把项目仓库的 schema/ 目录加到 PXR_PLUGINPATH_NAME。
+Without the schema plugin loaded, the file still opens and all attribute values are present; they are just treated as an unregistered API.
+To make usdview or Omniverse recognize the schema, add the schema/ directory of the project repository to PXR_PLUGINPATH_NAME.
 
-## 拓扑关系
-dchall:coolantSource → 为该机柜供液的 CDU（LiquidCooledAPI）
-dchall:powerFeed     → 为该设备配电的 RPP（DataHallEquipmentAPI）
+## Topology
+dchall:coolantSource → the CDU supplying coolant to this rack (LiquidCooledAPI)
+dchall:powerFeed     → the RPP supplying power to this device (DataHallEquipmentAPI)
 
-## 替换为高精度模型
-在更强的层里对 /DataHall/Catalog/<id> 写 over，所有摆放实例会自动跟着换，参数和拓扑不受影响。
-NVIDIA AI Factory 设备资产约定正面朝 +X，本文件正面朝 -Y，所以不要直接对原型加 reference，
-而是停用简化几何，在原型下建子 Xform 引用资产并转 -90°，kind 设为 subcomponent：
+## Replacing with high-fidelity models
+Write an over on /DataHall/Catalog/<id> in a stronger layer; all placed instances follow automatically, and parameters and topology are unaffected.
+NVIDIA AI Factory equipment assets face +X by convention while this file faces -Y, so do not add a reference directly on the prototype.
+Instead, deactivate the simplified geometry, create a child Xform under the prototype that references the asset, rotate it -90°, and set kind to subcomponent:
 
     over "DataHall"
     {
@@ -186,5 +186,5 @@ NVIDIA AI Factory 设备资产约定正面朝 +X，本文件正面朝 -Y，所�
         }
     }
 
-数值为公开报道与估算的粗略值，不可作为工程设计依据。
+Values are rough figures from public reports and estimates, not a basis for engineering design.
 `;

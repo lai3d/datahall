@@ -1,4 +1,4 @@
-// 右侧面板：市电选择、设备色板、容量仪表、问题列表、通电按钮、详情
+// Right-side panel: utility selection, device palette, capacity gauges, issue list, power button, details
 import {CATALOG, CAT} from './catalog.ts';
 import {compute, fmt} from './sim.ts';
 import {supplyLoads, supplyIssues} from './supply.ts';
@@ -15,7 +15,7 @@ import type {Reason, ReasonKind} from './redundancy.ts';
 import type {PresetName} from './layout.ts';
 import type {CatalogItem, FeedField, Item} from './types.ts';
 
-// 面板触发的操作，由 main.ts 实现
+// Actions triggered by the panel, implemented in main.ts
 export interface Actions {
   removeItem(key: string): void;
   setUtility(u: number): void;
@@ -35,14 +35,14 @@ export interface Actions {
   setLang(id: string): void;
 }
 
-// 详情面板用的供给信息：设备、它作为 CDU / RPP 的负载、它接的供给设备
+// Supply info for the detail panel: the device, its load as a CDU / RPP, and the supply equipment it connects to
 interface SupplyInfo {item: Item; supply: Supply | undefined; links: Links<Item> | undefined; loads: Loads; active: Item[]}
 
 const UTIL = [2, 5, 10];
 let actions: Actions;
 let supplyByKey = new Map<string, SupplyInfo>();
 
-// 点击事件委托：找到带 data-* 的按钮
+// Click event delegation: find the button with data-*
 const closest = (e: Event, selector: string): HTMLElement | null => e.target instanceof Element ? e.target.closest<HTMLElement>(selector) : null;
 
 export function initUI(a: Actions): void{
@@ -64,11 +64,11 @@ export function initUI(a: Actions): void{
   document.querySelectorAll<HTMLElement>('[data-preset]').forEach(b => { b.onclick = () => actions.loadPreset(b.dataset.preset as PresetName); });
 }
 
-// index.html 里带 data-i18n 的静态文案，以及语言切换按钮
-// 纯文本文案（没有变量）的键
+// Static copy in index.html marked with data-i18n, plus the language switch buttons
+// Keys of plain-text messages (no variables)
 type TextKey = {[K in MessageKey]: Messages[K] extends string ? K : never}[MessageKey];
 export function applyStaticText(): void{
-  // data-i18n 里写的是纯文本文案的键（没有变量）
+  // data-i18n holds keys of plain-text messages (no variables)
   document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => { el.textContent = tr(el.dataset.i18n as TextKey); });
   document.querySelectorAll<HTMLElement>('[data-i18n-aria]').forEach(el => el.setAttribute('aria-label', tr(el.dataset.i18nAria as TextKey)));
   setHTML($('#lang'), LANGS.map(l =>
@@ -76,7 +76,7 @@ export function applyStaticText(): void{
 }
 
 export function buildUI(): void{
-  // 阶段按钮：现有阶段加一个“下一阶段”
+  // Phase buttons: existing phases plus a "next phase" one
   const phases = phasesIn([...state.items.values()]), next = (phases.at(-1) || 1) + 1;
   setHTML($('#placePhase'), [...new Set([...phases, 1, state.phase])].sort((a, b) => a - b).concat(state.phase === next ? [] : [next]).map(n =>
     `<button type="button" data-phase="${n}" aria-pressed="${state.phase === n}"${n === next && !phases.includes(n) && state.phase !== n ? ` aria-label="${tr('phaseNew')}"` : ''}>${n === next && !phases.includes(n) && state.phase !== n ? '+' : n}</button>`).join(''));
@@ -105,10 +105,10 @@ function gauge(label: string, v: number, cap: number, cssVar: string): string{
 }
 
 export function refresh(): void{
-  // 故障演练中标记为故障的设施不参与计算
+  // Facilities marked failed in the failure drill are excluded from computation
   const all = itemList();
   const list = all.filter(it => isActive(keyOf(it.x, it.z), it));
-  const planned = all.filter(inView);   // 当前查看的阶段内的设备（不管故障演练）
+  const planned = all.filter(inView);   // Devices within the currently viewed phase (regardless of the failure drill)
   const s = compute(list, CAT, state.utility);
   const loads = supplyLoads(list, CAT);
   const perDevice = supplyIssues(loads, s);
@@ -128,7 +128,7 @@ export function refresh(): void{
       <div class="bar"><i style="width:${s.ports ? Math.min(100, s.gpus / s.ports * 100) : (s.gpus ? 100 : 0)}%;background:var(${s.gpus > s.ports ? '--bad' : '--net'})"></i></div></div>` +
     gauge(tr('gaugeUtility'), s.facility, state.utility * 1000, '--ink') +
     `<div class="gauge"><div class="top"><span>${tr('gaugeCapex')}</span><em>${tr('capex', {m: s.capex.toFixed(1)})}</em></div></div>`);
-  // 全机房总量的检查在前，逐台设备的超载在后
+  // Hall-wide total checks first, per-device overloads after
   const drill: {lvl: string; txt: string}[] = [
     ...(state.viewPhase !== null ? [{lvl: 'warn', txt: tr('viewIssues', {n: state.viewPhase})}] : []),
     ...(state.failed.size ? [{lvl: 'warn', txt: tr('drillIssues', {n: state.failed.size})}] : []),
@@ -138,7 +138,7 @@ export function refresh(): void{
   else if (!blocking) html += `<li class="ok">${tr('issueOk')}</li>`;
   setHTML($('#issues'), html);
   const btn = $<HTMLButtonElement>('#power');
-  btn.disabled = !s.it || (blocking && !state.powered);   // 通电后演练出问题，仍然可以断电
+  btn.disabled = !s.it || (blocking && !state.powered);   // If the drill causes problems after power-on, powering off is still allowed
   btn.classList.toggle('on', state.powered);
   btn.textContent = tr(state.powered ? 'powerOff' : 'powerOn');
   renderDrill(planned);
@@ -146,14 +146,14 @@ export function refresh(): void{
   renderInfo();
 }
 
-// 不满足容量检查的原因（redundancy.ts 的 blockingReasons）写成短语
+// Reasons for failing the capacity check (blockingReasons in redundancy.ts) as short phrases
 const REASON_TEXT = {dist: 'reasonDist', liquid: 'reasonLiquid', air: 'reasonAir', network: 'reasonNetwork', utility: 'reasonUtility'} as const;
 function reasonText(r: Reason): string{
   if (r.kind === 'overload') return tr('reasonOverload', {label: r.item.type.toUpperCase(), loc: loc(r.item.x, r.item.z)});
   return tr(REASON_TEXT[r.kind]);
 }
 
-// 故障演练区：当前故障数量，以及不考虑演练时整个布局的 N+1 检查
+// Failure drill section: current failure count, and the N+1 check of the whole layout ignoring the drill
 const MAX_SPOF = 5;
 function renderDrill(all: Item[]): void{
   $('#drillBar').hidden = !state.failed.size;
@@ -172,7 +172,7 @@ function renderDrill(all: Item[]): void{
   setHTML($('#n1'), html);
 }
 
-// 增长规划区：逐阶段累计的表格，以及当前查看阶段之后还能加几台
+// Growth planning section: cumulative per-phase table, and headroom after the currently viewed phase
 const KIND_LABEL = {dist: 'gaugeDist', liquid: 'gaugeLiquid', air: 'gaugeAir', network: 'gaugeNetwork', utility: 'gaugeUtility'} as const satisfies Record<ReasonKind, MessageKey>;
 const pct = (r: number): string => r === Infinity ? '∞' : Math.round(r * 100) + '%';
 function renderGrowth(all: Item[], planned: Item[]): void{
@@ -187,7 +187,7 @@ function renderGrowth(all: Item[], planned: Item[]): void{
   }).join('');
   const fails = plan.filter(p => p.reasons.length).map(p =>
     `<li class="bad">${tr('growthFail', {n: p.phase, reasons: p.reasons.map(reasonText).join(tr('listSep'))})}</li>`).join('');
-  // 还能加几台：默认用布局里最多的 GPU 机柜类型
+  // Headroom: defaults to the most common GPU rack type in the layout
   const gpuTypes = CATALOG.filter(t => t.gpus);
   const counts = new Map<string, number>(); planned.forEach(i => { if (CAT[i.type].gpus) counts.set(i.type, (counts.get(i.type) || 0) + 1); });
   const type = state.headroomType || [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] || 'vr200';
@@ -206,7 +206,7 @@ function renderGrowth(all: Item[], planned: Item[]): void{
 
 const badText = (txt: string): string => `<span style="color:var(--bad)">${txt}</span>`;
 
-// 详情面板里的供给关系：CDU、RPP 显示负载，其他设备显示供液和配电来自哪一台
+// Supply relations in the detail panel: CDUs and RPPs show their load, other devices show which unit supplies their coolant and power
 type Row = [string, string | number];
 function supplyRows(t: CatalogItem, info: SupplyInfo | undefined): Row[]{
   if (!info) return [];
@@ -216,7 +216,7 @@ function supplyRows(t: CatalogItem, info: SupplyInfo | undefined): Row[]{
     const text = `${fmt(loadKw)} / ${fmt(capacityKw)}`;
     rows.push([tr('rowLoad'), overloaded ? badText(text + tr('overloadedSuffix')) : text], [tr('rowConsumers'), tr('deviceCount', {n: consumers.length})]);
   }
-  // 设备：下拉框选择接哪台，第一项是就近（括号里是现在最近的那台）；手动指定的那台被拿掉（故障演练）时实际接的是就近
+  // Devices: a dropdown picks the supply; the first option is nearest (the current nearest unit in parentheses); if the manually assigned unit is removed (failure drill), the actual connection is the nearest
   const source = (field: FeedField, label: string, row: 'rowCoolantFrom' | 'rowPowerFrom', needed: boolean) => {
     if (!needed) return;
     const s = info.links?.[field];
@@ -273,7 +273,7 @@ export function renderInfo(): void{
     <p>${catNote(t)}</p>
     ${it ? `<div class="row" style="margin-top:8px">${supplyType ? `<button type="button" id="assignToggle" aria-pressed="${assigning}">${tr(assigning ? 'assignDone' : 'assignStart')}</button>` : ''}${failable ? `<button type="button" id="failToggle" title="F" aria-keyshortcuts="F">${tr(failed ? 'drillRestore' : 'drillFail')}</button>` : ''}<button type="button" id="del">${tr('remove')}</button></div>` : ''}`);
   if (!key) return;
-  // 这些控件只在选中了已摆放的设备时才有
+  // These controls exist only when a placed device is selected
   const q = <T extends HTMLElement>(s: string) => box.querySelector<T>(s);
   const d = q('#del'); if (d) d.onclick = () => actions.removeItem(key);
   const f = q('#failToggle'); if (f) f.onclick = () => actions.toggleFailed(key);

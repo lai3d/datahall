@@ -1,5 +1,5 @@
-// samples/datahall.usda 既是导出样例，也是回归测试的 golden 文件。
-// 布局只记录在样例本身里，所以从样例反解设备清单（按出现顺序）、市电容量和生成日期。
+// samples/datahall.usda is both the export sample and the golden file for regression tests.
+// The layout is recorded only in the sample itself, so the device list (in order of appearance), utility capacity and generation date are recovered from it.
 import {readFileSync} from 'node:fs';
 
 export const SAMPLE_PATH = new URL('../../samples/datahall.usda', import.meta.url);

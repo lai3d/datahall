@@ -1,4 +1,4 @@
-// 只存储不压缩的 zip，仅用于 claude.ai artifact 的下载通道（绕过扩展名白名单）
+// Store-only (uncompressed) zip, used only for the claude.ai artifact download path (bypasses the extension allowlist)
 export function crc32(buf: Uint8Array): number{
   let crc = 0xFFFFFFFF;
   for (let n = 0; n < buf.length; n++){

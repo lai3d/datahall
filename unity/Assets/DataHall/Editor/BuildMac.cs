@@ -5,10 +5,10 @@ using UnityEngine;
 
 namespace DataHall.Editor
 {
-    // 打包 macOS 程序。命令行：Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.BuildMac.Build -buildPath Build/DataHall.app -quit
+    // Builds the macOS app. Command line: Unity -batchmode -projectPath unity -executeMethod DataHall.Editor.BuildMac.Build -buildPath Build/DataHall.app -quit
     public static class BuildMac
     {
-        [MenuItem("DataHall/打包 macOS 程序")]
+        [MenuItem("DataHall/Build macOS App")]
         public static void Build()
         {
             var args = Environment.GetCommandLineArgs();

@@ -1,5 +1,5 @@
-// 生成 spec/capacity-cases.json：网页版容量模型（sim.ts）的输入和期望输出，Unity 版的 C# 移植用同一份用例核对。
-// 容量模型或目录数值有意变更后运行：npm run capacity-cases
+// Generates spec/capacity-cases.json: inputs and expected outputs of the web capacity model (sim.ts); the Unity C# port checks against the same cases.
+// Run after intentional changes to the capacity model or catalog values: npm run capacity-cases
 import {writeFileSync} from 'node:fs';
 import {buildLayout} from '../src/layout-export.ts';
 import {compute} from '../src/sim.ts';
@@ -13,7 +13,7 @@ import {getLang, setLang} from '../src/i18n.ts';
 export const CASES_PATH = new URL('../../spec/capacity-cases.json', import.meta.url);
 const META = {date: '2026-09-17'};
 
-// 用例里的问题文本固定用中文：Unity 的 C# 容量模型输出中文并逐字比对
+// Issue text in the cases is always Chinese: the Unity C# capacity model outputs Chinese and is compared verbatim
 export function buildCases(): ReturnType<typeof cases>{
   const previous = getLang();
   setLang('zh');

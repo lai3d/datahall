@@ -1,12 +1,12 @@
-// usda 文本格式的精简解析器：只解析根层的 prim、属性、元数据和值，不做组合（references、sublayer 不展开）。
-// 足够读取本项目导出、以及被 usdview、usdcat、Omniverse 重新保存过的文件。
-// 不支持的语法（variantSet、spline 等）按括号配对整体跳过。
+// Minimal parser for the usda text format: parses only root-layer prims, attributes, metadata and values, with no composition (references and sublayers are not expanded).
+// Enough to read files exported by this project, and those re-saved by usdview, usdcat or Omniverse.
+// Unsupported syntax (variantSet, spline, etc.) is skipped whole by matching brackets.
 
 import {tr} from './i18n.ts';
 
-// 解析结果。值保持 usda 里的形状：数字、字符串、布尔、None、路径 {path}、资产 {asset, path?}、列表、字典
+// Parse result. Values keep their usda shape: number, string, bool, None, path {path}, asset {asset, path?}, list, dictionary
 export type UsdValue = number | string | boolean | null | {path: string} | {asset: string; path?: string} | UsdValue[] | {[key: string]: UsdValue};
-// 带列表操作的值，例如 prepend references = </a>
+// Value with a list op, e.g. prepend references = </a>
 export interface ListOp {op: string; value: UsdValue}
 export type Metadata = {[key: string]: UsdValue | ListOp};
 export interface UsdProp {
@@ -75,7 +75,7 @@ function tokenize(src: string): Token[]{
     if ('(){}[]=,;:'.includes(c)){ push('punct', c); i++; continue; }
     const num = src.slice(i).match(/^[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?|^-inf\b/);
     if (num){ push('number', num[0] === '-inf' ? -Infinity : Number(num[0])); i += num[0].length; continue; }
-    // 标识符可以带命名空间和属性后缀：dchall:powerKw、outputs:surface.connect、float3[] 的 float3
+    // Identifiers may carry a namespace and a property suffix: dchall:powerKw, outputs:surface.connect, float3 in float3[]
     const id = src.slice(i).match(/^[A-Za-z_][\w]*(?:[:.][A-Za-z_][\w]*)*/);
     if (id){ push('ident', id[0]); i += id[0].length; continue; }
     fail(tr('parseChar', {c: JSON.stringify(c)}));
@@ -99,7 +99,7 @@ class Parser {
     throw new UsdaSyntaxError(tr('parseExpected', {expected: String(value ?? type), got: p.type === 'eof' ? tr('parseEof') : JSON.stringify(p.value)}), p.line);
   }
 
-  // 跳过一个成对括号包起来的块（当前 token 必须是开括号）
+  // Skip a block wrapped in a matching bracket pair (the current token must be an opening bracket)
   skipGroup(): void {
     const open: '(' | '{' | '[' = this.expect('punct').value, close = {'(': ')', '{': '}', '[': ']'}[open];
     let depth = 1;
@@ -132,7 +132,7 @@ class Parser {
       const items: UsdValue[] = [];
       while (!this.accept('punct', close)){
         items.push(this.value());
-        if (this.is('punct', '(')) this.skipGroup();      // sublayer 的层偏移 (offset = 0; scale = 1)
+        if (this.is('punct', '(')) this.skipGroup();      // Layer offset of a sublayer (offset = 0; scale = 1)
         if (!this.accept('punct', ',') && !this.is('punct', close)) this.expect('punct', close);
       }
       return items;
@@ -141,7 +141,7 @@ class Parser {
     throw new UsdaSyntaxError(tr('parseValue', {v: JSON.stringify(tok.value)}), tok.line);
   }
 
-  // 字典：customLayerData、customData 的 `type name = value`，以及 timeSamples 的 `time: value`
+  // Dictionary: `type name = value` in customLayerData and customData, and `time: value` in timeSamples
   dictionary(): {[key: string]: UsdValue} {
     this.expect('punct', '{');
     const out: {[key: string]: UsdValue} = {};
@@ -151,7 +151,7 @@ class Parser {
         out[key] = this.value();
       } else {
         if (this.is('ident') && !(this.at(1).type === 'punct' && this.at(1).value === '=')){
-          this.next();                                   // 值类型，例如 string、dictionary、double3
+          this.next();                                   // Value type, e.g. string, dictionary, double3
           if (this.is('punct', '[') && this.at(1).value === ']'){ this.next(); this.next(); }
         }
         const key = this.next().value;
@@ -163,7 +163,7 @@ class Parser {
     return out;
   }
 
-  // ( ... ) 元数据：key = value、带列表操作的 key、以及裸字符串形式的 doc
+  // ( ... ) metadata: key = value, keys with list ops, and doc as a bare string
   metadata(): Metadata {
     const out: Metadata = {};
     this.expect('punct', '(');
@@ -209,7 +209,7 @@ class Parser {
 
   property(prim: UsdPrim): void {
     const start = this.peek;
-    // reorder nameChildren / properties、variantSet 等不需要的语法整体跳过
+    // Skip unneeded syntax such as reorder nameChildren / properties and variantSet
     if (this.is('ident', 'reorder')){ while (!this.is('punct', '[')) this.next(); this.skipGroup(); return; }
     if (this.is('ident', 'variantSet')){ while (!this.is('punct', '{')) this.next(); this.skipGroup(); return; }
     let op: string | null = null, custom = false;

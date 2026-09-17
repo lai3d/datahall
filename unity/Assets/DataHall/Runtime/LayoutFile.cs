@@ -3,10 +3,10 @@ using System.IO;
 
 namespace DataHall
 {
-    // 读取并解析 layout.json。失败时返回面板上直接显示的中文原因，不抛异常
+    // Reads and parses layout.json. On failure returns a Chinese reason shown directly in the panel instead of throwing
     public static class LayoutFile
     {
-        // layout.json 通常只有几 KB；限制大小，避免误选大文件时卡住
+        // layout.json is usually a few KB; cap the size so picking a large file by mistake does not hang
         public const long MaxBytes = 16 * 1024 * 1024;
 
         public static bool TryRead(string path, out LayoutData layout, out string error)

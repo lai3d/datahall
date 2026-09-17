@@ -1,206 +1,206 @@
-# Unity 版：USD 接入方案对比
+# Unity version: USD integration options
 
-调研日期 2026-09-17。对比的是 Unity 版怎样使用本项目的 OpenUSD 数据：机房布局、设备参数、拓扑，以及以后替换进来的 SimReady 高精度资产。本文只做对比和推荐，不包含实现。
+Research date 2026-09-17. This compares how the Unity version could consume this project's OpenUSD data: hall layout, equipment parameters, topology, and the high-fidelity SimReady assets swapped in later. This document only compares options and gives a recommendation; it contains no implementation.
 
-**目标平台：macOS 桌面程序（Apple Silicon）。** 这是 2026-09-17 确定的。
+**Target platform: macOS desktop app (Apple Silicon).** Decided on 2026-09-17.
 
-**决定（2026-09-17）：** 采用方案 A。Unity 6000.6.1f1（本机已安装），URP，工程放在本仓库 `unity/`。
+**Decision (2026-09-17):** Option A. Unity 6000.6.1f1 (already installed locally), URP, project lives in this repo under `unity/`.
 
-**实现状态（2026-09-17）：** A1–A4 已完成。
-- **A1：** `spec/layout.schema.json`，网页“导出给 Unity”。
-- **A2：** `tools/usd_to_unity.py`。
-- **A3：** `unity/`，打包出的 macOS 程序通过冒烟断言，截图核对过渲染和中文界面。
-- **A4：** C# 容量模型，和 `spec/capacity-cases.json` 逐条一致。
+**Implementation status (2026-09-17):** A1–A4 are done.
+- **A1:** `spec/layout.schema.json`, the web "Export for Unity" action.
+- **A2:** `tools/usd_to_unity.py`.
+- **A3:** `unity/`; the built macOS app passes the smoke assertions, and rendering and the Chinese UI were checked against screenshots.
+- **A4:** C# capacity model, matching `spec/capacity-cases.json` case by case.
 
-A5（真实 SimReady 资产）还没做。A1–A4 实际用了约半个 Claude 会话小时，明显少于上文估算的 4–6 小时：导出格式范围小，Unity 本机工具链也已就绪。
+A5 (real SimReady assets) is not done yet. A1–A4 actually took about half a Claude session hour, well under the 4–6 hours estimated below: the export format has a small scope, and the local Unity toolchain was already in place.
 
-macOS 上没有主流 VR 运行时（SteamVR 2020 年起停止支持 macOS），所以 VR 暂不在范围内。以后如果要做 Quest 一体机，见文末附录，届时推荐不变，理由会更充分。
+There is no mainstream VR runtime on macOS (SteamVR dropped macOS support in 2020), so VR is out of scope for now. If a Quest standalone headset is targeted later, see the appendix at the end; the recommendation stays the same, with even stronger reasons.
 
-## 结论
+## Conclusion
 
-**推荐方案 A：设备几何离线转换成 glb 随程序发布，机房布局用 `layout.json` 传给 Unity。**
+**Recommended: option A. Convert equipment geometry offline to glb and ship it with the app; pass the hall layout to Unity as `layout.json`.**
 
-**具体分工：**
-- **`layout.json`**（布局、参数、拓扑）：网页版直接导出，同时由 Python pxr 转换器从任意 `.usda` 生成。Unity 运行时读 JSON，放置设备。
-- **`assets/<catalogId>.glb`**（几何、PBR 材质）：由 pxr 转换器离线生成，glTFast 在编辑器里导入成 prefab。托盘拆解、故障演练的交互做在 prefab 上。
+**Division of responsibilities:**
+- **`layout.json`** (layout, parameters, topology): exported directly by the web version, and also generated from any `.usda` by the Python pxr converter. The Unity runtime reads the JSON and places equipment.
+- **`assets/<catalogId>.glb`** (geometry, PBR materials): generated offline by the pxr converter and imported as prefabs by glTFast in the editor. Tray disassembly and fault-drill interactions are built on the prefabs.
 
-**理由：**
-1. **最常见的流程最短。** 用户在网页上摆好机房，导出后在 Unity 程序里打开。整个过程不需要 Python，也不需要原生插件。设备几何很少变，随程序一起发布即可。
-2. **组合交给参考实现。** SimReady 资产替换靠更强的层写 `over`（见 `docs/simready-audit.md`），需要真正的 USD 组合。转换器用 OpenUSD 26.8 完成组合，不必在 Unity 里重新实现。
-3. **可测。** 转换器和 `layout.json` 格式都能在不装 Unity 的情况下测试，和现有 vitest、pytest 放在一起。
-4. **Unity 侧依赖维护活跃。** glTFast 2026-08 仍有发布，编辑器和运行时都能导入。
+**Reasons:**
+1. **The most common workflow is the shortest.** The user lays out a hall on the web, exports it, and opens it in the Unity app. No Python and no native plugin are needed anywhere in that flow. Equipment geometry rarely changes, so it can ship with the app.
+2. **Composition is left to the reference implementation.** SimReady asset replacement relies on writing `over` in a stronger layer (see `docs/simready-audit.md`), which needs real USD composition. The converter does composition with OpenUSD 26.8, so there is no need to reimplement it in Unity.
+3. **Testable.** Both the converter and the `layout.json` format can be tested without Unity installed, alongside the existing vitest and pytest suites.
+4. **Unity-side dependencies are actively maintained.** glTFast still had releases in 2026-08 and imports in both the editor and at runtime.
 
-**主要备选：B3（Unity USD Core 的 C# 绑定，运行时直接读 USD）。** 已在本机实测：打包后的 macOS 程序能读取本项目的 usda，以及 USD 26.08 写的 usdc，instanceable 组合、原型参数继承、关系都正确。
+**Main alternative: B3 (Unity USD Core C# bindings, reading USD directly at runtime).** Tested locally: the built macOS app can read this project's usda as well as usdc written by USD 26.08, and instanceable composition, prototype parameter inheritance and relationships are all correct.
 
-**B3 的问题：**
-- 需要一个打包后处理步骤，否则程序一打开 USD 就崩溃；
-- 依赖停在 USD v23.02，Unity 自 2023-12 起没有再更新；同一套 USD 包里的 Importer 已经在 Unity 6000.6 上编译不过。
+**Problems with B3:**
+- It needs a post-build step, otherwise the app crashes as soon as it opens USD;
+- The dependency is stuck at USD v23.02 and Unity has not updated it since 2023-12; the Importer from the same set of USD packages already fails to compile on Unity 6000.6.
 
-**怎么选：** 如果“Unity 程序直接打开 `.usda`、全程只用 USD 一种格式”对你很重要，可以选 B3；否则选 A，长期维护风险更低。
+**How to choose:** If "the Unity app opens `.usda` directly and uses USD as the only format end to end" matters to you, choose B3; otherwise choose A, which has lower long-term maintenance risk.
 
-**方案 C（Unity USD Importer）实测编译失败，排除。** 方案 B1（自己编译 OpenUSD）在 A、B3 都不满足需求时再考虑。
+**Option C (Unity USD Importer) failed to compile in testing and is ruled out.** Option B1 (building OpenUSD ourselves) is only worth considering if neither A nor B3 meets the requirements.
 
-## 调研到的现状
+## Current landscape
 
-| 项目 | 现状 | 依据 |
+| Item | Status | Source |
 |---|---|---|
-| Unity USD Importer `com.unity.importer.usd` | 1.0.0-pre.2（2024-09-17），**只能在编辑器里用**，材质只支持 UsdPreviewSurface；**在 Unity 6000.6.1f1 上编译失败**：`IGraphValueUtility.cs(251,21): error CS0619`，`AssetDatabase.TryGetGUIDAndLocalFileIdentifier(int, …)` 已过时并被当成错误 | 包信息、官方手册、本机实测 |
-| Unity USD Core `com.unity.usd.core` | 1.0.0-pre.1（2023-12-12），**USD v23.02**；原生库覆盖 Windows x64、macOS arm64/x64、Linux x64，**macOS arm64 的库在打包后的程序里也启用**（`PluginImporter` 里 `Standalone: OSXUniversal`、`CPU: ARM64`）；没有 Android | 下载包 tarball 查看 `Runtime/Plugins` 和 `.meta` |
-| 旧版 `com.unity.formats.usd` | 3.0.0-exp.5（2023-10），官方说明只剩遗留支持、即将弃用 | 包信息、Unity-Technologies/usd-unity-sdk |
-| glTFast `com.unity.cloud.gltfast` | 6.20.0（2026-08-27）；编辑器和运行时都能导入；需要 Unity 6000.0+；支持读取 `extras`；`EXT_mesh_gpu_instancing` 只支持导入 | 包信息、6.20 功能页 |
-| OpenUSD 在 macOS 上 | 官方构建目标，支持 monolithic 构建 | OpenUSD BUILDING.md |
-| usd-core 26.8 pip 包里的 `libusd_ms.dylib` | 81 MB，universal2；**不能拿来直接链接**：包含 727 个 Python 符号但不链接 libpython，也没有头文件 | 本机 `otool`、`nm` 检查 |
-| 本机工具链 | Apple M5 Max，macOS 26.6.2，Xcode、cmake、ninja 都已安装；Unity 6000.6.1f1（arm64）和 Unity CLI 1.0.0-beta.8 已安装并登录；batchmode 新建工程 22 秒、打包 macOS 程序 13 秒（110 MB） | 本机检查 |
-| LightUSD（原 TinyUSDZ） | 无依赖的 C++17 库，支持组合、instancing；1.0 RC；C API 和 C# 绑定还在 `sandbox/`；Apache 2.0 | GitHub lighttransport/LightUSD（2026-09-15） |
-| usd2gltf（PyPI） | 0.3.5，2023-02 之后没有更新 | PyPI |
+| Unity USD Importer `com.unity.importer.usd` | 1.0.0-pre.2 (2024-09-17), **editor only**, materials limited to UsdPreviewSurface; **fails to compile on Unity 6000.6.1f1**: `IGraphValueUtility.cs(251,21): error CS0619`, `AssetDatabase.TryGetGUIDAndLocalFileIdentifier(int, …)` is obsolete and treated as an error | Package info, official manual, local testing |
+| Unity USD Core `com.unity.usd.core` | 1.0.0-pre.1 (2023-12-12), **USD v23.02**; native libraries cover Windows x64, macOS arm64/x64, Linux x64; **the macOS arm64 library is also enabled in built players** (`Standalone: OSXUniversal`, `CPU: ARM64` in `PluginImporter`); no Android | Downloaded the package tarball and inspected `Runtime/Plugins` and `.meta` |
+| Legacy `com.unity.formats.usd` | 3.0.0-exp.5 (2023-10); officially legacy support only, soon to be deprecated | Package info, Unity-Technologies/usd-unity-sdk |
+| glTFast `com.unity.cloud.gltfast` | 6.20.0 (2026-08-27); imports in both editor and runtime; requires Unity 6000.0+; supports reading `extras`; `EXT_mesh_gpu_instancing` is import only | Package info, 6.20 features page |
+| OpenUSD on macOS | Official build target, supports monolithic builds | OpenUSD BUILDING.md |
+| `libusd_ms.dylib` in the usd-core 26.8 pip package | 81 MB, universal2; **cannot be linked against directly**: contains 727 Python symbols but does not link libpython, and ships no headers | Local `otool`, `nm` inspection |
+| Local toolchain | Apple M5 Max, macOS 26.6.2, Xcode, cmake and ninja installed; Unity 6000.6.1f1 (arm64) and Unity CLI 1.0.0-beta.8 installed and signed in; batchmode creates a new project in 22 s and builds a macOS app in 13 s (110 MB) | Local check |
+| LightUSD (formerly TinyUSDZ) | Dependency-free C++17 library with composition and instancing; 1.0 RC; C API and C# bindings still in `sandbox/`; Apache 2.0 | GitHub lighttransport/LightUSD (2026-09-15) |
+| usd2gltf (PyPI) | 0.3.5, no updates since 2023-02 | PyPI |
 
-### usd2gltf 实测：不能直接用
+### usd2gltf testing: not usable as is
 
-用 usd2gltf 0.3.5 加 usd-core 26.8 转换 `samples/datahall.usda`：
+Converting `samples/datahall.usda` with usd2gltf 0.3.5 plus usd-core 26.8:
 
-- **设备实例丢失：** 17 个设备实例导出成只有变换矩阵、没有子节点的空节点，引用的原型几何没有带过去，机房里看不到任何设备。
-- **原型没挂进场景：** Catalog 里的 7 个 `class` 原型和它们的 14 个 Body、Front 被写成孤立节点，不在场景图里，Body、Front 也没挂在原型节点下。
-- **材质丢失：** 只导出了 1 个材质（地板），原型内部 `Looks` 里的 14 个材质都丢了。
-- **坐标轴没转换：** USD 是 Z 向上，glTF 是 Y 向上，转换器没处理。
-- **自定义属性丢失：** 所有 `dchall:` 属性都没有进 `extras`。
+- **Equipment instances lost:** the 17 equipment instances are exported as empty nodes with only a transform matrix and no children; the referenced prototype geometry is not carried over, so no equipment is visible in the hall.
+- **Prototypes not attached to the scene:** the 7 `class` prototypes in Catalog and their 14 Body and Front prims are written as orphan nodes outside the scene graph, and Body and Front are not parented under the prototype nodes either.
+- **Materials lost:** only 1 material (the floor) is exported; the 14 materials in the prototypes' internal `Looks` are all dropped.
+- **Axes not converted:** USD is Z-up and glTF is Y-up, and the converter does not handle this.
+- **Custom attributes lost:** none of the `dchall:` attributes end up in `extras`.
 
-所以方案 A 要自己写转换器。好在导出格式是本项目自己定的，需要处理的范围很小。
+So option A requires writing our own converter. Fortunately the export format is defined by this project, so the scope to handle is small.
 
-## 方案
+## Options
 
-### A. 离线转换：`layout.json` + 每种设备一个 glb
+### A. Offline conversion: `layout.json` + one glb per equipment type
 
 ```
-网页版 ──导出──▶ layout.json ◀──tools/usd_to_unity.py（pxr）── 任意 datahall.usda（可带 SimReady over 层）
+Web version ──export──▶ layout.json ◀──tools/usd_to_unity.py (pxr)── any datahall.usda (may include SimReady over layers)
                      │                        │
-                     │                        └──▶ assets/<catalogId>.glb（几何 + PBR 材质）
+                     │                        └──▶ assets/<catalogId>.glb (geometry + PBR materials)
                      ▼                                          ▼
-       Unity 运行时：读 JSON，按网格位置实例化 ◀── prefab ◀── glTFast 编辑器导入
+       Unity runtime: read JSON, instantiate by grid position ◀── prefab ◀── glTFast editor import
 ```
 
-**`layout.json`：**
-- **内容：** schema 版本、网格尺寸、市电、每台设备的 catalog id 和网格列排、拓扑关系（`powerFeed`、`coolantSource`），以及实际生效的设备参数。
-- **格式定义：** 配一份 JSON Schema，由网页版和转换器共用。
-- **网页版：** 在 `web/src/` 里加一个纯函数导出器，复用现有的拓扑计算。
+**`layout.json`:**
+- **Contents:** schema version, grid size, utility power, each device's catalog id and grid column/row, topology relationships (`powerFeed`, `coolantSource`), and the effective equipment parameters.
+- **Format definition:** a JSON Schema shared by the web version and the converter.
+- **Web version:** add a pure-function exporter in `web/src/` that reuses the existing topology computation.
 
-**转换器（Python，用 `Usd.Stage` 做组合）：**
-- **几何和材质：** 每个 Catalog 原型展开组合后的几何，输出一个 glb；UsdPreviewSurface 映射成 glTF 的 pbrMetallicRoughness。
-- **坐标：** USD 的 Z 向上转成 glTF 的 Y 向上，`(x, y, z)_usd → (x, z, -y)_gltf`。本项目设备正面朝 -Y，转换后正好落在 glTF 约定的正面方向 +Z。glTF 到 Unity 的左右手转换由 glTFast 负责。
-- **从 `.usda` 生成 `layout.json`：** 结果应当和网页版导出的逐字段一致，用现有样例做对照测试。
-- **校验：** glb 用 Khronos glTF-Validator 检查。
+**Converter (Python, composition via `Usd.Stage`):**
+- **Geometry and materials:** for each Catalog prototype, flatten the composed geometry and write one glb; map UsdPreviewSurface to glTF pbrMetallicRoughness.
+- **Coordinates:** convert USD Z-up to glTF Y-up, `(x, y, z)_usd → (x, z, -y)_gltf`. Equipment in this project faces -Y, which after conversion lands exactly on +Z, the glTF front-facing convention. glTFast handles the glTF-to-Unity handedness conversion.
+- **Generating `layout.json` from `.usda`:** the result should match the web export field by field, verified against the existing sample.
+- **Validation:** check glb files with the Khronos glTF-Validator.
 
-**Unity 侧：**
-- **编辑器工具：** 导入 glb，生成或更新 prefab。交互（托盘、碰撞体、高亮）做在 prefab 变体上，重新导入几何时不会被覆盖。
-- **运行时：** 打开 `layout.json`，按网格位置实例化；容量模型参照 `web/src/sim.ts` 移植成 C#，和网页版共用一份 JSON 测试用例。
+**Unity side:**
+- **Editor tool:** import glb and create or update prefabs. Interactions (trays, colliders, highlighting) live on prefab variants so they are not overwritten when geometry is reimported.
+- **Runtime:** open `layout.json` and instantiate by grid position; port the capacity model to C# based on `web/src/sim.ts`, sharing one set of JSON test cases with the web version.
 
-**缺点：**
-- 不是实时的，改了 USD 要重新转换。
-- MDL 材质转 glTF PBR 会有损失。
-- 在 Unity 里的修改要写回 USD，需要走 `layout.json → usda`（可以复用网页版的导入和导出逻辑）。
+**Drawbacks:**
+- Not live; changes to USD require reconversion.
+- Converting MDL materials to glTF PBR is lossy.
+- Writing edits made in Unity back to USD needs a `layout.json → usda` path (can reuse the web version's import and export logic).
 
-### B1. macOS 原生插件：OpenUSD 26.08
+### B1. macOS native plugin: OpenUSD 26.08
 
-**做法：**
-- 在本机用 `build_usd.py --build-monolithic --no-python --no-imaging` 之类的参数编译出 `libusd_m.dylib`。
-- 写一层 C API 封装（打开 stage、遍历组合后的 prim、读 mesh、材质、属性、关系），Unity 通过 P/Invoke 调用，在 C# 里生成 Mesh、Material。
+**Approach:**
+- Build `libusd_m.dylib` locally with flags along the lines of `build_usd.py --build-monolithic --no-python --no-imaging`.
+- Write a C API wrapper (open stage, traverse composed prims, read meshes, materials, attributes, relationships), call it from Unity via P/Invoke, and generate Mesh and Material in C#.
 
-**优点：**
-- Unity 程序可以直接打开任意 `.usd`、`.usdc`、`.usdz`。
-- USD 版本和 SimReady 工具链一致。
-- 以后可能在程序里写回 USD。
+**Advantages:**
+- The Unity app can open any `.usd`, `.usdc` or `.usdz` directly.
+- USD version matches the SimReady toolchain.
+- Possible to write USD back from the app later.
 
-**缺点：**
-- **原生层要长期维护：** 每次升级 USD 都要重新编译；要处理 plugInfo 资源在 `.app` 包里的路径；分发时插件要签名和公证。
-- **C# 侧工作量不变：** mesh、材质到 Unity 的转换代码仍然要写，工作量和方案 A 的 Unity 侧相当，还要再加上原生层。
-- **性能要单独测：** 大资产在运行时解析，加载时间要另外做性能测试。
+**Drawbacks:**
+- **Native layer needs long-term maintenance:** rebuild on every USD upgrade; handle plugInfo resource paths inside the `.app` bundle; the plugin must be signed and notarized for distribution.
+- **C# work is not reduced:** the mesh and material conversion code for Unity still has to be written, comparable to option A's Unity side, plus the native layer on top.
+- **Performance needs separate testing:** large assets are parsed at runtime, so load times need their own performance testing.
 
-### B3. Unity USD Core 的 C# 绑定（运行时）
+### B3. Unity USD Core C# bindings (runtime)
 
-**做法：** 直接用 `com.unity.usd.core`（USD.NET）在运行时打开 stage，自己写遍历和转换代码。
+**Approach:** use `com.unity.usd.core` (USD.NET) directly to open the stage at runtime, and write our own traversal and conversion code.
 
-**实测（2026-09-17，Unity 6000.6.1f1，Mono 脚本后端）：**
+**Testing (2026-09-17, Unity 6000.6.1f1, Mono scripting backend):**
 
-| 检查项 | 编辑器 | 打包后的 macOS 程序 |
+| Check | Editor | Built macOS app |
 |---|---|---|
-| 包能否编译 | ✅ | ✅ |
-| 打开 `samples/datahall.usda` | ✅ | 未单独测（和 usdc 走同一路径） |
-| 打开 USD 26.08 写出的 usdc（crate 0.8.0） | ✅ | ✅（需要下面的打包后处理） |
-| instanceable 实例、从 class 原型组合出 `dchall:powerKw = 190` | ✅ | ✅ |
-| 关系 `dchall:coolantSource` 的目标 | ✅ | ✅ |
-| 带 instance proxy 遍历：35 个 Mesh（地板 1 个，17 台设备各 2 个） | ✅ | ✅ |
-| `GetAppliedSchemas()` | 空列表（没注册本项目 schema 插件；属性值照样能读） | — |
+| Package compiles | ✅ | ✅ |
+| Open `samples/datahall.usda` | ✅ | Not tested separately (same code path as usdc) |
+| Open usdc written by USD 26.08 (crate 0.8.0) | ✅ | ✅ (requires the post-build step below) |
+| instanceable instances, `dchall:powerKw = 190` composed from the class prototype | ✅ | ✅ |
+| Targets of the `dchall:coolantSource` relationship | ✅ | ✅ |
+| Traversal with instance proxies: 35 Meshes (1 floor, 2 for each of 17 devices) | ✅ | ✅ |
+| `GetAppliedSchemas()` | Empty list (this project's schema plugin not registered; attribute values still readable) | — |
 
-**打包后处理必须做：**
-- **不处理会崩溃：** Unity 打包时只复制 dylib，不复制 `lib/usd/**/plugInfo.json`。打开 stage 时会报 `Failed to find plugin for ArDefaultResolver`，随后原生层段错误（退出码 139）。
-- **处理办法：** 把包里的 `Runtime/Plugins/arm64/MacOS/lib/usd` 复制到 `.app/Contents/PlugIns/ARM64/usd`（plugInfo 里的 `LibraryPath` 是 `../../libusd_*.dylib`，位置正好对上），再重新签名（本机用 ad-hoc 签名即可）。实际工程里用 `IPostprocessBuildWithReport` 自动完成。
+**Required post-build step:**
+- **Crashes without it:** Unity's build copies only the dylibs, not `lib/usd/**/plugInfo.json`. Opening a stage reports `Failed to find plugin for ArDefaultResolver`, followed by a segfault in the native layer (exit code 139).
+- **Fix:** copy the package's `Runtime/Plugins/arm64/MacOS/lib/usd` to `.app/Contents/PlugIns/ARM64/usd` (the `LibraryPath` in plugInfo is `../../libusd_*.dylib`, which lines up exactly), then re-sign (ad-hoc signing is enough locally). In the real project, automate this with `IPostprocessBuildWithReport`.
 
-**优点：**
-- 不需要转换器，也不需要新的交换格式，Unity 直接读网页导出的 `.usda`。
-- 组合在运行时完成，SimReady 覆盖层有机会直接生效（要看 23.02 能不能读那些资产）。
-- 不用自己编译 USD。
+**Advantages:**
+- No converter and no new interchange format; Unity reads the web-exported `.usda` directly.
+- Composition happens at runtime, so SimReady override layers could take effect directly (depends on whether 23.02 can read those assets).
+- No need to build USD ourselves.
 
-**缺点：**
-- **依赖停滞：** USD v23.02，pre-release 状态从 2023-12 延续至今；同一套包里的 Importer 已经在 Unity 6000.6 上编译失败，USD Core 以后也可能遇到同样的问题。
-- **新资产兼容性未知：** 本项目自己的文件没问题，但 2026 年工具链产出的 SimReady 资产如果用了 23.02 之后的新 schema 或新 crate 版本，可能读不全，需要拿真实资产验证。
-- **C# 侧工作量不减：** mesh、材质到 Unity 的转换代码要在 C# 里写，工作量和方案 A 的转换器相当，只是换了语言。
-- **还没验证的：** IL2CPP 脚本后端、签名和公证后的分发。
+**Drawbacks:**
+- **Stagnant dependency:** USD v23.02, in pre-release since 2023-12; the Importer from the same package set already fails to compile on Unity 6000.6, and USD Core may hit the same problem later.
+- **Unknown compatibility with newer assets:** this project's own files work, but SimReady assets produced by the 2026 toolchain may not be read fully if they use schemas or crate versions newer than 23.02; needs validation with real assets.
+- **C# work is not reduced:** the mesh and material conversion code for Unity has to be written in C#, comparable to option A's converter, just in a different language.
+- **Not yet verified:** the IL2CPP scripting backend, and distribution after signing and notarization.
 
-### C. Unity 官方 USD Importer（编辑器导入）
+### C. Unity's official USD Importer (editor import)
 
-**排除。**
-- **编译不过：** 在本机 Unity 6000.6.1f1 上，`com.unity.importer.usd@1.0.0-pre.2` 编译失败（CS0619，调用了已过时的 `AssetDatabase.TryGetGUIDAndLocalFileIdentifier(int, …)`），整个工程的编辑器脚本都会因此无法编译。
-- **其他限制：** 就算在更早的 Unity 版本上能用，它也只能在编辑器里用，底层是 USD v23.02；官方文档没有提到 instancing、payload、variant 和自定义属性。
+**Ruled out.**
+- **Does not compile:** on local Unity 6000.6.1f1, `com.unity.importer.usd@1.0.0-pre.2` fails to compile (CS0619, calls the obsolete `AssetDatabase.TryGetGUIDAndLocalFileIdentifier(int, …)`), which breaks compilation of all editor scripts in the project.
+- **Other limitations:** even on earlier Unity versions where it works, it is editor only and built on USD v23.02; the official docs do not mention instancing, payloads, variants or custom attributes.
 
-## 对比（macOS）
+## Comparison (macOS)
 
-| | A 离线：JSON + glb | B1 OpenUSD 原生插件 | B3 Unity USD Core 运行时 | C Unity USD Importer |
+| | A Offline: JSON + glb | B1 OpenUSD native plugin | B3 Unity USD Core runtime | C Unity USD Importer |
 |---|---|---|---|---|
-| 本机实测 | 转换器未写；usd2gltf 不可用 | 未测 | ✅ 打包后的 macOS 程序可读取（需打包后处理） | ❌ Unity 6000.6 编译失败 |
-| Unity 程序直接打开 `.usda` | ❌ 读 `layout.json`（网页导出） | ✅ | ✅ | — |
-| 组合正确性 | ✅ pxr 26.8 | ✅ OpenUSD 26.08 | ✅ 本项目文件已验证；SimReady 资产未验证（23.02） | — |
-| `dchall:` 参数和拓扑 | ✅ layout.json | ✅ 读属性 | ✅ 已验证 | — |
-| 依赖风险 | 低：usd-core、glTFast 维护活跃 | 中：自己编译、签名、升级 | 高：依赖停滞，同套 Importer 已在新版 Unity 上坏掉 | — |
-| CI 测试（Unity 已装好，batchmode 可用） | 转换器不需要 Unity；Unity 侧 EditMode | 部分 | EditMode 加打包冒烟测试 | — |
-| 首个可用版本（Claude 会话小时） | 4–6 | 9–13 | 4–6 | — |
+| Local testing | Converter not written; usd2gltf unusable | Not tested | ✅ Built macOS app can read (needs post-build step) | ❌ Fails to compile on Unity 6000.6 |
+| Unity app opens `.usda` directly | ❌ Reads `layout.json` (web export) | ✅ | ✅ | — |
+| Composition correctness | ✅ pxr 26.8 | ✅ OpenUSD 26.08 | ✅ Verified on this project's files; SimReady assets unverified (23.02) | — |
+| `dchall:` parameters and topology | ✅ layout.json | ✅ Read attributes | ✅ Verified | — |
+| Dependency risk | Low: usd-core and glTFast actively maintained | Medium: self-built, signing, upgrades | High: stagnant dependency; Importer from the same set already broken on new Unity | — |
+| CI testing (Unity installed, batchmode available) | Converter needs no Unity; EditMode on Unity side | Partial | EditMode plus build smoke test | — |
+| First usable version (Claude session hours) | 4–6 | 9–13 | 4–6 | — |
 
-## 工作量估算（方案 A）
+## Effort estimate (option A)
 
-按 Claude 会话小时计，实际日历时间取决于会话安排。
+In Claude session hours; actual calendar time depends on how sessions are scheduled.
 
-| 步骤 | 会话小时 | 内容 |
+| Step | Session hours | Scope |
 |---|---|---|
-| A1 `layout.json` 格式 | 1 | JSON Schema；网页版导出按钮和纯函数导出器；vitest 用例 |
-| A2 转换器 | 2–3 | `tools/usd_to_unity.py`：原型转 glb、`.usda` 转 `layout.json`、坐标转换；pytest 加 glTF-Validator；样例和 SimReady 替换写法做回归 |
-| A3 Unity 工程 | 2–3 | 编辑器导入 glb 生成 prefab、运行时打开 `layout.json` 并实例化；EditMode 测试 |
-| A4 容量模型移植 | 1–2 | `sim.ts` 移植为 C#，和网页版共用 JSON 测试用例 |
-| A5 高精度资产 | 3–5（视资产而定） | 真实 SimReady 资产：payload、大网格、MDL 到 PBR 的近似、贴图 |
+| A1 `layout.json` format | 1 | JSON Schema; web export button and pure-function exporter; vitest cases |
+| A2 Converter | 2–3 | `tools/usd_to_unity.py`: prototypes to glb, `.usda` to `layout.json`, coordinate conversion; pytest plus glTF-Validator; regression tests on the sample and the SimReady replacement pattern |
+| A3 Unity project | 2–3 | Editor import of glb into prefabs, runtime opening of `layout.json` and instantiation; EditMode tests |
+| A4 Capacity model port | 1–2 | Port `sim.ts` to C#, sharing JSON test cases with the web version |
+| A5 High-fidelity assets | 3–5 (depends on assets) | Real SimReady assets: payloads, large meshes, MDL-to-PBR approximation, textures |
 
-**需要你自己完成的步骤（耗时不在 Claude 控制范围内）：**
-- ~~安装 Unity 并登录~~：已完成（6000.6.1f1）。Claude 可以用 batchmode 跑测试、打包并运行 macOS 程序。6000.6 不是 LTS；如果想要长期稳定，可以在 Hub 里安装 6000.3 LTS，这需要你来操作。
-- 如果要把 `.app` 发给别人：Apple Developer 账号，以及签名和公证。只在本机运行不需要。
-- 真实 SimReady 资产的获取和授权。
+**Steps you need to do yourself (duration outside Claude's control):**
+- ~~Install Unity and sign in~~: done (6000.6.1f1). Claude can run tests, build and run the macOS app via batchmode. 6000.6 is not LTS; if you want long-term stability, install 6000.3 LTS in Hub, which you need to do yourself.
+- If the `.app` is to be sent to others: an Apple Developer account, plus signing and notarization. Not needed for running locally only.
+- Obtaining and licensing real SimReady assets.
 
-## 还需要决定的
+## Still to decide
 
-1. **选 A 还是 B3：** Unity 程序是否必须直接打开 `.usda`（全程只用 USD 一种格式）？
-   - 不必须：选 A，依赖风险低。
-   - 必须：选 B3，已实测可行，但依赖停滞；万一它在以后的 Unity 版本里坏掉，退路是 B1。
-2. **Unity 版本和渲染管线：** 继续用已装的 6000.6，还是改用 6000.3 LTS；渲染管线建议 URP（Apple Silicon 上性能稳，glTFast 着色器支持完整），追求画质选 HDRP。
-3. **Unity 工程放在哪：** 建议放在本仓库 `unity/`，和转换器、JSON Schema 一起做版本管理。
+1. **A or B3:** must the Unity app open `.usda` directly (USD as the only format end to end)?
+   - Not required: choose A, low dependency risk.
+   - Required: choose B3, proven workable in testing but with a stagnant dependency; if it breaks in a future Unity version, the fallback is B1.
+2. **Unity version and render pipeline:** keep the installed 6000.6 or switch to 6000.3 LTS; URP is the recommended render pipeline (stable performance on Apple Silicon, full glTFast shader support), HDRP if visual quality is the priority.
+3. **Where the Unity project lives:** recommended in this repo under `unity/`, version-controlled together with the converter and JSON Schema.
 
-## 附录：如果以后要做 Quest 一体机
+## Appendix: if a Quest standalone headset is targeted later
 
-- **Unity USD Core：** 原生库没有 Android 版本。
-- **OpenUSD：** 官方构建目标不含 Android（BUILDING.md 列出的是 Windows、macOS、visionOS、WebAssembly）；社区的 aarch64 构建脚本 syoyo/USD-build-aarch64 最后提交 2022-10。
-- **LightUSD：** 有 Android CI，但 C API 还在实验阶段。
-- **结论：** Quest 上运行时读 USD 风险很高。方案 A 在设备上只读 JSON 和 glb，不受影响，而且 glTFast 支持运行时导入。
+- **Unity USD Core:** no Android native libraries.
+- **OpenUSD:** official build targets do not include Android (BUILDING.md lists Windows, macOS, visionOS, WebAssembly); the community aarch64 build script syoyo/USD-build-aarch64 was last committed to in 2022-10.
+- **LightUSD:** has Android CI, but the C API is still experimental.
+- **Conclusion:** reading USD at runtime on Quest is high risk. Option A reads only JSON and glb on the device, so it is unaffected, and glTFast supports runtime import.
 
-## 来源
+## Sources
 
-- [Unity USD Importer 手册](https://docs.unity3d.com/Packages/com.unity.importer.usd@1.0/manual/index.html)、[USD Core 手册](https://docs.unity3d.com/Packages/com.unity.usd.core@1.0/manual/index.html)、[Understanding the Unity USD Packages](https://docs.unity3d.com/Packages/com.unity.exporter.usd@1.0/manual/UnderstandingUsdPackages.html)
-- 包信息：`https://packages.unity.com/com.unity.importer.usd`、`com.unity.usd.core`、`com.unity.formats.usd`、`com.unity.cloud.gltfast`（2026-09-17 查询），以及 `com.unity.usd.core` 1.0.0-pre.1 包文件
-- [glTFast 6.20 功能列表](https://docs.unity3d.com/Packages/com.unity.cloud.gltfast@6.20/manual/features.html)
-- [OpenUSD BUILDING.md](https://github.com/PixarAnimationStudios/OpenUSD/blob/dev/BUILDING.md)、[syoyo/USD-build-aarch64](https://github.com/syoyo/USD-build-aarch64)
+- [Unity USD Importer manual](https://docs.unity3d.com/Packages/com.unity.importer.usd@1.0/manual/index.html), [USD Core manual](https://docs.unity3d.com/Packages/com.unity.usd.core@1.0/manual/index.html), [Understanding the Unity USD Packages](https://docs.unity3d.com/Packages/com.unity.exporter.usd@1.0/manual/UnderstandingUsdPackages.html)
+- Package info: `https://packages.unity.com/com.unity.importer.usd`, `com.unity.usd.core`, `com.unity.formats.usd`, `com.unity.cloud.gltfast` (queried 2026-09-17), and the `com.unity.usd.core` 1.0.0-pre.1 package files
+- [glTFast 6.20 feature list](https://docs.unity3d.com/Packages/com.unity.cloud.gltfast@6.20/manual/features.html)
+- [OpenUSD BUILDING.md](https://github.com/PixarAnimationStudios/OpenUSD/blob/dev/BUILDING.md), [syoyo/USD-build-aarch64](https://github.com/syoyo/USD-build-aarch64)
 - [lighttransport/LightUSD](https://github.com/lighttransport/LightUSD)
-- [usd2gltf](https://pypi.org/project/usd2gltf)、[Unity-Technologies/usd-unity-sdk](https://github.com/Unity-Technologies/usd-unity-sdk)
+- [usd2gltf](https://pypi.org/project/usd2gltf), [Unity-Technologies/usd-unity-sdk](https://github.com/Unity-Technologies/usd-unity-sdk)
 - [Khronos glTF-Validator](https://github.com/KhronosGroup/glTF-Validator)

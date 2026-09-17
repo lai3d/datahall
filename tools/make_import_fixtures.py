@@ -41,20 +41,20 @@ def main():
     layer = Sdf.Layer.OpenAsAnonymous(SAMPLE)
     stage = Usd.Stage.Open(layer)
     eq = "/DataHall/Equipment/"
-    # 改了网格列但没改 translate：按网格列导入，提示 translate 不一致
+    # Grid column changed but translate not: import by grid column, warn that translate disagrees
     stage.GetPrimAtPath(eq + "R04_C04").GetAttribute("dchall:gridColumn").Set(0)
-    # 在视口里拖动过：translate 变了，网格列排没变
+    # Dragged in a viewport: translate changed, grid column and row did not
     stage.GetPrimAtPath(eq + "R04_C05").GetAttribute("xformOp:translate").Set(Gf.Vec3d(-1.5, 3.0, 0))
-    # 停用：不导入
+    # Deactivated: not imported
     stage.GetPrimAtPath(eq + "R06_C04").SetActive(False)
-    # 新增一台列间空调：正常导入
+    # An added in-row cooler: imported normally
     instance(stage, "R10_C16", "/DataHall/Catalog/crah", 15, 9)
-    # 目录里没有的类型、和 Kyber 重叠、超出网格、外部资产引用：都跳过
+    # Type not in the catalog, overlapping the Kyber, outside the grid, external asset reference: all skipped
     instance(stage, "R10_C01", "/DataHall/Catalog/nope", 0, 9)
     instance(stage, "R08_C16", "/DataHall/Catalog/rpp", 14, 7)
     instance(stage, "R11_C01", "/DataHall/Catalog/rpp", 0, 10)
     instance(stage, "R01_C01", None, 0, 0, external=("./vendor/rack.usd", "/rack"))
-    # 文件里的原型参数和目录不同：按目录计算，提示差异
+    # Prototype parameters in the file differ from the catalog: compute from the catalog, report the differences
     stage.GetPrimAtPath("/DataHall/Catalog/vr200").GetAttribute("dchall:powerKw").Set(230.0)
     layer.comment = 'edited in "usdview" # not a comment'
     layer.Export(os.path.join(OUT, "pxr-edited.usda"))

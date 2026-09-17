@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace DataHall
 {
-    // macOS 原生功能：文件对话框、把文件拖进窗口。实现在 unity/Native/DataHallNative.m，
-    // 插件只在打包后的 macOS 程序里加载；编辑器里文件对话框用 EditorUtility，拖放不可用。
+    // Native macOS features: file dialog and dropping files onto the window. Implemented in unity/Native/DataHallNative.m;
+    // the plugin loads only in the built macOS app. In the editor the file dialog uses EditorUtility and drop is unavailable.
     public static class NativeMac
     {
         const string Lib = "DataHallNative";
@@ -26,7 +26,7 @@ namespace DataHall
             finally { DataHallNative_Free(p); }
         }
 
-        // 插件版本；加载失败返回 -1
+        // Plugin version; -1 if loading failed
         public static int Version
         {
             get
@@ -43,7 +43,7 @@ namespace DataHall
         public static string OpenFile(string message, string extension, double autoCancelSeconds = 0) =>
             Version > 0 ? TakeString(DataHallNative_OpenFile(message, extension, autoCancelSeconds)) : null;
 
-        // 1 已启用，0 窗口还没创建，-1 无法接管
+        // 1 enabled, 0 window not created yet, -1 cannot take over
         public static int EnableFileDrop() => Version > 0 ? DataHallNative_EnableFileDrop() : -1;
 
         public static string PollDroppedFile() => Version > 0 ? TakeString(DataHallNative_PollDroppedFile()) : null;

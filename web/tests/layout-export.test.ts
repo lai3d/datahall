@@ -16,14 +16,14 @@ const validate = new Ajv2020({allErrors: true, strict: true}).compile(schema);
 const toItems = (list: Entry[]) => list.map(([type, x, z]) => ({type, x, z}));
 
 describe('buildLayout', () => {
-  it.each([...Object.entries(PRESETS), ['每种设备各一台', {u: 10, list: CATALOG.map((t, i): Entry => [t.id, i, 9])}] as [string, Layout]])(
-    '%s 符合 spec/layout.schema.json', (name, p) => {
+  it.each([...Object.entries(PRESETS), ['every device type once', {u: 10, list: CATALOG.map((t, i): Entry => [t.id, i, 9])}] as [string, Layout]])(
+    '%s conforms to spec/layout.schema.json', (name, p) => {
       const layout = buildLayout(toItems(p.list), CAT, p.u, GRID, META);
       expect(validate(layout), JSON.stringify(validate.errors)).toBe(true);
       expect(layout.equipment.length).toBe(p.list.length);
     });
 
-  it('样例：拓扑关系和 USD 导出里的 relationship 完全一致', () => {
+  it('sample: topology matches the relationships in the USD export exactly', () => {
     const {u, list} = importUsda(readSample(), CAT, GRID);
     const layout = buildLayout(toItems(list), CAT, u, GRID, META);
     const usda = buildUsda(toItems(list), CAT, u, GRID, META);
@@ -36,7 +36,7 @@ describe('buildLayout', () => {
     expect(layout.equipment.filter(e => e.coolantSource).length).toBeGreaterThan(0);
   });
 
-  it('目录只列出用到的设备类型，参数取自 catalog.json', () => {
+  it('catalog lists only the device types used, with parameters from catalog.json', () => {
     const layout = buildLayout(toItems([['vr200', 0, 0], ['cdu', 1, 0], ['vr200', 2, 0]]), CAT, 5, GRID, META);
     expect(layout.catalog.map(c => c.id)).toEqual(['vr200', 'cdu']);
     expect(layout.catalog[0]).toMatchObject({name: 'Vera Rubin NVL72', category: 'gpu', powerKw: 190, gpuCount: 72, liquidFraction: 0.95, heightM: 2.3, roadmap: false});
@@ -44,10 +44,10 @@ describe('buildLayout', () => {
     expect(layout.equipment[0]).toEqual({name: 'R01_C01', type: 'vr200', column: 0, row: 0, phase: 1, powerFeed: '', coolantSource: 'R01_C02'});
   });
 
-  it('跳过目录里没有的类型；缺日期报错；文本以换行结尾', () => {
+  it('skips types missing from the catalog; throws without a date; text ends with a newline', () => {
     const layout = buildLayout(toItems([['nope', 0, 0], ['rpp', 1, 1]]), CAT, 2, GRID, META);
     expect(layout.equipment.map(e => e.type)).toEqual(['rpp']);
-    // @ts-expect-error 缺少 meta，运行时也要报错
+    // @ts-expect-error missing meta must also throw at runtime
     expect(() => buildLayout([], CAT, 2, GRID)).toThrow(/meta.date/);
     expect(layoutToText(layout).endsWith('}\n')).toBe(true);
   });

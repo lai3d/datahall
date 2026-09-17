@@ -1,4 +1,4 @@
-# Unity 生成的目录和 IDE 文件
+# Unity-generated directories and IDE files
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -16,6 +16,7 @@
 .idea/
 .vscode/
 /TestResults*.xml
-# Unity 性能测试框架跑测试时临时创建 Assets/Resources，跑完只剩空目录和 .meta；以后真要用 Resources 目录时删掉这两行
+# The Unity Performance Testing framework creates Assets/Resources temporarily during test runs, leaving only an empty
+# directory and .meta afterwards; remove these two lines if a Resources directory is ever actually needed
 /Assets/Resources/PerformanceTestRun*
 /Assets/Resources.meta
