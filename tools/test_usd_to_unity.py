@@ -172,7 +172,7 @@ class UsdToUnityTest(unittest.TestCase):
     @unittest.skipUnless(HAS_WEB, "web/node_modules not installed")
     def test_layout_matches_web_export(self):
         layout, _ = self.convert(SAMPLE)
-        web = json.loads(subprocess.run(["node", "scripts/layout-from-usda.js", SAMPLE, "--date", "2026-09-17"],
+        web = json.loads(subprocess.run(["node", "scripts/layout-from-usda.ts", SAMPLE, "--date", "2026-09-17"],
                                         cwd=WEB, check=True, capture_output=True, text=True).stdout)
         layout.pop("generator"), web.pop("generator")
         self.assertEqual(layout, web)
@@ -181,9 +181,9 @@ class UsdToUnityTest(unittest.TestCase):
     def test_manual_assignment_and_phase_match_web_export(self):
         # 手动指定的供给设备（不是最近的那台）和部署阶段：pxr 转换器读文件里的关系和 dchall:phase，网页版导入后重建，结果要一致
         path = os.path.join(self.tmp, "props.usda")
-        subprocess.run(["node", "scripts/layout-props-usda.js", path], cwd=WEB, check=True)
+        subprocess.run(["node", "scripts/layout-props-usda.ts", path], cwd=WEB, check=True)
         layout, _ = self.convert(path)
-        web = json.loads(subprocess.run(["node", "scripts/layout-from-usda.js", path, "--date", "2026-09-17"],
+        web = json.loads(subprocess.run(["node", "scripts/layout-from-usda.ts", path, "--date", "2026-09-17"],
                                         cwd=WEB, check=True, capture_output=True, text=True).stdout)
         layout.pop("generator"), web.pop("generator")
         self.assertEqual(layout, web)
@@ -196,7 +196,7 @@ class UsdToUnityTest(unittest.TestCase):
     def test_gltf_validator(self):
         _, out = self.convert(SAMPLE)
         files = [os.path.join(out, "assets", f) for f in sorted(os.listdir(os.path.join(out, "assets")))]
-        run = subprocess.run(["node", "scripts/validate-gltf.js", *files], cwd=WEB, capture_output=True, text=True)
+        run = subprocess.run(["node", "scripts/validate-gltf.ts", *files], cwd=WEB, capture_output=True, text=True)
         reports = [json.loads(line) for line in run.stdout.splitlines()]
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertEqual([(r["errors"], r["warnings"]) for r in reports], [(0, 0)] * len(files))

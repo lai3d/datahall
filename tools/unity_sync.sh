@@ -17,7 +17,7 @@ import_bundle() {   # $1 bundle dir, $2 extra args
   grep 'DataHall:' "$root/build/unity-sync.log"
 }
 
-(cd "$root/web" && node scripts/all-types-usda.js "$root/build/all-types.usda")
+(cd "$root/web" && node scripts/all-types-usda.ts "$root/build/all-types.usda")
 rm -rf "$root/build/unity-bundle-all" "$root/build/unity-bundle"
 "$py" "$root/tools/usd_to_unity.py" "$root/build/all-types.usda" -o "$root/build/unity-bundle-all" --date 2026-09-17
 import_bundle "$root/build/unity-bundle-all" -noLayout

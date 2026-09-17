@@ -21,11 +21,24 @@ A simulator for laying out an AI data hall around NVIDIA's latest GPU racks: GB2
 - **English and Simplified Chinese UI.**
 - **Unity app (macOS, paused).** It reads the same layout through `layout.json` plus glTF models converted from USD.
 
+## Tech stack
+
+| Area | Stack |
+| --- | --- |
+| Web app | TypeScript 7 (strict), Vite 8, three.js 0.186. No UI framework: the panel is plain DOM, the 3D view is three.js. |
+| Web tests | vitest, ajv (layout.json schema), Khronos glTF-Validator |
+| Hosting | Vercel (production from `main`, preview per pull request) |
+| Data formats | OpenUSD `.usda` with a codeless applied API schema (`dchall:`), `layout.json` (JSON Schema 2020-12), share links in the URL hash |
+| USD tooling | Python with `usd-core` 26.8 (OpenUSD), `usdGenSchema`, NVIDIA SimReady Foundation / OAV rules for the audit |
+| Unity app | Unity 6000.6 (URP), glTFast, a small Objective-C plugin for the macOS file dialog and drag and drop |
+| CI | GitHub Actions: type check, vitest, build, schema freshness, USD validation, Python tests |
+| Repo | Git LFS for binary assets |
+
 ## Repository layout
 
 | Path | Contents |
 | --- | --- |
-| `web/` | Web app: Vite, three.js, vitest. Deployed to Vercel from `main`. |
+| `web/` | Web app (TypeScript, Vite, three.js). Deployed to Vercel from `main`. |
 | `spec/` | `catalog.json` (the single source of device data), `layout.schema.json`, shared capacity test cases |
 | `schema/` | Codeless USD schema plugin (`schema.usda` plus generated files) |
 | `samples/datahall.usda` | Reference export, also the golden file for export tests |
@@ -44,9 +57,10 @@ brew install git-lfs && git lfs install
 ```bash
 cd web
 npm install
-npm run dev      # dev server
-npm test         # vitest
-npm run build    # output in web/dist (relative base, deployable under any path)
+npm run dev        # dev server
+npm run typecheck  # tsc, type check only
+npm test           # vitest
+npm run build      # output in web/dist (relative base, deployable under any path)
 ```
 
 Pull requests get a Vercel preview deployment. Merging to `main` publishes production.
@@ -80,7 +94,7 @@ Use "Export for Unity" in the web app to produce `layout.json`, or convert a `.u
 
 GitHub Actions runs on pushes to `main` and on pull requests:
 
-- **web job:** vitest and the production build
+- **web job:** type check, vitest and the production build
 - **usd-tools job:** schema freshness, sample validation and the Python tests
 
 Unity isn't built in CI.
