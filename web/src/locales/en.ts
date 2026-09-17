@@ -86,6 +86,16 @@ export default {
 
   // Growth plan (growth.ts)
   hGrowth: 'Growth plan',
+  hEnergy: 'Annual energy',
+  energyPrice: 'Electricity price ($/kWh)',
+  energyLoad: ({pct}: {pct: number}) => `Average load: ${pct}% of rated IT power`,
+  rowItEnergy: 'IT energy',
+  rowOverheadEnergy: 'Cooling, losses and equipment overhead',
+  rowTotalEnergy: 'Total energy',
+  rowAnnualPue: 'Annual PUE',
+  rowCost: 'Electricity cost per year',
+  energyEmpty: 'Place devices to estimate energy use.',
+  energyNote: 'The default price is the 2025 US industrial average, 8.62 ¢/kWh (US EIA). It leaves out taxes, demand charges and fixed fees, so enter your own rate. The average load is an assumption. Equipment overhead runs all year, so the annual PUE rises as the load falls.',
   hCompare: 'Compare racks',
   compareIntro: ({u}: {u: number}) => `The largest hall ${u} MW of utility power can run with each rack type, with just enough CDUs, RPPs, in-row coolers and IB racks. Newer racks put more power into each rack, so the same power needs fewer racks and less floor. GPU counts drop because each GPU draws more power; performance per GPU is not modeled.`,
   compareRacks: ({n, gpus}: {n: number; gpus: string}) => `${plural(n, 'rack', 'racks')}, ${gpus} GPUs`,

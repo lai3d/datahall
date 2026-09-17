@@ -1,6 +1,8 @@
 import type {Group} from 'three';
 import {toItem, toEntry} from './edit.ts';
 import type {Item, Layout, Pos} from './types.ts';
+import {DEFAULT_LOAD, DEFAULT_PRICE} from './energy.ts';
+import type {EnergyInputs} from './energy.ts';
 
 // Devices placed in the scene: computation fields plus the three model
 export interface PlacedItem extends Item {mesh: Group}
@@ -36,6 +38,7 @@ export interface AppState {
   powered: boolean;
   powerStart: number;
   tutorial: number | null;   // index into tutorial.ts STEPS while the tutorial runs
+  energy: EnergyInputs;      // annual energy estimate inputs; view state, kept in localStorage, not in the layout or share links
   ui: UiState;
 }
 
@@ -54,6 +57,7 @@ export const state: AppState = {
   powered: false,
   powerStart: 0,
   tutorial: null,
+  energy: {price: DEFAULT_PRICE, load: DEFAULT_LOAD},
   ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, lastPlaced: null},
 };
 

@@ -28,13 +28,13 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Mobile polish | Collapsible panel, placement feedback on touch. Most share links are opened on phones | 2 h | Done, 2026-09-17 |
 | Scenario comparison cards and scale reference | At the same utility feed, how many GB200, Rubin, Helios and Kyber racks fit and what PUE results. The density trend is the best story to tell. Also a scale reference next to the IT load in the HUD: the hall's load in DGX Sparks (about 240 W), Mac Studios (about 270 W) and average households, so personal-scale readers get a feel for it. Personal devices are not placeable equipment: they are three orders of magnitude below a rack and never touch a constraint. Shipped with DGX Spark and US homes; Mac Studio waits for a sourced power figure | 4–5 h | Done, 2026-09-17 |
 | Load visualization | Animated flow on links after power-on; CDUs and RPPs colored by load, so "nearest assignment" becomes visible | 2–3 h | Done, 2026-09-17 |
+| Annual electricity cost | One electricity price input; convert facility kW into money. Shipped with an average-load input: equipment overhead runs all year, so the annual PUE differs from the full-load PUE | 1 h | Done, 2026-09-17 |
 
 ## Next (mid-quarter, 1 to 2 months)
 
 | Item | Why | Estimate |
 | --- | --- | --- |
 | "Learn more" panel | A paragraph and source link for each device type and each constraint; why the PUE coefficients are 0.08 and 0.30 | 2–3 h |
-| Annual electricity cost | One electricity price input; convert facility kW into money | 1 h |
 | Catalog data refresh | Measured GB300 power after shipping, Rubin's official naming, Kyber figures re-checked, DGX B200 replaced by B300; add Huawei CloudMatrix 384 as a compute rack (32 Ascend 910C) plus an optical switch rack, the best contrast story to NVL72; TPU Ironwood only if a credible per-rack power figure appears. Before adding any air-cooled dense rack, turn the hardcoded `dgx` density warning in `sim.ts` into a catalog flag. Sources go into the `catalog.json` notes | 2 h |
 
 ## Later (after the quarter, directional)

@@ -23,6 +23,7 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 - **Guided tutorial.** First-time visitors can build a small GB200 hall step by step and learn why it cannot power on until power distribution, cooling and networking are added.
 - **Editing.** Drag a device to move it, place a whole row with two clicks, and undo or redo any change (⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y). Delete removes the selected device.
 - **Load you can see.** CDUs and power panels carry a load meter that turns amber near capacity and red when overloaded, and power and coolant flow along the links once the hall is on.
+- **Annual energy.** Enter an electricity price and an average load to see yearly IT and facility energy, the annual PUE and the electricity bill.
 - **Rack comparison.** For the current utility feed, how many racks of each type fit with just enough support equipment, their GPUs, floor space, PUE and price. The HUD puts the IT load in everyday terms (DGX Sparks, US homes).
 - **Works on phones.** The panel folds away to give the 3D view the screen, and a bar on the 3D view shows what a tap will do.
 - **Share links.** The layout is encoded in the URL hash, so the address bar always links to the current hall. Shared links show a preview image, and "Save image" downloads the 3D view as a PNG.

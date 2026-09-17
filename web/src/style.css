@@ -97,6 +97,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .info p{margin:6px 0 0;color:var(--muted);font-size:13px}
 .info p.assign-hint{color:var(--ink)}
 .info select{font:inherit;font-size:13px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:210px}
+.energy{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:10px}
+.energy label{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.energy input[type=number]{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px;width:120px}
+/* 16px on phones: iOS zooms the page when focusing a smaller input */
+@media (max-width:899px){.energy input[type=number]{font-size:16px}}
+.energy input[type=range]{width:100%;accent-color:var(--ink)}
+.energy table{width:100%;border-collapse:collapse}
+.energy td{padding:2px 0}
+.energy td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.energy tr.total td{font-weight:700;border-top:1px solid var(--line);padding-top:4px}
 .compare{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
 .cmp{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .cmp > i{width:6px;flex:none}

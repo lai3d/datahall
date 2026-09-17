@@ -1,13 +1,15 @@
 // Right-side panel and the overlay on the 3D view (HUD, undo / redo, reset view), rendered with React.
 // The app logic stays in main.ts: components read `state`, call `actions`, and re-render on notify() (store.ts).
 // DOM ids and data-* attributes are part of the contract with the browser smoke tests (e2e/); keep them stable.
-import {StrictMode, useEffect, useMemo, useRef} from 'react';
+import {StrictMode, useEffect, useMemo, useRef, useState} from 'react';
 import type {CSSProperties, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createPortal} from 'react-dom';
 import {CATALOG, CAT} from './catalog.ts';
 import {fmt} from './sim.ts';
 import {compareRacks} from './compare.ts';
+import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
+import type {EnergyInputs} from './energy.ts';
 import {scaleRefs} from './scale.ts';
 import {GRID, keyOf, nearest, FEEDS} from './grid.ts';
 import {canFail, singlePointsOfFailure} from './redundancy.ts';
@@ -40,6 +42,7 @@ export interface Actions {
   setPlacePhase(n: number): void;
   setViewPhase(n: number | null): void;
   setHeadroomType(type: string): void;
+  setEnergy(change: Partial<EnergyInputs>): void;
   setItemPhase(key: string, phase: number): void;
   setFeedChoice(key: string, field: FeedField, value: string): void;
   toggleAssignMode(key: string): void;
@@ -95,6 +98,7 @@ function App({stage}: {stage: HTMLElement}){
       <h2 id="hInfo">{tr('hInfo')}</h2>
       <Info model={model} />
       <Growth model={model} />
+      <Energy model={model} />
       <Compare model={model} />
       <Drill model={model} />
       <Presets />
@@ -367,6 +371,47 @@ function Info({model}: {model: HallModel}){
 // Growth planning: cumulative per-phase table, and headroom as of the currently viewed phase
 const KIND_LABEL = {dist: 'gaugeDist', liquid: 'gaugeLiquid', air: 'gaugeAir', network: 'gaugeNetwork', utility: 'gaugeUtility'} as const satisfies Record<ReasonKind, MessageKey>;
 const pct = (r: number): string => r === Infinity ? '∞' : Math.round(r * 100) + '%';
+
+const fmtEnergy = (mwh: number): string => mwh >= 1000 ? (mwh / 1000).toFixed(mwh >= 10000 ? 1 : 2) + ' GWh' : Math.round(mwh).toLocaleString() + ' MWh';
+const fmtMoney = (usd: number): string => usd >= 1e6 ? '$' + (usd / 1e6).toFixed(2) + 'M' : '$' + Math.round(usd / 1e3).toLocaleString() + 'K';
+
+// Annual energy and electricity cost for the devices in the current calculation (energy.ts). The price field keeps its own text
+// while typing, so partial input such as "0." is not rewritten; only valid numbers reach the state
+function Energy({model}: {model: HallModel}){
+  const {price, load} = state.energy;
+  const [priceText, setPriceText] = useState(String(price));
+  useEffect(() => { if (Number(priceText) !== price) setPriceText(String(price)); }, [price]);
+  const e = annualEnergy(model.totals, state.energy);
+  const rows: Row[] = [
+    [tr('rowItEnergy'), fmtEnergy(e.itMWh)],
+    [tr('rowOverheadEnergy'), fmtEnergy(e.overheadMWh)],
+    [tr('rowTotalEnergy'), fmtEnergy(e.totalMWh)],
+    [tr('rowAnnualPue'), e.pue.toFixed(2)],
+    [tr('rowCost'), <span id="energyCost">{fmtMoney(e.cost)}</span>],
+  ];
+  return (
+    <>
+      <h2>{tr('hEnergy')}</h2>
+      <div className="energy" id="energy">
+        <label>
+          <span>{tr('energyPrice')}</span>
+          <input id="energyPrice" type="number" inputMode="decimal" min={PRICE_RANGE[0]} max={PRICE_RANGE[1]} step={0.01} value={priceText}
+            onChange={ev => { setPriceText(ev.target.value); const v = ev.target.valueAsNumber; if (Number.isFinite(v)) actions.setEnergy({price: v}); }}
+            onBlur={() => setPriceText(String(state.energy.price))} />
+        </label>
+        <label>
+          <span>{tr('energyLoad', {pct: Math.round(load * 100)})}</span>
+          <input id="energyLoad" type="range" min={LOAD_RANGE[0] * 100} max={LOAD_RANGE[1] * 100} step={5} value={Math.round(load * 100)}
+            onChange={ev => actions.setEnergy({load: ev.target.valueAsNumber / 100})} />
+        </label>
+        {model.totals.it
+          ? <table><tbody>{rows.map(([k, v], i) => <tr key={i} className={i === rows.length - 1 ? 'total' : undefined}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>
+          : <p className="sub">{tr('energyEmpty')}</p>}
+      </div>
+      <p className="sub" style={{marginTop: 6}}>{tr('energyNote')}</p>
+    </>
+  );
+}
 
 // For each GPU rack type, the largest hall the current utility feed can run (compare.ts). The card for the hall's most common rack type is marked
 function Compare({model}: {model: HallModel}){
