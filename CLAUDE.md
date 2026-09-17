@@ -11,6 +11,7 @@
   - `src/sim.js`：容量模型与 PUE，纯函数
   - `src/usd-export.js`：`buildUsda`，纯函数，不依赖 DOM 和 three，node 可直接 import
   - `src/download.js`：有 `window.claude` 走 downloads（zip），否则 Blob 直接下载文件
+  - `src/share-link.js`：分享链接，布局编码进网址 hash，纯函数
   - `src/layout-export.js`：`buildLayout`，给 Unity 版的 `layout.json`，纯函数；拓扑和设备名与 USD 导出共用 `grid.js` 的 `supplyLinks`、`equipmentName`
   - `src/usda-parser.js`：usda 文本的精简解析器（prim、属性、元数据、值），不做组合
   - `src/usd-import.js`：导入自己导出的 `.usda`，纯函数，返回布局和提示列表
@@ -95,6 +96,10 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
     `translate` 只用来提示不一致；设备参数以 `catalog.json` 为准，文件里的参数只提示差异
   - 停用（`active = false`）、未知类型、越界、重叠、外部引用的设备跳过并提示；网格尺寸和当前不一致直接拒绝
   - 导入会替换当前机房；提示里含文件内容，界面上只能用 `textContent` 写入
+- **分享链接**：`#layout=<版本>,<市电 MW>,<类型>:<列>.<排>-<列>.<排>,...`，列排从 0 开始，与 layout.json、USD 一致。
+  - 用 hash 不用查询参数：不发到服务器，静态托管不需要配置；每次编辑用 `history.replaceState` 更新（不产生历史记录）
+  - 打开页面时链接里的布局优先于 localStorage；手动改 hash 触发 `hashchange` 重新载入；无效条目跳过并提示，不支持的版本不载入
+  - 改格式要升版本号并保留旧版本解码，已经发出去的链接不能失效
 - **Unity 版**：`layout.json` 是 Unity 唯一读取的布局格式，网页“导出给 Unity”和 `tools/usd_to_unity.py` 产出的内容必须逐字段一致（测试比对）。
   - 设备几何来自 glb，导入后生成 prefab 变体；交互改变体，不改 `Generated/`。改了导出几何或颜色后跑 `tools/unity_sync.sh`
   - 颜色：USD 里写线性值（导出器把 sRGB 调色板换算后写入），glTF 同为线性；Unity 工程是线性色彩空间，IMGUI 贴图颜色要写 `.linear`
@@ -107,9 +112,14 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # 打开网页
 
 ## 下一步（按优先级）
 
-1. Unity 版后续：通电动画和供电/冷却连线、
-   托盘拆解等交互（做在 `Prefabs/` 的变体上）、真实 SimReady 高精度资产（方案 A5，见 `docs/unity-options.md`）。
-   目标平台 macOS 桌面，VR 暂不做。Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
+当前以网页版为主（2026-09-17 决定），Unity 版暂停。
+
+1. 部署到 Vercel，main 合并后自动更新。
+2. 按设备的容量检查：每台 CDU、RPP 按分配到的机柜算负载，在三维视图里标出超载设备和没接上的机柜。
+3. 编辑体验：拖动移动设备、撤销和重做、整排放置。
+4. three.js 从 r128 升级到新版（色彩管理、画质）。
+5. Unity 版（暂停）：面板遮挡三维视图、通电动画和连线、托盘拆解、真实 SimReady 资产（方案 A5，见 `docs/unity-options.md`）。
+   Unity USD Importer 在 6000.6 上编译失败，不要用；运行时直接读 USD 的备选是 B3。
 
 ## 数据可信度
 

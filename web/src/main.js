@@ -9,6 +9,7 @@ import {buildUsda} from './usd-export.js';
 import {importUsda, UsdImportError} from './usd-import.js';
 import {buildLayout, layoutToText} from './layout-export.js';
 import {createSaver} from './download.js';
+import {encodeLayout, decodeLayout} from './share-link.js';
 
 const $ = s => document.querySelector(s);
 
@@ -33,7 +34,48 @@ function clearAll(){
   state.items.clear(); state.selected = null; state.powered = false;
 }
 function select(key){ state.selected = key; view.setOutline(); renderInfo(); }
-function changed(){ view.rebuildLinks(); view.setOutline(); refresh(); saveLayout(snapshot()); }
+function changed(){ view.rebuildLinks(); view.setOutline(); refresh(); saveLayout(snapshot()); updateShareLink(); }
+
+// ---------- share link ----------
+// 每次改动都把布局写进地址栏的 hash；replaceState 不产生历史记录，也不会触发 hashchange。
+// 同时把分享区的提示恢复为默认说明，之后的载入结果或复制结果会覆盖它
+const SHARE_HINT = '地址栏里的网址随时对应当前机房，发给别人就能看到同样的布局。';
+function updateShareLink(){
+  $('#shareMsg').textContent = SHARE_HINT;
+  $('#shareWarnings').replaceChildren();
+  const hash = encodeLayout(snapshot());
+  try { history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search); } catch (e) {}   // claude.ai 沙箱里可能不允许
+}
+
+// 打开或粘贴带布局的链接时载入。返回是否载入了链接里的布局
+function loadFromLink(){
+  const link = decodeLayout(location.hash, CAT, GRID);
+  if (!link) return false;
+  const msg = $('#shareMsg'), list = $('#shareWarnings');
+  if (!link.list.length && link.warnings.length){
+    showImportResult(msg, list, '没有载入分享链接。', link.warnings);
+    return false;
+  }
+  loadLayout(link);
+  showImportResult(msg, list, `已从分享链接载入 ${link.list.length} 台设备，市电 ${link.u} MW。`, link.warnings);
+  return true;
+}
+
+function initShare(){
+  const msg = $('#shareMsg'), list = $('#shareWarnings');
+  $('#shareCopy').onclick = async () => {
+    list.replaceChildren();
+    if (!state.items.size){ msg.textContent = '机房是空的，先放设备再分享。'; return; }
+    updateShareLink();
+    try {
+      await navigator.clipboard.writeText(location.href);
+      msg.textContent = `已复制链接（${state.items.size} 台设备）。`;
+    } catch (e) {
+      msg.textContent = '浏览器不允许自动复制，请直接复制地址栏里的网址。';
+    }
+  };
+  window.addEventListener('hashchange', loadFromLink);
+}
 
 function loadLayout(p){
   clearAll(); state.utility = p.u;
@@ -127,10 +169,11 @@ initUI({
   loadPreset: name => loadLayout(PRESETS[name]),
 });
 initExport();
+initShare();
 
 const mq = window.matchMedia('(prefers-color-scheme: dark)');
 mq.addEventListener && mq.addEventListener('change', () => { view.retheme(); refresh(); });
 
 buildUI();
-loadLayout(restoreLayout() || PRESETS.gb200);
+if (!loadFromLink()) loadLayout(restoreLayout() || PRESETS.gb200);
 view.startLoop();
