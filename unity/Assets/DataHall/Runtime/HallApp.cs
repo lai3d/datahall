@@ -138,8 +138,9 @@ namespace DataHall
         void EnsureStyles()
         {
             if (panel != null) return;
+            // 线性色彩空间下 IMGUI 把贴图数值当线性值显示，所以写入面板色（sRGB #16202A）的线性值
             var background = new Texture2D(1, 1);
-            background.SetPixel(0, 0, new Color(0.086f, 0.125f, 0.165f, 0.92f));
+            background.SetPixel(0, 0, new Color(0.086f, 0.125f, 0.165f, 0.92f).linear);
             background.Apply();
             panel = new GUIStyle(GUI.skin.box) { padding = new RectOffset(12, 12, 10, 10), normal = { background = background } };
             body = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true, normal = { textColor = new Color(0.89f, 0.92f, 0.94f) } };
