@@ -5,9 +5,9 @@ import {StrictMode, useEffect, useMemo, useRef, useState} from 'react';
 import type {CSSProperties, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createPortal} from 'react-dom';
-import {CATALOG, CAT} from './catalog.ts';
+import {CATALOG, CAT, CATALOG_VERSION} from './catalog.ts';
 import {toItems} from './edit.ts';
-import {fmt, PUE_FACTORS, UTILITY_OPTIONS} from './sim.ts';
+import {fmt, MODEL_VERSION, PUE_FACTORS, UTILITY_OPTIONS} from './sim.ts';
 import {compareRacks} from './compare.ts';
 import {addCounts, planRepair} from './repair.ts';
 import type {RepairOption, SupportType} from './repair.ts';
@@ -257,7 +257,7 @@ function Method(){
         <button type="button" id="methodClose" onClick={() => actions.closeMethod()}>{tr('methodClose')}</button>
       </div>
       <div className="method-body">
-        <section id="m-intro"><p>{tr('mIntro')}</p></section>
+        <section id="m-intro"><p>{tr('mIntro')}</p><p className="src" id="methodVersions">{tr('mVersions', {catalog: CATALOG_VERSION, model: MODEL_VERSION})}</p></section>
         <section id="m-checks">
           <h3>{tr('mHChecks')}</h3>
           <p>{tr('mChecksIntro')}</p>

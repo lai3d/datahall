@@ -4,6 +4,8 @@
 import {equipmentName, supplyLinks} from './grid.ts';
 import type {ExportMeta} from './usd-export.ts';
 import type {Catalog, CatalogItem, Grid, Item} from './types.ts';
+import {CATALOG_VERSION} from './catalog.ts';
+import {MODEL_VERSION} from './sim.ts';
 
 // Structure of spec/layout.schema.json
 export interface LayoutCatalogEntry {
@@ -13,7 +15,7 @@ export interface LayoutCatalogEntry {
 }
 export interface LayoutEquipment {name: string; type: string; column: number; row: number; phase: number; powerFeed: string; coolantSource: string}
 export interface LayoutJson {
-  format: string; version: number; generator: string; generated: string;
+  format: string; version: number; generator: string; generated: string; catalogVersion: string; modelVersion: string;
   grid: {columns: number; rows: number; cellWidthM: number; cellDepthM: number};
   utilityMw: number; catalog: LayoutCatalogEntry[]; equipment: LayoutEquipment[];
 }
@@ -42,6 +44,8 @@ export function buildLayout(list: Item[], CAT: Catalog, utility: number, g: Grid
     version: LAYOUT_VERSION,
     generator: 'GPU Data Hall Builder web',
     generated: meta.date,
+    catalogVersion: CATALOG_VERSION,
+    modelVersion: MODEL_VERSION,
     grid: {columns: g.GW, rows: g.GD, cellWidthM: g.CX, cellDepthM: g.CZ},
     utilityMw: utility,
     catalog: used.map(id => catalogEntry(id, CAT[id])),

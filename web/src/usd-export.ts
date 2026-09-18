@@ -4,6 +4,8 @@
 // when changing attributes, change the schema first; web tests check that both sides agree
 import {equipmentName, supplyLinks} from './grid.ts';
 import type {Catalog, Grid, Item} from './types.ts';
+import {CATALOG_VERSION} from './catalog.ts';
+import {MODEL_VERSION} from './sim.ts';
 
 export interface ExportMeta {date: string}
 type Vec3 = [number, number, number];
@@ -64,6 +66,8 @@ export function buildUsda(list: Item[], CAT: Catalog, utility: number, g: Grid, 
     '        string asset_name = "datahall"',
     '        string asset_type = "data_hall_layout"',
     '        string "dchall:schemaVersion" = "0.2"',
+    `        string "dchall:catalogVersion" = "${CATALOG_VERSION}"`,
+    `        string "dchall:modelVersion" = "${MODEL_VERSION}"`,
     '        string generator = "GPU Data Hall Builder"',
     '        dictionary SimReady_Metadata = {',
     '        }',
@@ -140,6 +144,10 @@ datahall.usda is an OpenUSD text layer, Z up, in meters.
 
 Geometry is non-subdivided Mesh, materials are UsdPreviewSurface, and the layer metadata carries the fields
 required by SimReady SR.001: asset_name, asset_type, source_file, usd_date_generated, SimReady_Metadata.
+
+The layer metadata also records where the figures came from: dchall:catalogVersion is the data version of the
+equipment catalog and dchall:modelVersion the version of the capacity and PUE model. Both identify the numbers
+in this file after the app's own figures change.
 Device origin is at the bottom center, front facing -Y.
 
 ## Attribute schema (dchall: namespace, schema 0.2)

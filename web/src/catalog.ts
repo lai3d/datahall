@@ -3,4 +3,6 @@ import data from '../../spec/catalog.json' with {type: 'json'};
 import type {Catalog, CatalogItem} from './types.ts';
 
 export const CATALOG: CatalogItem[] = data.items as CatalogItem[];
+// Data version of spec/catalog.json: the date its figures were last checked. Exports carry it, so a result stays explainable after values change
+export const CATALOG_VERSION: string = data.version;
 export const CAT: Catalog = Object.fromEntries(CATALOG.map(t => [t.id, t]));

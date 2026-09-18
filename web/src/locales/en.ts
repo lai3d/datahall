@@ -102,6 +102,7 @@ export default {
   rangeCap: ({lo, hi}: {lo: number; hi: number}) => `$${lo}–${hi}M`,
   srcChecked: ({date}: {date: string}) => `checked ${date}`,
   mIntro: 'This simulator is for learning how an AI data hall fits together. It uses a few simple rules so every result can be explained, and its figures are rough public estimates. Do not use it for engineering design.',
+  mVersions: ({catalog, model}: {catalog: string; model: string}) => `Catalog version ${catalog}, capacity model ${model}. Exported .usda and layout.json files carry both, so a result stays explainable after the figures change.`,
   mHChecks: 'Five checks before power-on',
   mChecksIntro: 'The hall can power on only when all five pass. Each one compares what the devices need with what the support equipment provides.',
   mDist: ({cap}: {cap: number}) => `Power distribution: the IT power of all racks must fit the RPP power panels, ${cap} kW each. Real halls also have transformers, switchgear, UPS and A/B feeds; here they are folded into the RPP.`,
@@ -328,6 +329,7 @@ export default {
   usdOutside: ({where, loc}: {where: string; loc: string}) => `${where} at ${loc} is outside the grid. Not imported.`,
   usdOverlap: ({where, other, loc}: {where: string; other: string; loc: string}) => `${where} shares a cell with ${other} (${loc}). Not imported.`,
   usdFeedInvalid: ({where, field, target}: {where: string; field: string; target: string}) => `${where} has dchall:${field} pointing to ${target}, which was not imported as a matching supply. Using the nearest one.`,
+  usdCatalogVersion: ({v, cur}: {v: string; cur: string}) => `The file was exported with catalog version ${v}; this page uses ${cur}. Device parameters come from the current catalog.`,
   usdPhase: ({where, v}: {where: string; v: string | number}) => `${where} has an invalid dchall:phase ${v}. Using phase 1.`,
   usdTranslate: ({where, loc}: {where: string; loc: string}) => `${where} has an xformOp:translate that does not match ${loc}. Placed by dchall:gridColumn / gridRow.`,
 

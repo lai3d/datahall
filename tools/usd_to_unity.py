@@ -73,6 +73,16 @@ def catalog_id(prim):
 
 # ---------- layout ----------
 
+# Provenance written by the web exporter into the layer's customLayerData; older files have none, and the fields stay out then
+def versions(stage):
+    data = stage.GetRootLayer().customLayerData or {}
+    out = {}
+    for key, field in (("dchall:catalogVersion", "catalogVersion"), ("dchall:modelVersion", "modelVersion")):
+        if isinstance(data.get(key), str) and data[key]:
+            out[field] = data[key]
+    return out
+
+
 def build_layout(stage, date, warn):
     hall = stage.GetDefaultPrim()
     if not hall or hall.GetName() != "DataHall":
@@ -126,6 +136,7 @@ def build_layout(stage, date, warn):
         "version": LAYOUT_VERSION,
         "generator": "GPU Data Hall Builder tools/usd_to_unity.py",
         "generated": date,
+        **versions(stage),
         "grid": {"columns": cols, "rows": rows, "cellWidthM": number(grid["cellWidthM"]), "cellDepthM": number(grid["cellDepthM"])},
         "utilityMw": number(attr(hall, "dchall:utilityMw", 2)),
         "catalog": catalog,

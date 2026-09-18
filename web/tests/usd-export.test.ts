@@ -4,6 +4,8 @@ import {buildUsda} from '../src/usd-export.ts';
 import {CAT, CATALOG} from '../src/catalog.ts';
 import {GRID} from '../src/grid.ts';
 import {parseSampleLayout, readSample} from '../scripts/sample.ts';
+import {CATALOG_VERSION} from '../src/catalog.ts';
+import {MODEL_VERSION} from '../src/sim.ts';
 
 const SAMPLE = readSample();
 const META = {date: '2026-09-17'};
@@ -177,5 +179,13 @@ describe('SimReady conventions (docs/simready-audit.md)', () => {
         expect(['group', 'assembly'], `ancestor ${a.path} of ${p.path}`).toContain(a.kind);
       }
     }
+  });
+});
+
+describe('provenance', () => {
+  it('writes the catalog and model versions into customLayerData', () => {
+    const usda = buildUsda([{type: 'gb200', x: 0, z: 0}], CAT, 2, GRID, {date: '2026-09-18'});
+    expect(usda).toContain(`string "dchall:catalogVersion" = "${CATALOG_VERSION}"`);
+    expect(usda).toContain(`string "dchall:modelVersion" = "${MODEL_VERSION}"`);
   });
 });

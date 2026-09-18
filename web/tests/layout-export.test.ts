@@ -52,3 +52,12 @@ describe('buildLayout', () => {
     expect(layoutToText(layout).endsWith('}\n')).toBe(true);
   });
 });
+
+describe('provenance', () => {
+  it('layout.json records the catalog and model versions', async () => {
+    const {CATALOG_VERSION} = await import('../src/catalog.ts');
+    const {MODEL_VERSION} = await import('../src/sim.ts');
+    const layout = buildLayout(toItems([['gb200', 0, 0]]), CAT, 2, GRID, {date: '2026-09-18'});
+    expect(layout).toMatchObject({catalogVersion: CATALOG_VERSION, modelVersion: MODEL_VERSION, version: 1});
+  });
+});
