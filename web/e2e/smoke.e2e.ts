@@ -280,10 +280,18 @@ test('imports the sample .usda and exports OpenUSD and layout.json', async ({pag
   const usda = readFileSync((await usd.path())!, 'utf8');
   expect(usda.startsWith('#usda 1.0')).toBe(true);
   expect(usda.match(/def Xform "R\d\d_C\d\d"/g)).toHaveLength(17);
+  // Provenance: both exports identify the catalog and model behind the figures
+  expect(usda).toMatch(/string "dchall:catalogVersion" = "\d{4}-\d{2}-\d{2}"/);
+  expect(usda).toMatch(/string "dchall:modelVersion" = "[^"]+"/);
 
   const [json] = await Promise.all([page.waitForEvent('download'), page.locator('#layoutExport').click()]);
   expect(json.suggestedFilename()).toBe('layout.json');
-  expect(JSON.parse(readFileSync((await json.path())!, 'utf8')).equipment).toHaveLength(17);
+  const layoutJson = JSON.parse(readFileSync((await json.path())!, 'utf8'));
+  expect(layoutJson.equipment).toHaveLength(17);
+  expect(layoutJson.catalogVersion).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(layoutJson.modelVersion).toBeTruthy();
+  await page.locator('#methodOpen').click();
+  await expect(page.locator('#methodVersions')).toContainText(`Catalog version ${layoutJson.catalogVersion}, capacity model ${layoutJson.modelVersion}`);
 });
 
 test('keyboard: focus stays on the button after activating it', async ({page}) => {

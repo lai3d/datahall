@@ -179,6 +179,20 @@ class UsdToUnityTest(unittest.TestCase):
         self.assertEqual(layout, web)
 
     @unittest.skipUnless(HAS_WEB, "web/node_modules not installed")
+    def test_versions_come_from_the_file(self):
+        # Provenance in customLayerData is copied through; a file without it (an old export) gets no version fields
+        layout, _ = self.convert(SAMPLE)
+        self.assertRegex(layout["catalogVersion"], r"^\d{4}-\d{2}-\d{2}$")
+        self.assertTrue(layout["modelVersion"])
+        path = os.path.join(self.tmp, "no-versions.usda")
+        with open(SAMPLE, encoding="utf-8") as f:
+            text = f.read()
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("\n".join(l for l in text.splitlines() if "dchall:catalogVersion" not in l and "dchall:modelVersion" not in l))
+        older, _ = self.convert(path)
+        self.assertNotIn("catalogVersion", older)
+        self.assertNotIn("modelVersion", older)
+
     def test_manual_assignment_and_phase_match_web_export(self):
         # Manually assigned supply equipment (not the nearest one) and deployment phase: the pxr converter reads the relationships
         # and dchall:phase from the file, the web version rebuilds them on import, and the results must match

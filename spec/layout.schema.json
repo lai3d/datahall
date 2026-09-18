@@ -5,46 +5,152 @@
   "description": "Hall layout exchanged with the Unity app. Produced by the web page (web/src/layout-export.ts) and by tools/usd_to_unity.py from a .usda file. Units: kW, m, million USD.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["format", "version", "generator", "generated", "grid", "utilityMw", "catalog", "equipment"],
+  "required": [
+    "format",
+    "version",
+    "generator",
+    "generated",
+    "grid",
+    "utilityMw",
+    "catalog",
+    "equipment"
+  ],
   "properties": {
-    "format": {"const": "dchall.layout"},
-    "version": {"const": 1},
-    "generator": {"type": "string"},
-    "generated": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "format": {
+      "const": "dchall.layout"
+    },
+    "version": {
+      "const": 1
+    },
+    "generator": {
+      "type": "string"
+    },
+    "generated": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+    },
+    "catalogVersion": {
+      "type": "string",
+      "description": "Data version of spec/catalog.json the figures came from; optional for files written before it existed"
+    },
+    "modelVersion": {
+      "type": "string",
+      "description": "Version of the capacity and PUE model that produced the figures; optional for older files"
+    },
     "grid": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["columns", "rows", "cellWidthM", "cellDepthM"],
+      "required": [
+        "columns",
+        "rows",
+        "cellWidthM",
+        "cellDepthM"
+      ],
       "properties": {
-        "columns": {"type": "integer", "minimum": 1, "maximum": 20},
-        "rows": {"type": "integer", "minimum": 1},
-        "cellWidthM": {"type": "number", "exclusiveMinimum": 0},
-        "cellDepthM": {"type": "number", "exclusiveMinimum": 0}
+        "columns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cellWidthM": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "cellDepthM": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
       }
     },
-    "utilityMw": {"type": "number", "exclusiveMinimum": 0},
+    "utilityMw": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
     "catalog": {
       "description": "Parameters in effect for each equipment type used in the hall, in first-use order.",
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "name", "category", "powerKw", "gpuCount", "liquidFraction", "liquidCoolingKw", "airCoolingKw", "overheadKw", "distributionKw", "fabricPorts", "capexMusd", "roadmap", "heightM"],
+        "required": [
+          "id",
+          "name",
+          "category",
+          "powerKw",
+          "gpuCount",
+          "liquidFraction",
+          "liquidCoolingKw",
+          "airCoolingKw",
+          "overheadKw",
+          "distributionKw",
+          "fabricPorts",
+          "capexMusd",
+          "roadmap",
+          "heightM"
+        ],
         "properties": {
-          "id": {"type": "string", "pattern": "^[A-Za-z_]\\w*$"},
-          "name": {"type": "string"},
-          "category": {"enum": ["gpu", "net", "fac"]},
-          "powerKw": {"type": "number", "minimum": 0},
-          "gpuCount": {"type": "integer", "minimum": 0},
-          "liquidFraction": {"type": "number", "minimum": 0, "maximum": 1},
-          "liquidCoolingKw": {"type": "number", "minimum": 0},
-          "airCoolingKw": {"type": "number", "minimum": 0},
-          "overheadKw": {"type": "number", "minimum": 0},
-          "distributionKw": {"type": "number", "minimum": 0},
-          "fabricPorts": {"type": "integer", "minimum": 0},
-          "capexMusd": {"type": "number", "minimum": 0},
-          "roadmap": {"type": "boolean"},
-          "heightM": {"type": "number", "exclusiveMinimum": 0}
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z_]\\w*$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "gpu",
+              "net",
+              "fac"
+            ]
+          },
+          "powerKw": {
+            "type": "number",
+            "minimum": 0
+          },
+          "gpuCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "liquidFraction": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "liquidCoolingKw": {
+            "type": "number",
+            "minimum": 0
+          },
+          "airCoolingKw": {
+            "type": "number",
+            "minimum": 0
+          },
+          "overheadKw": {
+            "type": "number",
+            "minimum": 0
+          },
+          "distributionKw": {
+            "type": "number",
+            "minimum": 0
+          },
+          "fabricPorts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "capexMusd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "roadmap": {
+            "type": "boolean"
+          },
+          "heightM": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          }
         }
       }
     },
@@ -54,15 +160,45 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["name", "type", "column", "row", "powerFeed", "coolantSource"],
+        "required": [
+          "name",
+          "type",
+          "column",
+          "row",
+          "powerFeed",
+          "coolantSource"
+        ],
         "properties": {
-          "name": {"type": "string", "pattern": "^R\\d{2}_C\\d{2}$"},
-          "type": {"type": "string"},
-          "column": {"type": "integer", "minimum": 0},
-          "row": {"type": "integer", "minimum": 0},
-          "phase": {"description": "Deployment phase, starting at 1. Treat a missing value as 1.", "type": "integer", "minimum": 1},
-          "powerFeed": {"description": "Name of the RPP feeding this equipment, or empty.", "type": "string", "pattern": "^(R\\d{2}_C\\d{2})?$"},
-          "coolantSource": {"description": "Name of the CDU supplying coolant, or empty.", "type": "string", "pattern": "^(R\\d{2}_C\\d{2})?$"}
+          "name": {
+            "type": "string",
+            "pattern": "^R\\d{2}_C\\d{2}$"
+          },
+          "type": {
+            "type": "string"
+          },
+          "column": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "row": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "phase": {
+            "description": "Deployment phase, starting at 1. Treat a missing value as 1.",
+            "type": "integer",
+            "minimum": 1
+          },
+          "powerFeed": {
+            "description": "Name of the RPP feeding this equipment, or empty.",
+            "type": "string",
+            "pattern": "^(R\\d{2}_C\\d{2})?$"
+          },
+          "coolantSource": {
+            "description": "Name of the CDU supplying coolant, or empty.",
+            "type": "string",
+            "pattern": "^(R\\d{2}_C\\d{2})?$"
+          }
         }
       }
     }

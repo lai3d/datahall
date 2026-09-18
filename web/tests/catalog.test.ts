@@ -2,12 +2,19 @@
 import {describe, expect, it} from 'vitest';
 import Ajv2020 from 'ajv/dist/2020.js';
 import {readFileSync} from 'node:fs';
-import {CATALOG} from '../src/catalog.ts';
+import {CATALOG, CATALOG_VERSION} from '../src/catalog.ts';
 import type {SourcedField} from '../src/types.ts';
 
 const json = (p: string) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
 
 describe('catalog', () => {
+  it('data version is the newest checked date of its sources', () => {
+    const cat = json('../../spec/catalog.json') as {version: string; items: {sources: {checked: string}[]}[]};
+    const newest = cat.items.flatMap(t => t.sources.map(s => s.checked)).sort().at(-1);
+    expect(cat.version).toBe(newest);
+    expect(CATALOG_VERSION).toBe(cat.version);
+  });
+
   it('matches spec/catalog.schema.json', () => {
     const validate = new Ajv2020({allErrors: true}).compile(json('../../spec/catalog.schema.json'));
     expect(validate(json('../../spec/catalog.json')), JSON.stringify(validate.errors, null, 1)).toBe(true);

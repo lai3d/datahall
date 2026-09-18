@@ -4,6 +4,7 @@
 import {parseUsda, UsdaSyntaxError} from './usda-parser.ts';
 import {keyOf, FEEDS, supplyLinks} from './grid.ts';
 import {MAX_PHASE} from './growth.ts';
+import {CATALOG_VERSION} from './catalog.ts';
 import {setFeed} from './feeds.ts';
 import {tr, loc, catName} from './i18n.ts';
 import type {UsdPrim} from './usda-parser.ts';
@@ -61,6 +62,10 @@ export function importUsda(text: string, CAT: Catalog, GRID: Grid): ImportResult
 
   // Position comes only from gridColumn/gridRow, independent of the up axis; the up axis is used only to verify translate
   const zUpMeters = meta.upAxis === 'Z' && meta.metersPerUnit === 1;
+
+  // Figures always come from the current catalog; say so when the file was exported from a different one
+  const fileCatalog = (meta.customLayerData as Record<string, unknown> | undefined)?.['dchall:catalogVersion'];
+  if (typeof fileCatalog === 'string' && fileCatalog !== CATALOG_VERSION) warn(tr('usdCatalogVersion', {v: fileCatalog, cur: CATALOG_VERSION}));
 
   const grid: Record<keyof Grid, string> = {GW: 'dchall:gridColumns', GD: 'dchall:gridRows', CX: 'dchall:cellWidthM', CZ: 'dchall:cellDepthM'};
   for (const [k, name] of Object.entries(grid) as [keyof Grid, string][]){

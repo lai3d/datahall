@@ -41,6 +41,7 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 | Web app | TypeScript 7 (strict), Vite 8, React 19 for the panel, three.js 0.186 for the 3D view (plain three.js, no React bindings) |
 | Web tests | vitest for the pure logic, ajv (layout.json schema), Khronos glTF-Validator, Playwright browser smoke tests |
 | Hosting | Vercel (production from `main`, preview per pull request), Vercel Web Analytics |
+| Provenance | Exported `.usda` and `layout.json` name the catalog data version and the capacity model version behind their figures |
 | Data formats | OpenUSD `.usda` with a codeless applied API schema (`dchall:`), `layout.json` (JSON Schema 2020-12), share links in the URL hash |
 | USD tooling | Python with `usd-core` 26.8 (OpenUSD), `usdGenSchema`, NVIDIA SimReady Foundation / OAV rules for the audit |
 | Unity app | Unity 6000.6 (URP), glTFast, a small Objective-C plugin for the macOS file dialog and drag and drop |

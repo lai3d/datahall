@@ -95,6 +95,7 @@ const zh: typeof en = {
   rangeCap: ({lo, hi}) => `$${lo}–${hi}M`,
   srcChecked: ({date}) => `核对于 ${date}`,
   mIntro: '这个模拟器用来了解 AI 机房是怎么搭起来的。它只用几条简单规则，每个结果都能讲清楚原因；里面的数字是公开资料里的粗略估算，不能用于工程设计。',
+  mVersions: ({catalog, model}) => `设备目录版本 ${catalog}，容量模型 ${model}。导出的 .usda 和 layout.json 都带这两个版本号，数值以后变了也能对得上。`,
   mHChecks: '通电前的五项检查',
   mChecksIntro: '五项全部通过才能通电。每一项都是拿设备的需求和配套设备能提供的容量比较。',
   mDist: ({cap}) => `配电：所有机柜的 IT 功率不能超过配电柜 RPP 的容量，每台 ${cap} kW。真实机房还有变压器、开关柜、UPS 和 A/B 双路供电，这里都合并进了 RPP。`,
@@ -312,6 +313,7 @@ const zh: typeof en = {
   usdOutside: ({where, loc}) => `${where} 的位置（${loc}）超出网格，未导入。`,
   usdOverlap: ({where, other, loc}) => `${where} 和 ${other} 占用同一格（${loc}），未导入。`,
   usdFeedInvalid: ({where, field, target}) => `${where} 的 dchall:${field} 指向 ${target}，它没有作为对应的供给设备导入，改为就近。`,
+  usdCatalogVersion: ({v, cur}) => `文件导出时用的是 ${v} 版设备目录，当前页面是 ${cur} 版。设备参数按当前目录计算。`,
   usdPhase: ({where, v}) => `${where} 的 dchall:phase = ${v} 无效，按第 1 阶段导入。`,
   usdTranslate: ({where, loc}) => `${where} 的 xformOp:translate 和${loc}的位置不一致，按 dchall:gridColumn / gridRow 放置。`,
 

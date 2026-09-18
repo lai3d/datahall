@@ -34,6 +34,7 @@ Estimates are in Claude session hours. Calendar time depends on how sessions are
 | Repair suggestions | From the product roadmap proposal (P1): a hall that cannot power on should say how to fix it, not just what is short. Deterministic: support units to add, a bigger feed or racks to remove, each option re-checked including per-device assignment, applied in one click | 2 h | Done, 2026-09-18 |
 | Layout from a goal | From the product roadmap proposal (P1): early planning starts from a target, not an empty grid. Rack type, GPU count, utility feed and optional N+1 give a deterministic layout that passes every check, with the reason when the goal does not fit; reuses the repair placement | 2–3 h | Done, 2026-09-18 |
 | Scenario library | From the product roadmap proposal (P1): presets become short lessons with a goal, a starting hall, a completion condition and a conclusion. Four scenarios; each hall stays shareable, and completion is counted without sending layout contents | 3–4 h | Done, 2026-09-18 |
+| Versioned exports | From the product roadmap proposal (P0): a shared or exported result must stay explainable after catalog figures change. Exports name the catalog data version and the model version; imports flag a different catalog. Share links keep their format, so existing links still work | 1–2 h | Done, 2026-09-18 |
 
 ## Next (mid-quarter, 1 to 2 months)
 
