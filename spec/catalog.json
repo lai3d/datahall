@@ -238,6 +238,7 @@
       "liq": 0,
       "cap": 2,
       "h": 2.2,
+      "airDense": true,
       "note": "一柜 4 台 10U DGX B200，每台 8 GPU、最大约 14.3 kW（NVIDIA）。纯风冷，单柜接近 60 kW；NVIDIA 给后续 DGX B300 的 4 台一柜方案（平均约 58 kW）配的是主动式背门换热器。每柜价格为估算。",
       "i18n": {
         "en": {
@@ -275,7 +276,12 @@
             "gpus",
             "liq",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "一柜 4 台、纯风冷，以及每台约 $500K 的价格，都是估算"
+            }
+          }
         }
       ]
     },
@@ -484,7 +490,12 @@
           "supports": [
             "liq",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "液冷比例按机柜内 100 kW 的 CDU 对整柜最高 120 kW 估算；价格按每颗 GPU 约 $25–30k 加整机估算"
+            }
+          }
         }
       ]
     },
@@ -498,11 +509,11 @@
       "liq": 0.7,
       "cap": 0.67,
       "h": 2.25,
-      "note": "华为 Atlas 900 A3 SuperPoD（华为云称 CloudMatrix384）的计算柜。整套 16 柜：12 个计算柜，每柜 4 个节点、共 32 颗昇腾 910C NPU（这里按 GPU 计）；4 个总线交换柜承载全光 UnifiedBus 超节点互联（6,912 个 LPO 光模块），这里不单独建模，功耗和价格摊进计算柜。计算柜液冷、总线柜风冷（华为）。整套约 559 kW，含网络和存储（SemiAnalysis 经 Tom's Hardware，2025-04），约 $8M（FT 经 TrendForce，2025-07）；每柜功耗、液冷比例和价格都是按整套平摊的估算。2025 年 3 月开始交付；后续的 Atlas 950 SuperPoD 每个计算柜 64 颗 NPU、约 100 kW，计划 2026 年四季度上市。",
+      "note": "华为 Atlas 900 A3 SuperPoD（华为云称 CloudMatrix384）的计算柜。整套 16 柜：12 个计算柜，每柜 4 个节点、共 32 颗昇腾 910C NPU（这里按 GPU 计，同样要占 IB 交换柜的后端端口）；4 个总线交换柜承载全光 UnifiedBus 超节点互联（6,912 个 LPO 光模块），这里不单独建模，功耗和价格摊进计算柜。计算柜液冷、总线柜风冷（华为）。整套约 559 kW，含网络和存储（SemiAnalysis 经 Tom's Hardware，2025-04），约 $8M（FT 经 TrendForce，2025-07）；每柜功耗、液冷比例和价格都是按整套平摊的估算。2025 年 3 月开始交付；后续的 Atlas 950 SuperPoD 每个计算柜 64 颗 NPU、约 100 kW，计划 2026 年四季度上市。",
       "i18n": {
         "en": {
           "name": "CloudMatrix 384 rack",
-          "note": "Compute rack of Huawei's Atlas 900 A3 SuperPoD (offered by Huawei Cloud as CloudMatrix384). A full system is 16 racks: 12 compute racks, each with 4 nodes and 32 Ascend 910C NPUs (counted as GPUs here), and 4 bus switch racks carrying the all-optical UnifiedBus scale-up network (6,912 LPO transceivers). The switch racks are not modeled separately; their power and price are folded into the compute racks. Compute racks are liquid-cooled and switch racks air-cooled (Huawei). The whole system draws about 559 kW including networking and storage (SemiAnalysis via Tom's Hardware, 2025-04) and costs about $8M (FT via TrendForce, 2025-07); per-rack power, liquid share and price spread those totals over the 12 compute racks and are estimates. Deliveries began in March 2025; the successor Atlas 950 SuperPoD puts 64 NPUs and about 100 kW in each compute cabinet and is planned for Q4 2026."
+          "note": "Compute rack of Huawei's Atlas 900 A3 SuperPoD (offered by Huawei Cloud as CloudMatrix384). A full system is 16 racks: 12 compute racks, each with 4 nodes and 32 Ascend 910C NPUs (counted as GPUs here, so they need back-end ports on IB switch racks too), and 4 bus switch racks carrying the all-optical UnifiedBus scale-up network (6,912 LPO transceivers). The switch racks are not modeled separately; their power and price are folded into the compute racks. Compute racks are liquid-cooled and switch racks air-cooled (Huawei). The whole system draws about 559 kW including networking and storage (SemiAnalysis via Tom's Hardware, 2025-04) and costs about $8M (FT via TrendForce, 2025-07); per-rack power, liquid share and price spread those totals over the 12 compute racks and are estimates. Deliveries began in March 2025; the successor Atlas 950 SuperPoD puts 64 NPUs and about 100 kW in each compute cabinet and is planned for Q4 2026."
         }
       },
       "sources": [
@@ -567,7 +578,12 @@
             "kw",
             "liq",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "每柜功耗（559 kW ÷ 12）、液冷比例和价格（$8M ÷ 12）都是把整套（含 4 个交换柜）平摊到 12 个计算柜"
+            }
+          }
         }
       ]
     },
@@ -617,7 +633,12 @@
             "ports",
             "liq",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "288 个端口和 24 kW 相当于约两台 Q3400 交换机加光模块等余量；风冷和价格为估算"
+            }
+          }
         }
       ]
     },
@@ -655,7 +676,12 @@
             "kw",
             "liq",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "按一柜约 7 个 FlashBlade//E 机箱、每个约 2.5 kW 估算；风冷和价格为估算"
+            }
+          }
         }
       ]
     },
@@ -696,7 +722,12 @@
             "liqCool",
             "ovh",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "800 kW 介于 Vertiv 的 600 和 1350 kW 两款之间；泵耗按 Vertiv 的比例折算；价格为估算"
+            }
+          }
         }
       ],
       "ranges": {
@@ -753,7 +784,12 @@
             "airCool",
             "ovh",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "120 kW 相当于约两台真实的列间空调；风机耗电和价格为估算"
+            }
+          }
         }
       ]
     },
@@ -790,7 +826,12 @@
           "supports": [
             "dist",
             "cap"
-          ]
+          ],
+          "i18n": {
+            "zh": {
+              "title": "800 kW 约相当于 415 V 下 1,200 A；价格为估算"
+            }
+          }
         }
       ]
     }

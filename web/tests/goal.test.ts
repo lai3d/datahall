@@ -3,7 +3,7 @@ import {CAT, CATALOG} from '../src/catalog.ts';
 import {GRID, keyOf} from '../src/grid.ts';
 import {UTILITY_OPTIONS} from '../src/sim.ts';
 import {blockingReasons, singlePointsOfFailure} from '../src/redundancy.ts';
-import {generateLayout, rackCells, MAX_GOAL_RACKS} from '../src/goal.ts';
+import {generateLayout, rackCells, maxGoalRacks} from '../src/goal.ts';
 import type {Item} from '../src/types.ts';
 
 const count = (list: Item[], type: string) => list.filter(i => i.type === type).length;
@@ -12,8 +12,8 @@ describe('rack rows', () => {
   it('centers each row and spreads rows down the hall', () => {
     expect(rackCells(8, GRID)).toEqual([4, 5, 6, 7, 8, 9, 10, 11].map(x => ({x, z: 4})));
     expect(new Set(rackCells(20, GRID).map(c => c.z))).toEqual(new Set([2, 6]));
-    expect(rackCells(MAX_GOAL_RACKS, GRID)).toHaveLength(MAX_GOAL_RACKS);
-    expect(rackCells(MAX_GOAL_RACKS + 1, GRID)).toEqual([]);
+    expect(rackCells(maxGoalRacks(GRID), GRID)).toHaveLength(maxGoalRacks(GRID));
+    expect(rackCells(maxGoalRacks(GRID) + 1, GRID)).toEqual([]);
   });
 });
 
@@ -31,7 +31,7 @@ describe('layout from a goal', () => {
   });
 
   it('stops at the floor for low-power racks', () => {
-    expect(generateLayout({type: 'dgx', gpus: 5000, utility: 10, n1: false}, CAT, GRID)).toMatchObject({racks: MAX_GOAL_RACKS, limit: 'floor'});
+    expect(generateLayout({type: 'dgx', gpus: 5000, utility: 10, n1: false}, CAT, GRID)).toMatchObject({racks: maxGoalRacks(GRID), limit: 'floor'});
   });
 
   it('says when N+1 redundancy is what limits the hall', () => {

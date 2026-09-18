@@ -224,6 +224,7 @@ The web version is the current focus (decided 2026-09-17), positioned as a demo 
 ## Data reliability
 
 Figures in `spec/catalog.json` are public estimates for teaching, **not engineering data**. The file's `version` is its data version: the newest `checked` date of its sources, kept in step by `web/tests/catalog.test.ts`; bump it with the sources whenever a figure changes. Every entry carries `sources` (schema in `spec/catalog.schema.json`, checked by `web/tests/catalog.test.ts`):
+- Dense air-cooled racks are flagged with `airDense` in the catalog, not by id in `sim.ts`; the warning names the rack and its power. Unity's C# keeps its own id list, since `layout.json` does not carry the flag
 - Each source has `title`, `type` (`official`: the maker's own documents, including OEM product guides; `reported`: press and analysts; `estimate`: this project's reasoning, no URL), `checked` (date last compared with the catalog value) and `supports` (the catalog fields it backs; empty for context-only sources). Non-estimates need `url` and `publisher`; `date` is omitted for undated product pages
 - Every numeric field of an entry must be backed by at least one source; `ranges` records the range sources give, and the simulation value must fall inside it
 - When changing a value: update the source (or add one), `checked`, `ranges`, and the Chinese and English notes together, then `npm run capacity-cases`, `npm run sample` and `tools/make_import_fixtures.py`; the schema-0.1 import fixture keeps old values, so its expected warnings change
@@ -247,6 +248,7 @@ Last full check 2026-09-18. Choices made then:
 - Elements with `display` set (`.row`, `.h2row`) rely on the global `[hidden]{display:none !important}` to be hidden with the `hidden` attribute
 - The UI defaults to English and supports Simplified Chinese. Both languages use sentence-style copy; English uses sentence case, no all-caps labels
 - Issue text in `spec/capacity-cases.json` is always generated in Chinese (`buildCases` temporarily switches to Chinese), and Unity's C# capacity model compares it verbatim; when changing the Chinese wording of capacity issues, update the C# as well
+- Source titles in `catalog.json` keep the publication's own language; only this project's own `estimate` notes carry a `i18n.zh.title` (`i18n.ts`'s `srcTitle`)
 - The content of exported files (`.usda` comments and README, `layout.json`) does not change with the UI language
 - Fixed color semantics: NVIDIA GPU green, AMD GPU rose (`--amd`), Huawei blue (`--huawei`), coolant cyan, power distribution copper, network purple. Rose was chosen over AMD red and blue over Huawei red so racks never look like the red overload marker. A new color also needs an entry in `usd-export.ts`'s `PALETTE` and in the color test in `sim.test.ts`
 - Answer directly, no pleasantries.
