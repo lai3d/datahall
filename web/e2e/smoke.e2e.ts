@@ -231,6 +231,35 @@ test('start from a goal: generates a hall that passes, explains the limit, and c
   expect(errors).toEqual([]);
 });
 
+test('scenario: fix the bare rack row, power on, and read the conclusion', async ({page}) => {
+  const errors = await openApp(page);
+  await page.locator('#scenarios button[data-scenario="powerOn"]').click();
+  await expect(page.locator('#scenario')).toContainText('Eight GB200 racks are on the floor');
+  expect((await layout(page)).items).toHaveLength(8);
+  await page.locator('#repairApply').click();
+  await expect(page.locator('#scenario')).not.toHaveAttribute('data-done', 'true');
+  await page.locator('#power').click();
+  await expect(page.locator('#scenario')).toHaveAttribute('data-done', 'true');
+  await expect(page.locator('#scenario')).toContainText('Powered on: 576 GPUs');
+  await page.locator('#scenarioExit').click();
+  await expect(page.locator('#scenario')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('scenario: rebuild the same feed with newer racks using the goal generator', async ({page}) => {
+  const errors = await openApp(page);
+  await page.locator('#scenarios button[data-scenario="sameFeed"]').click();
+  await expect(page.locator('#scenario')).toContainText('largest GB200 hall a 2 MW feed can run');
+  await page.locator('#goalType').selectOption('vr200');
+  await page.locator('#goalGpus').fill('2000');
+  await page.locator('#goalUtility').selectOption('2');
+  await page.locator('#goalGenerate').click();
+  // Generating from a goal is part of this lesson, so it does not leave the scenario
+  await expect(page.locator('#scenario')).toHaveAttribute('data-done', 'true');
+  await expect(page.locator('#scenario')).toContainText('On the same 2 MW feed: 8 Vera Rubin racks with 576 GPUs, against 12 GB200 racks with 864 GPUs.');
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

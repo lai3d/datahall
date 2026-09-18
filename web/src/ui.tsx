@@ -6,11 +6,14 @@ import type {CSSProperties, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createPortal} from 'react-dom';
 import {CATALOG, CAT} from './catalog.ts';
+import {toItems} from './edit.ts';
 import {fmt, PUE_FACTORS, UTILITY_OPTIONS} from './sim.ts';
 import {compareRacks} from './compare.ts';
 import {addCounts, planRepair} from './repair.ts';
 import type {RepairOption, SupportType} from './repair.ts';
 import type {Goal} from './goal.ts';
+import {SCENARIO_IDS, scenarioResult, startLayout} from './scenarios.ts';
+import type {ScenarioId} from './scenarios.ts';
 import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
 import {scaleRefs} from './scale.ts';
@@ -48,6 +51,8 @@ export interface Actions {
   setEnergy(change: Partial<EnergyInputs>): void;
   applyRepair(index: number): void;
   generateGoal(goal: Goal): void;
+  startScenario(id: ScenarioId): void;
+  exitScenario(): void;
   openMethod(section: MethodSection): void;
   closeMethod(): void;
   setItemPhase(key: string, phase: number): void;
@@ -95,6 +100,7 @@ function App({stage}: {stage: HTMLElement}){
       <PanelBar model={model} />
       <Header />
       <Tutorial model={model} version={version} />
+      <ScenarioCard model={model} />
       <h2>{tr('hUtility')}</h2>
       <div className="row seg" id="utility">
         {UTILITY_OPTIONS.map(u => <button key={u} type="button" data-u={u} aria-pressed={u === state.utility} onClick={() => actions.setUtility(u)}>{u} MW</button>)}
@@ -108,6 +114,7 @@ function App({stage}: {stage: HTMLElement}){
       <Compare model={model} />
       <Drill model={model} />
       <Presets />
+      <Scenarios />
       <GoalForm />
       <Share notice={state.ui.share} />
       <Usd notice={state.ui.usd} />
@@ -760,6 +767,51 @@ function GoalForm(){
         <button type="submit" id="goalGenerate" disabled={!(asked > 0)}>{tr('goalGenerate')}</button>
       </form>
       {message && <p className="sub" id="goalMsg" style={{marginTop: 6}}>{message}</p>}
+    </>
+  );
+}
+
+// Scenario library (scenarios.ts): a card at the top of the panel while one runs, and the list of scenarios to start
+const SCEN_TITLE = {powerOn: 'scenPowerOnTitle', sameFeed: 'scenSameFeedTitle', redundancy: 'scenRedundancyTitle', phases: 'scenPhasesTitle'} as const;
+const SCEN_GOAL = {powerOn: 'scenPowerOnGoal', sameFeed: 'scenSameFeedGoal', redundancy: 'scenRedundancyGoal', phases: 'scenPhasesGoal'} as const;
+
+function conclusion(id: ScenarioId, model: HallModel): string{
+  const r = scenarioResult(model.active, CAT, state.utility);
+  if (id === 'powerOn') return tr('scenPowerOnDone', {gpus: r.gpus.toLocaleString(), support: r.support, pue: r.pue});
+  if (id === 'redundancy') return tr('scenRedundancyDone', {cdu: r.cdu, rpp: r.rpp, crah: r.crah, ib: r.ib});
+  if (id === 'phases') return tr('scenPhasesDone', {racks: r.racks});
+  const before = scenarioResult(toItems(startLayout('sameFeed', CAT, GRID).list), CAT, state.utility);
+  return tr('scenSameFeedDone', {racks: r.racks, gpus: r.gpus.toLocaleString(), oldRacks: before.racks, oldGpus: before.gpus.toLocaleString(), u: state.utility});
+}
+
+function ScenarioCard({model}: {model: HallModel}){
+  const s = state.scenario;
+  if (!s) return null;
+  return (
+    <section className="tutorial" id="scenario" data-scenario={s.id} data-done={s.done || undefined} aria-live="polite">
+      <div className="tutorial-head"><strong>{tr(SCEN_TITLE[s.id])}</strong><span>{tr(s.done ? 'scenarioDoneLabel' : 'hScenarios')}</span></div>
+      <p>{s.done ? conclusion(s.id, model) : tr(SCEN_GOAL[s.id])}</p>
+      <div className="row">
+        {s.done && <button type="button" id="scenarioShare" onClick={() => actions.copyShareLink()}>{tr('shareCopy')}</button>}
+        <button type="button" id="scenarioExit" onClick={() => actions.exitScenario()}>{tr(s.done ? 'scenarioFinish' : 'scenarioExit')}</button>
+      </div>
+    </section>
+  );
+}
+
+function Scenarios(){
+  return (
+    <>
+      <h2>{tr('hScenarios')}</h2>
+      <p className="sub">{tr('scenariosIntro')}</p>
+      <div className="palette" id="scenarios">
+        {SCENARIO_IDS.map(id => (
+          <button key={id} type="button" className="chip" data-scenario={id} aria-pressed={state.scenario?.id === id} onClick={() => actions.startScenario(id)}>
+            <i style={{background: 'var(--coolant)'}}></i>
+            <div><strong>{tr(SCEN_TITLE[id])}</strong><small>{tr(SCEN_GOAL[id])}</small></div>
+          </button>
+        ))}
+      </div>
     </>
   );
 }

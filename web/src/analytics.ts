@@ -30,6 +30,11 @@ export function reportTutorialDone(): void{
   if (enabled()) pageview({path: '/tutorial-done'});
 }
 
+// Scenario completions are counted as virtual pages, like the tutorial; no layout content is sent
+export function reportScenarioDone(id: string): void{
+  if (enabled()) pageview({path: `/scenario-${id}-done`});
+}
+
 export function initAnalytics(openedFromShareLink: boolean): void{
   if (!enabled()) return;
   inject({

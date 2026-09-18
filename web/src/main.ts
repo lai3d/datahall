@@ -4,6 +4,8 @@ import {phasesIn, MAX_PHASE} from './growth.ts';
 import {cleanInputs} from './energy.ts';
 import {planRepair} from './repair.ts';
 import {generateLayout} from './goal.ts';
+import {SCENARIOS, isDone, scenarioContext, startLayout} from './scenarios.ts';
+import type {ScenarioId} from './scenarios.ts';
 import type {Goal} from './goal.ts';
 import type {EnergyInputs} from './energy.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
@@ -26,7 +28,7 @@ import {lineCells, freeCells, sameLayout, createHistory, toItem} from './edit.ts
 import {canFail, blockingReasons} from './redundancy.ts';
 import {advance, LAST} from './tutorial.ts';
 import type {TutorialContext} from './tutorial.ts';
-import {hasShareLink, initAnalytics, reportTutorialDone} from './analytics.ts';
+import {hasShareLink, initAnalytics, reportScenarioDone, reportTutorialDone} from './analytics.ts';
 import {$} from './dom.ts';
 import type {PlacedItem} from './state.ts';
 import type {Actions} from './ui.tsx';
@@ -70,7 +72,13 @@ function edit(fn: () => void){
 const removeItem = (key: string) => edit(() => remove(key));
 // Loading a preset, importing a file or opening a share link swaps in a different hall, so the failure drill is cleared; undo and redo keep it (facilities still in their cells stay failed)
 // They also end a running tutorial
-const loadLayout = (p: Layout) => edit(() => { state.failed.clear(); state.viewPhase = null; state.phase = 1; state.tutorial = null; replaceLayout(p); });
+// keepScenario: the goal generator is a tool a scenario may ask for, so generating does not leave the scenario;
+// presets, imports and share links do
+const loadLayout = (p: Layout, keepScenario = false) => edit(() => {
+  state.failed.clear(); state.viewPhase = null; state.phase = 1; state.tutorial = null;
+  if (!keepScenario) state.scenario = null;
+  replaceLayout(p);
+});
 // Not recorded in undo history: loading at startup, and undo/redo themselves
 function showLayout(p: Layout){ replaceLayout(p); state.powered = false; state.rowAnchor = null; changed(); }
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
@@ -84,6 +92,7 @@ function refresh(){
   view.setLoads(model.loads);
   view.setDimmed();
   if (state.tutorial !== null) stepTutorial(model, false);
+  checkScenario(model);
   notify();
 }
 
@@ -117,6 +126,22 @@ function stepTutorial(model: ReturnType<typeof hallModel>, next: boolean){
   state.tutorial = advance(before, tutorialContext(model), next);
   if (before < LAST && state.tutorial === LAST) reportTutorialDone();
 }
+// ---------- scenarios ----------
+// A scenario starts from its own hall (like a preset, one undo entry) and finishes when the hall meets its condition
+function startScenario(id: ScenarioId){
+  loadLayout(startLayout(id, CAT, GRID));
+  state.scenario = {id, done: false};
+  notify();
+}
+function checkScenario(model: ReturnType<typeof hallModel>){
+  const s = state.scenario;
+  if (!s || s.done) return;
+  if (isDone(s.id, scenarioContext(model.all, model.active, CAT, state.utility, state.powered))){
+    s.done = true;
+    reportScenarioDone(s.id);
+  }
+}
+
 // Start from an empty hall at 2 MW with nothing selected
 function startTutorial(){
   markTutorialSeen();
@@ -224,7 +249,7 @@ function generateGoal(goal: Goal){
   const r = generateLayout(goal, CAT, GRID);
   const found = !!r && r.racks > 0;
   if (r && found){
-    loadLayout({u: goal.utility, list: r.list.map(i => [i.type, i.x, i.z])});
+    loadLayout({u: goal.utility, list: r.list.map(i => [i.type, i.x, i.z])}, true);
     r.list.forEach(i => view.popMesh(state.items.get(keyOf(i.x, i.z))));
   }
   const support = (['rpp', 'cdu', 'crah', 'ib'] as const).map(t => [t, r ? r.list.filter(i => i.type === t).length : 0] as [string, number]).filter(([, n]) => n > 0);
@@ -501,6 +526,8 @@ const actions: Actions = {
   startTutorial,
   tutorialNext: () => { stepTutorial(hallModel(), true); refresh(); },
   exitTutorial: () => { state.tutorial = null; notify(); },
+  startScenario,
+  exitScenario: () => { state.scenario = null; notify(); },
   dismissTutorialOffer: () => { markTutorialSeen(); notify(); },
   undo,
   redo,
