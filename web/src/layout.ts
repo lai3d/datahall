@@ -47,7 +47,7 @@ export function parseSavedLayout(raw: string, CAT: Catalog, grid: Grid): Layout 
   for (const e of (p as Layout).list as unknown[]){
     if (!Array.isArray(e)) continue;
     const [type, x, z, props] = e;
-    if (typeof type !== 'string' || !CAT[type] || !inGrid(x, z) || seen.has(keyOf(x, z as number))) continue;
+    if (typeof type !== 'string' || !Object.hasOwn(CAT, type) || !inGrid(x, z) || seen.has(keyOf(x, z as number))) continue;
     seen.add(keyOf(x, z as number));
     // The 4th item is {feeds?, phase?}, or the short-lived bare feeds form (see entryProps in edit.ts)
     const src = props && typeof props === 'object' ? ('coolantSource' in props || 'powerFeed' in props ? {feeds: props} : props) : {};

@@ -43,7 +43,7 @@ const undoStack = createHistory();   // Not named history, to avoid shadowing wi
 // extra: {feeds?, phase?}, from the snapshot entry
 function place(type: string, x: number, z: number, extra: EntryProps = {}){
   const key = keyOf(x, z);
-  if (state.items.has(key) || !CAT[type]) return;
+  if (state.items.has(key) || !Object.hasOwn(CAT, type)) return;
   const it: Omit<PlacedItem, 'mesh'> & {mesh?: PlacedItem['mesh']} = {...extra, type, x, z};
   view.addMesh(key, it);
   state.items.set(key, it as PlacedItem);

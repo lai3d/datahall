@@ -15,13 +15,14 @@ export function reportedUrl(url: string, openedFromShareLink: boolean): string{
   const u = new URL(url);
   u.hash = '';
   u.search = '';
-  if (VIRTUAL_PAGES.some(p => u.pathname.endsWith('/' + p))) return u.toString();
+  const page = u.pathname.split('/').pop() ?? '';
+  if (VIRTUAL_PAGES.some(p => typeof p === 'string' ? p === page : p.test(page))) return u.toString();
   if (openedFromShareLink) u.pathname = u.pathname.replace(/\/?(index\.html)?$/, '/shared');
   return u.toString();
 }
 
 // Virtual pages reported with pageview() for milestones (Hobby has no custom events); kept as they are by reportedUrl
-const VIRTUAL_PAGES = ['tutorial-done'];
+const VIRTUAL_PAGES = ['tutorial-done', /^scenario-[\w-]+-done$/];
 
 const enabled = () => !import.meta.env.DEV && import.meta.env.MODE !== 'e2e';
 

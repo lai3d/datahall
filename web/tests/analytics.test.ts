@@ -23,3 +23,11 @@ describe('analytics URLs', () => {
     expect(reportedUrl('https://example.com/tools/datahall', true)).toBe('https://example.com/tools/datahall/shared');
   });
 });
+
+describe('scenario completions', () => {
+  it('keep their own page even for a visitor who arrived on a share link', () => {
+    expect(reportedUrl('https://datahall.example/scenario-powerOn-done', true)).toBe('https://datahall.example/scenario-powerOn-done');
+    expect(reportedUrl('https://datahall.example/scenario-sameFeed-done', false)).toBe('https://datahall.example/scenario-sameFeed-done');
+    expect(reportedUrl('https://datahall.example/', true)).toBe('https://datahall.example/shared');
+  });
+});

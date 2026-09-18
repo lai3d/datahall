@@ -100,7 +100,7 @@ export function importUsda(text: string, CAT: Catalog, GRID: Grid): ImportResult
     if (!isActive(prim)){ skip(tr('usdInactive', {where})); continue; }
     const id = catalogIdOf(prim);
     if (!id){ skip(tr('usdNoProto', {where})); continue; }
-    if (!CAT[id]){ skip(tr('usdUnknownType', {where, id})); continue; }
+    if (!Object.hasOwn(CAT, id)){ skip(tr('usdUnknownType', {where, id})); continue; }
 
     let x = valueOf(prim, 'dchall:gridColumn'), z = valueOf(prim, 'dchall:gridRow');
     if (!Number.isInteger(x) || !Number.isInteger(z)){
