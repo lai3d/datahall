@@ -204,6 +204,33 @@ test('repair suggestion: when the feed is the limit, raise it or remove racks in
   expect(errors).toEqual([]);
 });
 
+test('start from a goal: generates a hall that passes, explains the limit, and can be undone', async ({page}) => {
+  const errors = await openApp(page);
+  const before = (await layout(page)).items;
+  await page.locator('#goalType').selectOption('gb200');
+  await page.locator('#goalGpus').fill('576');
+  await page.locator('#goalUtility').selectOption('2');
+  await page.locator('#goalGenerate').click();
+  await expect(page.locator('#goalMsg')).toHaveText('Placed 8 × GB200 NVL72 (576 GPUs) with 2 RPPs, 2 CDUs, 2 in-row coolers and 2 IB switch racks.');
+  await expect(page.locator('#issues')).toContainText('All checks pass');
+  expect((await layout(page)).items.filter(i => i.startsWith('gb200@'))).toHaveLength(8);
+
+  await page.locator('#goalType').selectOption('vr200');
+  await page.locator('#goalGpus').fill('2000');
+  await page.locator('#goalUtility').selectOption('5');
+  await page.locator('#goalN1').check();
+  await page.locator('#goalGenerate').click();
+  await expect(page.locator('#goalMsg')).toContainText('but a 5 MW feed runs at most 21 of these racks');
+  await expect(page.locator('#n1')).toContainText('N+1 redundant:');
+  expect((await layout(page)).utility).toBe(5);
+
+  await page.locator('#undo').click();
+  await page.locator('#undo').click();
+  expect((await layout(page)).items).toEqual(before);
+  await expect(page.locator('#goalMsg')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

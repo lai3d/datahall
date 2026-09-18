@@ -21,13 +21,13 @@ const MAX_OVERLOAD_STEPS = 24;
 const byCell = (a: Pos, b: Pos) => a.z - b.z || a.x - b.x;
 
 // Free cells ordered by the nearest-assignment distance to a point (a row away counts double), ties by row then column
-function freeCellsNear(target: {x: number; z: number}, occupied: Set<string>, grid: Grid): Pos[]{
+export function freeCellsNear(target: {x: number; z: number}, occupied: Set<string>, grid: Grid): Pos[]{
   const cells: Pos[] = [];
   for (let z = 0; z < grid.GD; z++) for (let x = 0; x < grid.GW; x++) if (!occupied.has(keyOf(x, z))) cells.push({x, z});
   const d = (c: Pos) => Math.hypot(c.x - target.x, (c.z - target.z) * 2);
   return cells.sort((a, b) => d(a) - d(b) || byCell(a, b));
 }
-const centroid = (list: Pos[], grid: Grid) => list.length
+export const centroid = (list: Pos[], grid: Grid) => list.length
   ? {x: list.reduce((n, i) => n + i.x, 0) / list.length, z: list.reduce((n, i) => n + i.z, 0) / list.length}
   : {x: (grid.GW - 1) / 2, z: (grid.GD - 1) / 2};
 
@@ -47,7 +47,7 @@ const PER_DEVICE = {rpp: {load: (t: Catalog[string]) => t.kw ?? 0, cap: 'dist'},
 //    on the free cell nearest to the first one that the new unit would win (strictly nearer, or equal and first in row then column order).
 // 4. Drop any added unit the hall does not need to pass, last added first.
 // Returns null when the floor runs out
-function addSupport(base: Item[], CAT: Catalog, utility: number, occupied: Set<string>, grid: Grid): Item[] | null{
+export function addSupport(base: Item[], CAT: Catalog, utility: number, occupied: Set<string>, grid: Grid): Item[] | null{
   const need = new Map<SupportType, number>(SUPPORT_TYPES.map(t => [t, 0]));
   const counted = () => SUPPORT_TYPES.flatMap(t => Array.from({length: need.get(t)!}, (): Item => ({type: t, x: -1, z: -1})));
   for (let guard = 0; guard < 400; guard++){
