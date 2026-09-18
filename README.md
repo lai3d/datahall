@@ -25,6 +25,7 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 - **Load you can see.** CDUs and power panels carry a load meter that turns amber near capacity and red when overloaded, and power and coolant flow along the links once the hall is on.
 - **Explained assumptions.** "How the model works" explains every check, the PUE formula and its coefficients, what the estimates leave out, and where each device figure comes from.
 - **Annual energy.** Enter an electricity price and an average load to see yearly IT and facility energy, the annual PUE and the electricity bill.
+- **Scenarios.** Four short lessons on the same model: why a row of racks cannot power on, the same feed with a newer rack, why one more CDU is not N+1, and a growth plan that fails in phase two. Each ends with what the numbers mean.
 - **Start from a goal.** Pick a rack type, a GPU count, a utility feed and optionally N+1, and get a hall that passes every check, with a note on what stopped it short of the goal.
 - **Repair suggestions.** When the hall cannot power on, it proposes the fewest support units to add, a bigger utility feed or racks to remove, and applies the fix in one click.
 - **Rack comparison.** For the current utility feed, how many racks of each type fit with just enough support equipment, their GPUs, floor space, PUE and price. The HUD puts the IT load in everyday terms (DGX Sparks, US homes).
