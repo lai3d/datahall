@@ -130,7 +130,14 @@ export function removeMesh(it: PlacedItem): void{
 
 // Coolant and power links, same topology as the USD export (supplyLinks). Links to overloaded CDUs/RPPs are drawn red, manual assignments dashed
 export function rebuildLinks(): void{
-  if (linkObj){ scene.remove(linkObj); linkObj.traverse(o => { if (o instanceof THREE.LineSegments || o instanceof THREE.Points) o.geometry.dispose(); }); }
+  if (linkObj){
+    scene.remove(linkObj);
+    linkObj.traverse(o => {
+      if (!(o instanceof THREE.LineSegments || o instanceof THREE.Points)) return;
+      o.geometry.dispose();
+      (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+    });
+  }
   flows.length = 0;
   linkObj = new THREE.Group();
   const list = [...state.items].filter(([key, it]) => isActive(key, it)).map(([, it]) => it);
@@ -248,7 +255,8 @@ export function setDimmed(): void{
 }
 
 export function setOutline(): void{
-  if (outline){ scene.remove(outline); outline = null; }
+  // Rebuilt on every selection change and on every cell a drag passes through, so the old one has to go
+  if (outline){ scene.remove(outline); outline.geometry.dispose(); (Array.isArray(outline.material) ? outline.material : [outline.material]).forEach(m => m.dispose()); outline = null; }
   const it = state.selected && state.items.get(state.selected); if (!it) return;
   const h = CAT[it.type].h;
   outline = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(CX * .98, h + .1, CZ)),

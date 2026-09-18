@@ -108,6 +108,10 @@
         "future": {
           "type": "boolean"
         },
+        "airDense": {
+          "type": "boolean",
+          "description": "Air-cooled rack dense enough that real deployments need rear-door heat exchangers; the capacity check warns about it"
+        },
         "note": {
           "type": "string",
           "description": "Chinese source text"
@@ -216,6 +220,19 @@
             "$ref": "#/$defs/field"
           },
           "description": "Catalog fields this source backs; empty for context-only sources"
+        },
+        "i18n": {
+          "type": "object",
+          "description": "Translations of this source title; publication titles are never translated, only this project’s own estimate notes",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string"
+              }
+            }
+          }
         }
       },
       "if": {

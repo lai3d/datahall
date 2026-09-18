@@ -33,7 +33,8 @@ export function rackCells(n: number, grid: Grid): {x: number; z: number}[]{
   });
   return cells;
 }
-export const MAX_GOAL_RACKS = Object.keys(ROWS).length * 16;
+// Most racks the row pattern can hold on this grid
+export const maxGoalRacks = (grid: Grid): number => Object.keys(ROWS).length * grid.GW;
 
 const MAX_N1_STEPS = 40;
 
@@ -73,7 +74,7 @@ export function generateLayout(goal: Goal, CAT: Catalog, grid: Grid): GoalResult
   if (!t?.gpus || !(goal.gpus > 0)) return null;
   const wanted = Math.ceil(goal.gpus / t.gpus);
   const max = largestHall(goal.type, CAT, goal.utility, grid);
-  const maxRacks = Math.min(max.racks, MAX_GOAL_RACKS);
+  const maxRacks = Math.min(max.racks, maxGoalRacks(grid));
   let racks = Math.min(wanted, maxRacks);
   // The totals-only maximum can still fail once racks are laid out (per-device assignment, N+1), so step down until a layout passes
   for (; racks > 0; racks--){
@@ -86,6 +87,6 @@ export function generateLayout(goal: Goal, CAT: Catalog, grid: Grid): GoalResult
   function limitOf(g: Goal, fitted: number): GoalLimit{
     if (g.n1 && fitted < maxRacks && attempt({...g, n1: false}, fitted + 1, CAT, grid)) return 'n1';
     if (fitted < maxRacks) return 'layout';
-    return maxRacks === MAX_GOAL_RACKS || max.limit === 'floor' ? 'floor' : 'utility';
+    return maxRacks === maxGoalRacks(grid) || max.limit === 'floor' ? 'floor' : 'utility';
   }
 }
