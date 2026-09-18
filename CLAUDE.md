@@ -111,6 +111,8 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # open a layou
 
 ## Design decisions
 
+- **Capacity comparisons** use `sim.ts`'s `over(need, cap)` (tolerance `KW_EPS`), not `>`: summing the same devices in a different order changes the last bits of a float, and dragging reorders the list, so an exact comparison can report a shortage that appears and disappears as devices move. `supply.ts` already compared with a tolerance
+- **Device type names from outside the app** (share links, saved layouts, `.usda` files) are looked up with `Object.hasOwn(CAT, type)`: `CAT` is a plain object, so `constructor` or `toString` would otherwise pass as a device type and put a broken device in the hall
 - **Capacity model**: five constraints — power distribution (RPP), liquid cooling (CDU), air cooling (in-row coolers), back-end network ports, utility power; if any is not met, the hall cannot power on.
   PUE estimate: `(IT + equipment overhead + liquid-cooled heat × 0.08 + air-cooled heat × 0.30 + IT × 0.05) / IT`, a simplified formula for teaching.
   - The web version also has a per-device check (`supply.ts`): even when totals are sufficient, if the liquid-cooling heat assigned by proximity to a CDU, or the power assigned to an RPP, exceeds its capacity, the hall cannot power on.

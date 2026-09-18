@@ -1,6 +1,6 @@
 // Failure drills and N+1 redundancy checks. Pure functions, no DOM dependency.
 // Failed devices are removed from the computation: they provide no capacity and draw no power; remaining devices are reassigned to the nearest unit via supplyLinks.
-import {compute} from './sim.ts';
+import {compute, over} from './sim.ts';
 import {supplyLoads, reportedOverloads} from './supply.ts';
 import type {Catalog, CatalogItem, Item} from './types.ts';
 
@@ -15,11 +15,11 @@ export const canFail = (t: CatalogItem | undefined): boolean => !!(t && (t.liqCo
 export function blockingReasons<T extends Item>(list: T[], CAT: Catalog, utility: number): Reason<T>[]{
   const s = compute(list, CAT, utility);
   const reasons: Reason<T>[] = [];
-  if (s.it > s.dist) reasons.push({kind: 'dist'});
-  if (s.liqHeat > s.liqCap) reasons.push({kind: 'liquid'});
-  if (s.airHeat > s.airCap) reasons.push({kind: 'air'});
+  if (over(s.it, s.dist)) reasons.push({kind: 'dist'});
+  if (over(s.liqHeat, s.liqCap)) reasons.push({kind: 'liquid'});
+  if (over(s.airHeat, s.airCap)) reasons.push({kind: 'air'});
   if (s.gpus > s.ports) reasons.push({kind: 'network'});
-  if (s.facility > utility * 1000) reasons.push({kind: 'utility'});
+  if (over(s.facility, utility * 1000)) reasons.push({kind: 'utility'});
   const loads = supplyLoads(list, CAT);
   for (const kind of ['cdu', 'rpp'] as const) reportedOverloads(loads, s, kind).forEach(([item]) => reasons.push({kind: 'overload', item}));
   return reasons;

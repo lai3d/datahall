@@ -177,7 +177,7 @@ describe('importUsda', () => {
 
   it('files that cannot be imported give a clear reason', () => {
     const errors: [string, RegExp][] = [
-      ['PXR-USDC  binary', /二进制 .usd（usdc）/],
+      ['PXR-USDC\u0000\u0000binary', /二进制 .usd（usdc）/],
       ['{"not": "usd"}', /文件格式有误.*缺少 #usda 文件头/],
       ['#usda 1.0\ndef Xform "World" {}\n', /没有找到 \/DataHall/],
       [exportList([], 2).replace('dchall:gridColumns = 16', 'dchall:gridColumns = 20'), /网格 dchall:gridColumns = 20.*无法导入/],

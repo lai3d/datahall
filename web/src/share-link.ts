@@ -58,7 +58,7 @@ export function decodeLayout(hash: string, CAT: Catalog, GRID: Grid): DecodedLay
   for (const group of groups){
     const [type, cells = ''] = group.split(':');
     if (v >= 2 && type.startsWith('@')){ assigned.push([type, cells]); continue; }
-    if (!CAT[type]){ warnings.push(tr('linkType', {type})); continue; }
+    if (!Object.hasOwn(CAT, type)){ warnings.push(tr('linkType', {type})); continue; }
     for (const cell of cells.split('-').filter(Boolean)){
       const m = cell.match(/^(\d+)\.(\d+)$/);
       if (!m){ warnings.push(tr('linkCell', {cell: `${type}:${cell}`})); continue; }

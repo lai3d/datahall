@@ -63,3 +63,48 @@ describe('the phase cap matches between the UI, share links and imports', async 
     expect(back.list).toEqual([['gb200', 0, 0, {phase: MAX_PHASE}]]);
   });
 });
+
+describe('capacity checks do not depend on device order', () => {
+  it('a hall whose heat lands exactly on capacity reads the same in any order', async () => {
+    const {compute} = await import('../src/sim.ts');
+    const {blockingReasons} = await import('../src/redundancy.ts');
+    // 10 CloudMatrix racks, network, storage and one DGX: the air heat sums to exactly three in-row coolers
+    const list: Item[] = [
+      ...Array.from({length: 10}, (_, i) => at('cm384', i, 0)),
+      ...Array.from({length: 3}, (_, i) => at('ib', i, 1)), at('dgx', 5, 1),
+      ...Array.from({length: 5}, (_, i) => at('stor', i + 6, 1)),
+      ...Array.from({length: 3}, (_, i) => at('crah', i, 2)),
+    ];
+    const orders = [list, [...list].reverse(), [...list.slice(3), ...list.slice(0, 3)]];
+    expect(new Set(orders.map(l => JSON.stringify(blockingReasons(l, CAT, 10).map(r => r.kind))))).toHaveLength(1);
+    expect(new Set(orders.map(l => JSON.stringify(compute(l, CAT, 10).issues.map(i => i.txt))))).toHaveLength(1);
+    expect(blockingReasons(list, CAT, 10).map(r => r.kind)).not.toContain('air');
+  });
+});
+
+describe('device types from untrusted input cannot come from Object.prototype', () => {
+  const evil = ['constructor', 'toString', '__proto__', 'hasOwnProperty'];
+
+  it('share links skip them with a message', async () => {
+    const {decodeLayout} = await import('../src/share-link.ts');
+    const {GRID} = await import('../src/grid.ts');
+    for (const type of evil){
+      const r = decodeLayout(`#layout=1,2,${type}:0.0`, CAT, GRID)!;
+      expect(r.list, type).toEqual([]);
+      expect(r.warnings, type).toHaveLength(1);
+    }
+  });
+
+  it('saved layouts and .usda imports skip them too', async () => {
+    const {parseSavedLayout} = await import('../src/layout.ts');
+    const {GRID} = await import('../src/grid.ts');
+    const {importUsda} = await import('../src/usd-import.ts');
+    for (const type of evil){
+      expect(parseSavedLayout(JSON.stringify({u: 2, list: [[type, 0, 0]]}), CAT, GRID)!.list, type).toEqual([]);
+      const usda = `#usda 1.0\n(\n    defaultPrim = "DataHall"\n    metersPerUnit = 1\n    upAxis = "Z"\n)\n\ndef Xform "DataHall" (\n    kind = "assembly"\n)\n{\n    double dchall:utilityMw = 2\n    int dchall:gridColumns = ${GRID.GW}\n    int dchall:gridRows = ${GRID.GD}\n    double dchall:cellWidthM = ${GRID.CX}\n    double dchall:cellDepthM = ${GRID.CZ}\n\n    def Scope "Equipment" (\n        kind = "group"\n    )\n    {\n        def Xform "R01_C01" (\n            kind = "component"\n            prepend references = </DataHall/Catalog/${type}>\n        )\n        {\n            int dchall:gridColumn = 0\n            int dchall:gridRow = 0\n        }\n    }\n}\n`;
+      const r = importUsda(usda, CAT, GRID);
+      expect(r.list, type).toEqual([]);
+      expect(r.skipped, type).toBe(1);
+    }
+  });
+});

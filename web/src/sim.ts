@@ -20,6 +20,11 @@ export const UTILITY_OPTIONS = [2, 5, 10];
 
 export const PUE_FACTORS = {liquid: .08, air: .30, losses: .05} as const;
 
+// Capacity comparisons: floating-point sums of the same devices differ in the last bits depending on the order they were added,
+// and dragging reorders the list. A demand only counts as short when it is over capacity by more than this
+export const KW_EPS = 1e-9;
+export const over = (need: number, cap: number): boolean => need > cap + KW_EPS;
+
 export function fmt(kw: number): string{ return kw >= 1000 ? (kw / 1000).toFixed(2) + ' MW' : Math.round(kw) + ' kW'; }
 
 export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
@@ -40,11 +45,11 @@ export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
   s.facility = s.it + s.ovh + chiller + losses;
   s.pue = s.it ? s.facility / s.it : 0;
   const add = (lvl: Issue['lvl'], txt: string) => s.issues.push({lvl, txt});
-  if (s.it > s.dist) add('bad', tr('issueDist', {need: fmt(s.it), cap: fmt(s.dist)}));
-  if (s.liqHeat > s.liqCap) add('bad', tr('issueLiquid', {heat: fmt(s.liqHeat), cap: fmt(s.liqCap)}));
-  if (s.airHeat > s.airCap) add('bad', tr('issueAir', {heat: fmt(s.airHeat), cap: fmt(s.airCap)}));
+  if (over(s.it, s.dist)) add('bad', tr('issueDist', {need: fmt(s.it), cap: fmt(s.dist)}));
+  if (over(s.liqHeat, s.liqCap)) add('bad', tr('issueLiquid', {heat: fmt(s.liqHeat), cap: fmt(s.liqCap)}));
+  if (over(s.airHeat, s.airCap)) add('bad', tr('issueAir', {heat: fmt(s.airHeat), cap: fmt(s.airCap)}));
   if (s.gpus > s.ports) add('bad', tr('issueNetwork', {gpus: s.gpus, ports: s.ports}));
-  if (s.facility > utility * 1000) add('bad', tr('issueUtility', {facility: fmt(s.facility), u: utility}));
+  if (over(s.facility, utility * 1000)) add('bad', tr('issueUtility', {facility: fmt(s.facility), u: utility}));
   if (s.future) add('warn', tr('issueKyber'));
   if (s.dense) add('warn', tr('issueDgx'));
   s.blocking = s.issues.some(i => i.lvl === 'bad');
