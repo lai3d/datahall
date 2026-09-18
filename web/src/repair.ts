@@ -5,12 +5,13 @@
 import {blockingReasons} from './redundancy.ts';
 import {supplyLoads, reportedOverloads} from './supply.ts';
 import {compute, UTILITY_OPTIONS} from './sim.ts';
-import {keyOf} from './grid.ts';
+import {keyOf, FEEDS, FEED_FIELDS} from './grid.ts';
 import type {Catalog, Grid, Item, Pos} from './types.ts';
 
 export type SupportType = 'rpp' | 'cdu' | 'crah' | 'ib';
 export const SUPPORT_TYPES: SupportType[] = ['rpp', 'cdu', 'crah', 'ib'];
 export interface RepairOption {
+  manualBlock: boolean;     // an overload is held in place by a device assigned to that unit by hand, which no new unit can relieve
   utility: number | null;   // raise the utility feed to this many MW, or null to keep it
   remove: Item[];           // racks to remove, from the end of the rows
   add: Item[];              // support units to place, with their cells
@@ -45,9 +46,11 @@ const PER_DEVICE = {rpp: {load: (t: Catalog[string]) => t.kw ?? 0, cap: 'dist'},
 //    group gets a unit unless one is already close; more units than the totals need are added when the groups require it.
 // 3. While a CDU or RPP is still overloaded under nearest assignment, take its consumers from the farthest in, and add a unit of its type
 //    on the free cell nearest to the first one that the new unit would win (strictly nearer, or equal and first in row then column order).
-// 4. Drop any added unit the hall does not need to pass, last added first.
+//    Devices assigned to that unit by hand stay with it whatever is added, so they are not targets, and a unit whose load is all manual
+//    is reported through manualBlock instead of being chased with more units.
+// 4. Drop any added unit that does not change the outcome, last added first.
 // Returns null when the floor runs out
-export function addSupport(base: Item[], CAT: Catalog, utility: number, occupied: Set<string>, grid: Grid): Item[] | null{
+export function addSupport(base: Item[], CAT: Catalog, utility: number, occupied: Set<string>, grid: Grid): {add: Item[]; manualBlock: boolean} | null{
   const need = new Map<SupportType, number>(SUPPORT_TYPES.map(t => [t, 0]));
   const counted = () => SUPPORT_TYPES.flatMap(t => Array.from({length: need.get(t)!}, (): Item => ({type: t, x: -1, z: -1})));
   for (let guard = 0; guard < 400; guard++){
@@ -102,13 +105,22 @@ export function addSupport(base: Item[], CAT: Catalog, utility: number, occupied
   }
 
   const dist = (a: Pos, b: Pos) => Math.hypot(a.x - b.x, (a.z - b.z) * 2);
+  // A device assigned by hand to this unit never moves to a new one
+  const pinned = (c: Item, unit: Item) => {
+    const field = FEED_FIELDS.find(f => FEEDS[f].type === unit.type);
+    const cell = field && c.feeds?.[field];
+    return !!cell && cell[0] === unit.x && cell[1] === unit.z;
+  };
+  let manualBlock = false;
   overload: for (let step = 0; step < MAX_OVERLOAD_STEPS; step++){
     const list = all();
     const s = compute(list, CAT, utility), loads = supplyLoads(list, CAT);
     const overloaded = (['cdu', 'rpp'] as const).flatMap(kind => reportedOverloads(loads, s, kind)).sort(([a], [b]) => byCell(a, b));
     if (!overloaded.length) break;
     for (const [unit, supply] of overloaded){
-      const far = [...supply.consumers].sort((a, b) => dist(b, unit) - dist(a, unit) || byCell(a, b));
+      const movable = supply.consumers.filter(c => !pinned(c, unit));
+      if (movable.length < supply.consumers.length) manualBlock = true;
+      const far = movable.sort((a, b) => dist(b, unit) - dist(a, unit) || byCell(a, b));
       for (const c of far){
         const d = dist(c, unit);
         const cell = freeCellsNear(c, taken, grid).find(f => dist(f, c) < d - 1e-9 || (Math.abs(dist(f, c) - d) <= 1e-9 && byCell(f, unit) < 0));
@@ -118,13 +130,14 @@ export function addSupport(base: Item[], CAT: Catalog, utility: number, occupied
     break;
   }
 
-  if (!blockingReasons(all(), CAT, utility).length){
-    for (let i = add.length - 1; i >= 0; i--){
-      const without = add.filter((_, j) => j !== i);
-      if (!blockingReasons([...base, ...without], CAT, utility).length) add.splice(i, 1);
-    }
+  // Keep only units that change the outcome, whether or not the hall ends up passing
+  const outcome = (list: Item[]) => JSON.stringify(blockingReasons(list, CAT, utility).map(r => r.kind === 'overload' ? `overload ${r.item.x},${r.item.z}` : r.kind).sort());
+  const target = outcome(all());
+  for (let i = add.length - 1; i >= 0; i--){
+    const without = add.filter((_, j) => j !== i);
+    if (outcome([...base, ...without]) === target) add.splice(i, 1);
   }
-  return add;
+  return {add, manualBlock};
 }
 
 function option(base: Item[], remove: Item[], CAT: Catalog, utility: number, raiseTo: number | null, occupied: Set<string>, grid: Grid): RepairOption | null{
@@ -132,9 +145,10 @@ function option(base: Item[], remove: Item[], CAT: Catalog, utility: number, rai
   const removed = new Set(remove);
   const kept = base.filter(i => !removed.has(i));
   const free = new Set([...occupied].filter(k => !remove.some(r => keyOf(r.x, r.z) === k)));
-  const add = addSupport(kept, CAT, u, free, grid);
-  if (!add) return null;
-  return {utility: raiseTo, remove, add, passes: blockingReasons([...kept, ...add], CAT, u).length === 0};
+  const support = addSupport(kept, CAT, u, free, grid);
+  if (!support) return null;
+  const {add, manualBlock} = support;
+  return {utility: raiseTo, remove, add, manualBlock, passes: blockingReasons([...kept, ...add], CAT, u).length === 0};
 }
 
 // items: the devices in the current calculation; occupied: every occupied cell, including failed or later-phase devices.
@@ -161,7 +175,9 @@ export function planRepair(items: Item[], CAT: Catalog, utility: number, occupie
       if (fewer?.passes){ options.push(fewer); break; }
     }
   }
-  return options.length ? options : keep ? [keep] : [];
+  // An option that changes nothing is not an option
+  const actionable = (o: RepairOption) => o.utility !== null || o.remove.length > 0 || o.add.length > 0;
+  return [...options, ...(options.length ? [] : keep ? [keep] : [])].filter(actionable);
 }
 
 // Count of each support type in an option, in SUPPORT_TYPES order

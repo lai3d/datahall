@@ -262,10 +262,12 @@ function applyRepair(index: number){
   const options = planRepair(hallModel().active, CAT, state.utility, new Set(state.items.keys()), GRID);
   const o = options?.[index];
   if (!o) return;
+  // The plan is made for the devices in the calculation, so new units join the phase being viewed, not the placement phase
+  const phase = state.viewPhase ?? state.phase;
   edit(() => {
     if (o.utility !== null) state.utility = o.utility;
     o.remove.forEach(r => remove(keyOf(r.x, r.z)));
-    o.add.forEach(a => place(a.type, a.x, a.z, newProps()));
+    o.add.forEach(a => place(a.type, a.x, a.z, phase > 1 ? {phase} : {}));
   });
   o.add.forEach(a => view.popMesh(state.items.get(keyOf(a.x, a.z))));
 }

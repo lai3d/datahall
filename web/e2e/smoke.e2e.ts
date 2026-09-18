@@ -260,6 +260,18 @@ test('scenario: rebuild the same feed with newer racks using the goal generator'
   expect(errors).toEqual([]);
 });
 
+test('repair suggestion: while viewing a phase, the new units join that phase', async ({page}) => {
+  // Phase 1 has eight bare racks; phase 2 adds two more. Viewing phase 1 and applying must fix phase 1 itself
+  const errors = await openApp(page, '/?lang=en#layout=3,2,gb200:4.3-5.3-6.3-7.3-8.3-9.3-10.3-11.3-12.3-13.3,@2:12.3-13.3');
+  // New devices are set to go into phase 2, but the repair is for phase 1, so its units must land in phase 1
+  await page.locator('#placePhase button[data-phase="2"]').click();
+  await page.locator('#viewPhase button[data-phase="1"]').click();
+  await page.locator('#repairApply').click();
+  await expect(page.locator('#growth tbody tr[data-phase="1"]')).toContainText('OK');
+  await expect(page.locator('#issues')).toContainText('All checks pass');
+  expect(errors).toEqual([]);
+});
+
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
   await clickTop(page, 6, 3);

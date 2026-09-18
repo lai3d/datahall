@@ -60,8 +60,9 @@ function makeN1(list: Item[], CAT: Catalog, utility: number, grid: Grid): Item[]
 function attempt(goal: Goal, racks: number, CAT: Catalog, grid: Grid): Item[] | null{
   const base: Item[] = rackCells(racks, grid).map(c => ({type: goal.type, ...c}));
   if (base.length < racks) return null;
-  const add = addSupport(base, CAT, goal.utility, new Set(base.map(i => keyOf(i.x, i.z))), grid);
-  if (!add) return null;
+  const support = addSupport(base, CAT, goal.utility, new Set(base.map(i => keyOf(i.x, i.z))), grid);
+  if (!support) return null;
+  const {add} = support;
   const list = [...base, ...add];
   if (blockingReasons(list, CAT, goal.utility).length) return null;
   return goal.n1 ? makeN1(list, CAT, goal.utility, grid) : list;

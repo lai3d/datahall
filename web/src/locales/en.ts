@@ -136,6 +136,7 @@ export default {
   repairOr: 'Or: ',
   repairApply: 'Apply',
   repairPartial: 'A check would still fail, but this gets closest.',
+  repairManual: 'A check would still fail: a device assigned by hand to an overloaded unit stays with it, so no unit added nearby can take its load. Change that assignment in the device details.',
   repairNone: 'No fix found: there is not enough free floor space.',
   repairWhere: 'New units go on free cells next to the devices they serve, and every check runs again on the result. You can undo it.',
   hScenarios: 'Scenarios',
