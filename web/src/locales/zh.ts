@@ -128,6 +128,7 @@ const zh: typeof en = {
   repairOr: '或者：',
   repairApply: '应用',
   repairPartial: '这样仍有检查不通过，但已经是最接近的方案。',
+  repairManual: '这样仍有检查不通过：手动指定了供给的设备不会改接别的设备，所以在旁边新加设备也分不走它的负载。可以在设备详情里改这个指定。',
   repairNone: '找不到修复方案：空地板不够。',
   repairWhere: '新设备放在它们服务的设备旁边的空格上，结果会重新跑一遍全部检查，可以撤销。',
   hScenarios: '场景',

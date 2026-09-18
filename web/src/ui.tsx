@@ -399,7 +399,7 @@ function repairSentence(o: RepairOption): string{
   return tr('repairSentence', {steps: steps.join(tr('repairThen'))});
 }
 function Repair({model}: {model: HallModel}){
-  const signature = `${state.utility}|${[...state.items.keys()].join(' ')}|${model.active.map(i => `${i.type}@${i.x},${i.z}`).join(' ')}`;
+  const signature = `${state.utility}|${[...state.items.keys()].join(' ')}|${model.active.map(i => `${i.type}@${i.x},${i.z}${JSON.stringify(i.feeds ?? '')}`).join(' ')}`;
   const options = useMemo(() => model.blocking && model.totals.it ? planRepair(model.active, CAT, state.utility, new Set(state.items.keys()), GRID) : null, [signature, model.blocking]);
   if (!options || state.tutorial !== null) return null;
   return (
@@ -408,7 +408,7 @@ function Repair({model}: {model: HallModel}){
       {options.length === 0 && <p>{tr('repairNone')}</p>}
       {options.map((o, i) => (
         <div key={i} className="repair-option" data-option={i}>
-          <p>{i > 0 && tr('repairOr')}{repairSentence(o)}{!o.passes && <> {tr('repairPartial')}</>}</p>
+          <p>{i > 0 && tr('repairOr')}{repairSentence(o)}{!o.passes && <> {tr(o.manualBlock ? 'repairManual' : 'repairPartial')}</>}</p>
           <button type="button" id={i ? 'repairApplyAlt' : 'repairApply'} onClick={() => actions.applyRepair(i)}>{tr('repairApply')}</button>
         </div>
       ))}

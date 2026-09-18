@@ -81,3 +81,31 @@ describe('repair suggestions', () => {
     expect(b).toEqual(a);
   });
 });
+
+describe('limits of what adding units can fix', () => {
+  it('does not chase an overload that a manual assignment holds in place', () => {
+    // Both Kyber racks are assigned by hand to the same CDU, which no new CDU can relieve
+    const list: Item[] = [
+      {type: 'kyber', x: 0, z: 3, feeds: {coolantSource: [0, 5]}}, {type: 'kyber', x: 1, z: 3, feeds: {coolantSource: [0, 5]}},
+      ...[3, 4, 5, 6, 7].map((x): Item => ({type: 'gb200', x, z: 3})),
+      {type: 'cdu', x: 0, z: 5}, {type: 'cdu', x: 4, z: 5}, {type: 'rpp', x: 5, z: 5}, {type: 'rpp', x: 6, z: 5},
+      {type: 'ib', x: 7, z: 5}, {type: 'crah', x: 8, z: 5},
+    ];
+    const [o] = plan(list, 10)!;
+    expect(o.passes).toBe(false);
+    expect(o.manualBlock).toBe(true);
+    // Without the fix the loop kept adding CDUs that could never take the load
+    expect(o.add.filter(i => i.type === 'cdu').length).toBeLessThanOrEqual(2);
+  });
+
+  it('never offers an option that changes nothing', () => {
+    const halls: [Item[], number][] = [
+      [[...Array.from({length: 16}, (_, x): Item => ({type: 'kyber', x, z: 3}))], 10],
+      [[{type: 'kyber', x: 0, z: 3, feeds: {coolantSource: [0, 5]}}, {type: 'cdu', x: 0, z: 5}], 2],
+      [[...Array.from({length: 10}, (_, x): Item => ({type: 'vr200', x, z: 3}))], 2],
+    ];
+    for (const [list, u] of halls){
+      for (const o of plan(list, u) ?? []) expect(o.utility !== null || o.remove.length > 0 || o.add.length > 0, JSON.stringify(o)).toBe(true);
+    }
+  });
+});
