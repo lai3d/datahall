@@ -136,7 +136,7 @@ function startScenario(id: ScenarioId){
 function checkScenario(model: ReturnType<typeof hallModel>){
   const s = state.scenario;
   if (!s || s.done) return;
-  if (isDone(s.id, scenarioContext(model.all, model.active, CAT, state.utility, state.powered))){
+  if (isDone(s.id, scenarioContext(model.all, model.active, CAT, state.utility, state.powered), CAT, GRID)){
     s.done = true;
     reportScenarioDone(s.id);
   }
