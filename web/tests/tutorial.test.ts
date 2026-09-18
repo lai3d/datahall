@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest';
-import {advance, LAST, STEPS} from '../src/tutorial.ts';
+import {advance, LAST, RACKS, STEPS} from '../src/tutorial.ts';
 import type {TutorialContext} from '../src/tutorial.ts';
 
 const idAt = (i: number) => STEPS[i].id;
@@ -45,5 +45,23 @@ describe('tutorial steps', () => {
   it('every step except the last has a condition or is manual, and targets are selectors', () => {
     for (const s of STEPS.slice(0, -1)) expect(!!s.manual || !!s.done, s.id).toBe(true);
     expect(STEPS.at(-1)!.id).toBe('done');
+  });
+});
+
+describe('losing the racks', () => {
+  const at = (step: number, c: Partial<TutorialContext>) => advance(step, {tool: null, counts: {}, reasons: [], overloads: [], blocking: false, powered: false, ...c});
+
+  it('does not let an empty hall complete the facility steps', () => {
+    // An empty hall is short of nothing, so without the rack check every facility step would pass at once
+    for (const step of [3, 4, 5, 6, 7]) expect(STEPS[at(step, {})].id, STEPS[step].id).toBe('place');
+  });
+
+  it('still advances while the row is there', () => {
+    expect(STEPS[at(3, {counts: {gb200: RACKS}})].id).toBe('powerOn');
+    expect(STEPS[at(3, {counts: {gb200: RACKS}, reasons: ['dist']})].id).toBe('power');
+  });
+
+  it('leaves the finished tutorial alone', () => {
+    expect(at(LAST, {})).toBe(LAST);
   });
 });

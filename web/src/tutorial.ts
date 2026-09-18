@@ -22,25 +22,31 @@ export interface TutorialStep {
 }
 
 export const RACKS = 8;
+export const PLACE = 1;   // index of the "place the row" step, the only step the tutorial can go back to
 const racks = (c: TutorialContext) => c.counts.gb200 || 0;
+// The facility steps complete when their shortage is gone, and an empty hall is short of nothing,
+// so every condition also needs the row of racks to still be there
+const hasRacks = (c: TutorialContext) => racks(c) >= RACKS;
 
 export const STEPS: TutorialStep[] = [
   {id: 'pick', target: '#palette button[data-t="gb200"]', done: c => c.tool === 'gb200' || racks(c) >= RACKS},
   {id: 'place', target: '#placeMode button[data-mode="row"]', done: c => racks(c) >= RACKS},
   {id: 'why', target: '#issues', manual: true},
-  {id: 'power', target: '#palette button[data-t="rpp"]', done: c => !c.reasons.includes('dist') && !c.overloads.includes('rpp')},
-  {id: 'liquid', target: '#palette button[data-t="cdu"]', done: c => !c.reasons.includes('liquid') && !c.overloads.includes('cdu')},
-  {id: 'air', target: '#palette button[data-t="crah"]', done: c => !c.reasons.includes('air')},
-  {id: 'network', target: '#palette button[data-t="ib"]', done: c => !c.reasons.includes('network')},
-  {id: 'utility', target: '#utility', done: c => !c.reasons.includes('utility')},
+  {id: 'power', target: '#palette button[data-t="rpp"]', done: c => hasRacks(c) && !c.reasons.includes('dist') && !c.overloads.includes('rpp')},
+  {id: 'liquid', target: '#palette button[data-t="cdu"]', done: c => hasRacks(c) && !c.reasons.includes('liquid') && !c.overloads.includes('cdu')},
+  {id: 'air', target: '#palette button[data-t="crah"]', done: c => hasRacks(c) && !c.reasons.includes('air')},
+  {id: 'network', target: '#palette button[data-t="ib"]', done: c => hasRacks(c) && !c.reasons.includes('network')},
+  {id: 'utility', target: '#utility', done: c => hasRacks(c) && !c.reasons.includes('utility')},
   {id: 'powerOn', target: '#power', done: c => c.powered},
   {id: 'done', target: null, manual: true},
 ];
 export const LAST = STEPS.length - 1;
 
-// Move forward from `step` past every step whose condition already holds. Never moves backwards and
-// stops at manual steps; `next` also passes the current manual step (the "Next" button)
+// Move forward from `step` past every step whose condition already holds, stopping at manual steps; `next` also passes
+// the current manual step (the "Next" button). The one way back: the row of racks is gone (undo, delete), which returns
+// the tutorial to placing them instead of leaving it on a step about a hall that no longer exists
 export function advance(step: number, c: TutorialContext, next = false): number{
+  if (step > PLACE && step < LAST && racks(c) < RACKS) return PLACE;
   let i = step;
   if (next && STEPS[i]?.manual && i < LAST) i++;
   while (i < LAST && !STEPS[i].manual && STEPS[i].done?.(c)) i++;
