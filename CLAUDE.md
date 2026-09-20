@@ -246,6 +246,7 @@ Last full check 2026-09-18. Choices made then:
 - Support units: CDU 800 kW within Vertiv's 600–2300 kW range; the 120 kW in-row cooler stands in for about two real units (58–70 kW each); the 800 kW RPP is a high-density panel; IB rack of 288 ports is about two Q3400 switches; all their prices are estimates
 - PUE context in the methodology dialog: weighted average annual PUE 1.54 in 2025, 1.44 for facilities of 20 MW and above (Uptime Institute Global Data Center Survey 2025)
 - Default electricity price (`energy.ts`): 8.62 ¢/kWh, the 2025 US industrial average (US EIA, Electric Power Monthly, table 5.3), excluding taxes, demand charges and fixed fees. The 80% average load is an assumption
+- Ownership estimate (`ownership.ts`): the 5% of hardware per year for maintenance and the ±30% / ±20% / ±25% sensitivity bands are assumptions with no source, labeled as such in the UI, like the 80% average load
 - Scale references (`scale.ts`): DGX Spark 240 W (its power adapter rating), US home about 1.2 kW average (about 10,500 kWh a year, US EIA). A Mac Studio reference waits for a sourced power figure
 
 ## Style
