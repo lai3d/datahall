@@ -12,8 +12,11 @@ import type {EnergyInputs} from './energy.ts';
 import type {OwnershipInputs} from './ownership.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
 import {state, itemList, snapshot} from './state.ts';
-import * as view from './scene.ts';
-import {initControls} from './controls.ts';
+// The 3D scene and its controls pull in three.js, which is most of the bundle. They load after the panel is on screen
+// (see boot at the bottom), so first paint waits on the panel's own code instead. `view` is assigned before anything uses it
+type Scene = typeof import('./scene.ts');
+let view!: Scene;
+let controls: {resetView(): void} | null = null;
 import type {DragHandlers} from './controls.ts';
 import {mountUI} from './ui.tsx';
 import {notify} from './store.ts';
@@ -559,20 +562,10 @@ function switchLang(id: string){
 const openedFromShareLink = hasShareLink(location.hash);
 applyLang(initialLang(), false);
 const stage = $('#stage');
-const el = view.initScene(stage);
-// Keyboard path into the 3D view (see the keyboard section); the labels are re-read when the language changes.
 // The panel is the page's main landmark, so the stage is a region of its own, holding the HUD and the overlay buttons
-el.tabIndex = 0;
-el.setAttribute('role', 'application');
 stage.setAttribute('role', 'region');
-const labelStage = () => { stage.setAttribute('aria-label', tr('stageRegion')); el.setAttribute('aria-label', tr('stageLabel')); };
+let labelStage = () => { stage.setAttribute('aria-label', tr('stageRegion')); };
 labelStage();
-const controls = initControls(el, view.camera, {
-  onTap: tap,
-  onHover: e => { hoverCell = view.pickCell(e); updateGhost(); },
-  onLeave: () => { hoverCell = null; updateGhost(); },
-  drag: dragItem,
-});
 const actions: Actions = {
   removeItem,
   togglePanel: () => { state.ui.panelCollapsed = !state.ui.panelCollapsed; notify(); },
@@ -606,7 +599,7 @@ const actions: Actions = {
   dismissTutorialOffer: () => { markTutorialSeen(); notify(); },
   undo,
   redo,
-  resetView: () => controls.resetView(),
+  resetView: () => controls?.resetView(),
   copyShareLink: () => { void copyShareLink(); },
   importUsdFile: file => { void importUsdFile(file); },
   exportUsd: () => { void exportUsd(); },
@@ -615,20 +608,39 @@ const actions: Actions = {
   saveImage: () => { void saveImage(); },
   exportHint,
 };
-mountUI(actions, stage, $('#panel'));
-void initExport();
-window.addEventListener('hashchange', () => loadFromLink(true));
-initKeyboard(el);
+// The 3D code starts downloading right away; the panel renders while it is on its way
+const scene = import('./scene.ts'), sceneControls = import('./controls.ts');
 
-const mq = window.matchMedia('(prefers-color-scheme: dark)');
-mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
-
-// First visit (no share link, nothing saved, tutorial never started or dismissed): offer the tutorial
+// First visit (no share link, nothing saved, tutorial never started or dismissed): offer the tutorial.
+// Read before the panel mounts, so the offer is not missing from its first render
 state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
 restoreEnergy();
 restoreOwnership();
-if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || PRESETS.gb200);
-// Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
-if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce, meters: view.meters, flowDots: view.flowDots};
-view.startLoop();
+mountUI(actions, stage, $('#panel'));
+void initExport();
+window.addEventListener('hashchange', () => loadFromLink(true));
 initAnalytics(openedFromShareLink);
+
+// Everything that needs the scene, in the order it used to run at module scope
+void (async () => {
+  view = await scene;
+  const el = view.initScene(stage);
+  // Keyboard path into the 3D view (see the keyboard section); the labels are re-read when the language changes
+  el.tabIndex = 0;
+  el.setAttribute('role', 'application');
+  labelStage = () => { stage.setAttribute('aria-label', tr('stageRegion')); el.setAttribute('aria-label', tr('stageLabel')); };
+  labelStage();
+  controls = (await sceneControls).initControls(el, view.camera, {
+    onTap: tap,
+    onHover: e => { hoverCell = view.pickCell(e); updateGhost(); },
+    onLeave: () => { hoverCell = null; updateGhost(); },
+    drag: dragItem,
+  });
+  initKeyboard(el);
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
+  if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || PRESETS.gb200);
+  // Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
+  if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce, meters: view.meters, flowDots: view.flowDots};
+  view.startLoop();
+})();
