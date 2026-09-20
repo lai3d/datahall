@@ -99,14 +99,16 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .info select{font:inherit;font-size:13px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:210px}
 .energy{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:10px}
 .energy label{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;color:var(--muted)}
-.energy input[type=number]{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px;width:120px}
+.energy strong{display:block;margin-bottom:8px}
+.energy input[type=number],.energy select{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px;width:120px}
 /* 16px on phones: iOS zooms the page when focusing a smaller input */
-@media (max-width:899px){.energy input[type=number]{font-size:16px}}
+@media (max-width:899px){.energy input[type=number],.energy select{font-size:16px}}
 .energy input[type=range]{width:100%;accent-color:var(--ink)}
 .energy table{width:100%;border-collapse:collapse}
 .energy td{padding:2px 0}
 .energy td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .energy tr.total td{font-weight:700;border-top:1px solid var(--line);padding-top:4px}
+.energy p.band{margin:8px 0 0}
 button.link{border:0;padding:0;background:none;color:var(--coolant);text-decoration:underline;text-underline-offset:2px;font-size:inherit;cursor:pointer}
 .h2row button.link{font-size:13px}
 .method-open{margin:-6px 0 12px}

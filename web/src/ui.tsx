@@ -17,6 +17,8 @@ import {SCENARIO_IDS, scenarioResult, startLayout} from './scenarios.ts';
 import type {ScenarioId} from './scenarios.ts';
 import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
+import {BANDS, MAINT_RANGE, YEAR_OPTIONS, ownership} from './ownership.ts';
+import type {OwnershipInputs} from './ownership.ts';
 import {scaleRefs} from './scale.ts';
 import {GRID, keyOf, nearest, FEEDS} from './grid.ts';
 import {canFail, singlePointsOfFailure} from './redundancy.ts';
@@ -50,6 +52,7 @@ export interface Actions {
   setViewPhase(n: number | null): void;
   setHeadroomType(type: string): void;
   setEnergy(change: Partial<EnergyInputs>): void;
+  setOwnership(change: Partial<OwnershipInputs>): void;
   applyRepair(index: number): void;
   generateGoal(goal: Goal): void;
   startScenario(id: ScenarioId): void;
@@ -290,6 +293,7 @@ function Method(){
           <h3>{tr('mHCost')}</h3>
           <p>{tr('mCost')}</p>
           <p>{tr('mEnergy')}</p>
+          <p>{tr('mOwnership')}</p>
           {src('https://www.eia.gov/electricity/monthly/epm_table_grapher.php?t=table_5_03', 'US EIA, Electric Power Monthly, table 5.3')}
         </section>
         <section id="m-planning">
@@ -522,7 +526,8 @@ const KIND_LABEL = {dist: 'gaugeDist', liquid: 'gaugeLiquid', air: 'gaugeAir', n
 const pct = (r: number): string => r === Infinity ? '∞' : Math.round(r * 100) + '%';
 
 const fmtEnergy = (mwh: number): string => mwh >= 1000 ? (mwh / 1000).toFixed(mwh >= 10000 ? 1 : 2) + ' GWh' : Math.round(mwh).toLocaleString() + ' MWh';
-const fmtMoney = (usd: number): string => usd >= 1e6 ? '$' + (usd / 1e6).toFixed(2) + 'M' : '$' + Math.round(usd / 1e3).toLocaleString() + 'K';
+const fmtMoney = (usd: number): string => usd >= 1e9 ? '$' + (usd / 1e9).toFixed(2) + 'B'
+  : usd >= 1e6 ? '$' + (usd / 1e6).toFixed(2) + 'M' : '$' + Math.round(usd / 1e3).toLocaleString() + 'K';
 
 // Annual energy and electricity cost for the devices in the current calculation (energy.ts). The price field keeps its own text
 // while typing, so partial input such as "0." is not rewritten; only valid numbers reach the state
@@ -557,8 +562,49 @@ function Energy({model}: {model: HallModel}){
           ? <table><tbody>{rows.map(([k, v], i) => <tr key={i} className={i === rows.length - 1 ? 'total' : undefined}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>
           : <p className="sub">{tr('energyEmpty')}</p>}
       </div>
-      <p className="sub" style={{marginTop: 6}}>{tr('energyNote')} <MethodLink section="cost" /></p>
+      <p className="sub" style={{marginTop: 6}}>{tr('energyNote')}</p>
+      <Ownership model={model} />
+      <p className="sub" style={{marginTop: 6}}>{tr('ownershipNote')} <MethodLink section="cost" /></p>
     </>
+  );
+}
+
+// A share such as 0.05 as a percentage, rounded to one decimal: 0.05 * 100 is 5.000000000000001 in binary floating point
+const asPct = (share: number): number => Math.round(share * 1000) / 10;
+
+// Three- or five-year ownership estimate (ownership.ts), part of the energy section: hardware, electricity and a maintenance
+// assumption, with the band the operating assumptions produce. The maintenance field keeps its own text while typing, like the price
+function Ownership({model}: {model: HallModel}){
+  const {years, maint} = state.ownership;
+  const [maintText, setMaintText] = useState(String(asPct(maint)));
+  useEffect(() => { if (Number(maintText) !== asPct(maint)) setMaintText(String(asPct(maint))); }, [maint]);
+  const o = ownership(model.totals, state.energy, state.ownership);
+  const rows: Row[] = [
+    [tr('rowOwnHardware'), fmtMoney(o.hardware)],
+    [tr('rowOwnElectricity', {n: years}), fmtMoney(o.electricity)],
+    [tr('rowOwnMaint', {n: years}), fmtMoney(o.maintenance)],
+    [tr('rowOwnTotal', {n: years}), <span id="ownershipTotal">{fmtMoney(o.total)}</span>],
+  ];
+  return (
+    <div className="energy" id="ownership" style={{marginTop: 10}}>
+      <strong>{tr('hOwnership')}</strong>
+      <label>
+        <span>{tr('ownershipYears')}</span>
+        <select id="ownershipYears" value={years} onChange={ev => actions.setOwnership({years: Number(ev.target.value)})}>
+          {YEAR_OPTIONS.map(n => <option key={n} value={n}>{tr('ownershipYearsN', {n})}</option>)}
+        </select>
+      </label>
+      <label>
+        <span>{tr('ownershipMaint')}</span>
+        <input id="ownershipMaint" type="number" inputMode="decimal" min={MAINT_RANGE[0] * 100} max={MAINT_RANGE[1] * 100} step={1} value={maintText}
+          onChange={ev => { setMaintText(ev.target.value); const v = ev.target.valueAsNumber; if (Number.isFinite(v)) actions.setOwnership({maint: v / 100}); }}
+          onBlur={() => setMaintText(String(asPct(state.ownership.maint)))} />
+      </label>
+      {model.totals.it ? <>
+        <table><tbody>{rows.map(([k, v], i) => <tr key={i} className={i === rows.length - 1 ? 'total' : undefined}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>
+        <p className="sub band" id="ownershipBand">{tr('ownershipBand', {low: fmtMoney(o.low), high: fmtMoney(o.high), price: asPct(BANDS.price), loadBand: asPct(BANDS.load), ovhBand: asPct(BANDS.overhead)})}</p>
+      </> : <p className="sub">{tr('ownershipEmpty')}</p>}
+    </div>
   );
 }
 

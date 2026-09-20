@@ -158,6 +158,23 @@ test('annual energy: price and average load change the yearly cost and are remem
   expect(errors).toEqual([]);
 });
 
+test('ownership estimate: the period and the maintenance assumption change the total and are remembered', async ({page}) => {
+  const errors = await openApp(page);
+  // GB200 preset: $27.16M of hardware, three years of electricity at the default price, plus 5% of hardware a year
+  await expect(page.locator('#ownershipTotal')).toHaveText('$33.55M');
+  await page.locator('#ownershipYears').selectOption('5');
+  await expect(page.locator('#ownershipTotal')).toHaveText('$37.82M');
+  await page.locator('#ownershipMaint').fill('0');
+  await expect(page.locator('#ownershipTotal')).toHaveText('$31.03M');
+  // The band says what the estimate is worth: it brackets the total
+  await expect(page.locator('#ownershipBand')).toContainText('lands between');
+  await page.reload();
+  await expect(page.locator('#ownershipYears')).toHaveValue('5');
+  await expect(page.locator('#ownershipMaint')).toHaveValue('0');
+  await expect(page.locator('#ownershipTotal')).toHaveText('$31.03M');
+  expect(errors).toEqual([]);
+});
+
 test('methodology dialog opens from the header and from section links, and closes with Esc', async ({page}) => {
   const errors = await openApp(page);
   await page.locator('#methodOpen').click();

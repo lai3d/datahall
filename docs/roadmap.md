@@ -17,7 +17,6 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 
 | Item | Why | Estimate | Status |
 | --- | --- | --- | --- |
-| Simplified ownership estimate (P2) | The hall already gives a hardware estimate and a yearly electricity bill; a three- or five-year total is the number people actually compare. Explicitly simplified: hardware plus electricity plus an optional maintenance assumption, with sensitivity to price, average load and PUE rather than false precision | 2–3 h | Not started |
 
 ## Next (mid-quarter, 1 to 2 months)
 
@@ -51,6 +50,7 @@ Dates are when the work merged to main.
 - ✅ Repair suggestions: what to add, a bigger feed or which racks to remove, each option re-checked and applied in one click (2026-09-18).
 - ✅ Layout from a goal: rack type, GPU count, feed and optional N+1 give a hall that passes, with the reason when the goal does not fit (2026-09-18).
 - ✅ Annual energy and electricity cost, with an average-load input (2026-09-18).
+- ✅ Simplified three- or five-year ownership estimate: hardware, electricity and an optional maintenance assumption, with a sensitivity band on price, average load and the cooling and loss coefficients (2026-09-20).
 - ✅ Load visualization: load meters on CDUs and RPPs, and flow along the links while powered on (2026-09-17).
 
 **Credibility**

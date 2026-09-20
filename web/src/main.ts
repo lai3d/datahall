@@ -2,12 +2,14 @@ import {CAT} from './catalog.ts';
 import {GRID, keyOf, FEEDS} from './grid.ts';
 import {phasesIn, MAX_PHASE} from './growth.ts';
 import {cleanInputs} from './energy.ts';
+import {cleanOwnership} from './ownership.ts';
 import {planRepair} from './repair.ts';
 import {generateLayout} from './goal.ts';
 import {SCENARIOS, isDone, scenarioContext, startLayout} from './scenarios.ts';
 import type {ScenarioId} from './scenarios.ts';
 import type {Goal} from './goal.ts';
 import type {EnergyInputs} from './energy.ts';
+import type {OwnershipInputs} from './ownership.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
 import {state, itemList, snapshot} from './state.ts';
 import * as view from './scene.ts';
@@ -104,6 +106,14 @@ function restoreEnergy(){ try { state.energy = cleanInputs(JSON.parse(localStora
 function setEnergy(change: Partial<EnergyInputs>){
   state.energy = cleanInputs({...state.energy, ...change});
   try { localStorage.setItem(ENERGY_KEY, JSON.stringify(state.energy)); } catch (e) {}
+  notify();
+}
+// Ownership estimate inputs persist the same way, under their own key
+const OWNERSHIP_KEY = 'datahall.ownership';
+function restoreOwnership(){ try { state.ownership = cleanOwnership(JSON.parse(localStorage.getItem(OWNERSHIP_KEY) || '{}')); } catch (e) {} }
+function setOwnership(change: Partial<OwnershipInputs>){
+  state.ownership = cleanOwnership({...state.ownership, ...change});
+  try { localStorage.setItem(OWNERSHIP_KEY, JSON.stringify(state.ownership)); } catch (e) {}
   notify();
 }
 function tutorialSeen(): boolean{ try { return localStorage.getItem(TUTORIAL_SEEN) === '1'; } catch (e) { return false; } }
@@ -516,6 +526,7 @@ const actions: Actions = {
   setViewPhase: n => setView(() => { state.viewPhase = n; }),
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
   setEnergy,
+  setOwnership,
   applyRepair,
   generateGoal,
   openMethod: section => { state.ui.method = section; notify(); },
@@ -552,6 +563,7 @@ mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
 // First visit (no share link, nothing saved, tutorial never started or dismissed): offer the tutorial
 state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
 restoreEnergy();
+restoreOwnership();
 if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || PRESETS.gb200);
 // Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
 if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce, meters: view.meters, flowDots: view.flowDots};
