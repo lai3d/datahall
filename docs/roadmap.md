@@ -18,7 +18,6 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 | Item | Why | Estimate | Status |
 | --- | --- | --- | --- |
 | Simplified ownership estimate (P2) | The hall already gives a hardware estimate and a yearly electricity bill; a three- or five-year total is the number people actually compare. Explicitly simplified: hardware plus electricity plus an optional maintenance assumption, with sensitivity to price, average load and PUE rather than false precision | 2–3 h | Not started |
-| Example gallery (P3) | Launch material, the README and the app all need halls worth opening: a small teaching hall, a 1 MW GB200 hall, a 2 MW Rubin hall, an N+1 design, a three-phase growth plan and an intentionally broken one. Kept in the repo as share links with a test that each one still loads and still says what its label claims | 1–2 h | Not started |
 
 ## Next (mid-quarter, 1 to 2 months)
 
@@ -60,6 +59,7 @@ Dates are when the work merged to main.
 - ✅ Versioned exports: `.usda` and `layout.json` name the catalog data version and the model version; imports flag a different catalog (2026-09-18).
 
 **Reach and craft**
+- ✅ Example gallery: six halls kept in the repo as share links, generated into `docs/examples.md`, each checked against what it claims (2026-09-20).
 - ✅ TypeScript (strict) migration, React panel, Playwright smoke tests in CI, English docs and comments (2026-09-17).
 - ✅ Social preview image, favicon, one-click screenshot of the 3D view (2026-09-17).
 - ✅ Mobile polish: foldable panel, stage bar, placement feedback (2026-09-17).
