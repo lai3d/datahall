@@ -24,6 +24,9 @@ namespace DataHall
 
     public static class CapacityModel
     {
+        // Rack types flagged airDense in spec/catalog.json; layout.json does not carry the flag, so the ids are listed here
+        static readonly HashSet<string> AirDense = new HashSet<string> { "dgx" };
+
         // Same as fmt in JS: >= 1000 kW shows MW with two decimals, otherwise rounds to whole kW
         public static string Format(double kw) => kw >= 1000
             ? (kw / 1000).ToString("F2", CultureInfo.InvariantCulture) + " MW"
@@ -32,7 +35,8 @@ namespace DataHall
         public static CapacityResult Compute(LayoutData layout)
         {
             var s = new CapacityResult();
-            bool future = false, dense = false;
+            bool future = false;
+            CatalogEntry dense = null;   // first air-cooled dense rack in the hall
             foreach (var e in layout.equipment)
             {
                 var t = layout.Find(e.type);
@@ -48,7 +52,7 @@ namespace DataHall
                 s.overheadKw += t.overheadKw;
                 s.capexMusd += t.capexMusd;
                 if (t.roadmap) future = true;
-                if (e.type == "dgx") dense = true;
+                if (dense == null && AirDense.Contains(e.type)) dense = t;
             }
             // Simplified teaching PUE: cooling power of liquid heat ×0.08 and air heat ×0.30, plus IT×0.05 distribution loss
             double chiller = s.liquidHeatKw * .08 + s.airHeatKw * .30;
@@ -63,7 +67,7 @@ namespace DataHall
             if (s.gpus > s.fabricPorts) Add("bad", $"后端网络不足：{s.gpus} 颗 GPU，只有 {s.fabricPorts} 个端口。加 IB 交换机柜。");
             if (s.facilityKw > layout.utilityMw * 1000) Add("bad", $"超出市电：设施总功耗 {Format(s.facilityKw)}，市电只有 {layout.utilityMw.ToString(CultureInfo.InvariantCulture)} MW。");
             if (future) Add("warn", "Kyber 机柜需要 800 VDC 配电，目前还只是路线图产品。");
-            if (dense) Add("warn", "DGX B200 整柜约 57 kW 纯风冷，现实中通常要配背板换热器。");
+            if (dense != null) Add("warn", $"{dense.name} 整柜约 {dense.powerKw.ToString(CultureInfo.InvariantCulture)} kW 纯风冷，现实中通常要配背板换热器。");
             s.blocking = s.issues.Any(i => i.level == "bad");
             return s;
         }

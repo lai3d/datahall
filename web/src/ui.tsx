@@ -12,6 +12,7 @@ import {compareRacks} from './compare.ts';
 import {addCounts, planRepair} from './repair.ts';
 import type {RepairOption, SupportType} from './repair.ts';
 import type {Goal} from './goal.ts';
+import type {SourcedField} from './types.ts';
 import {SCENARIO_IDS, scenarioResult, startLayout} from './scenarios.ts';
 import type {ScenarioId} from './scenarios.ts';
 import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
@@ -22,7 +23,7 @@ import {canFail, singlePointsOfFailure} from './redundancy.ts';
 import {state} from './state.ts';
 import type {Notice} from './state.ts';
 import {phasesIn, growthPlan, headroom, MAX_PHASE} from './growth.ts';
-import {LANGS, getLang, htmlLang, tr, loc, catName, catNote} from './i18n.ts';
+import {LANGS, getLang, htmlLang, tr, loc, catName, catNote, srcTitle} from './i18n.ts';
 import type {MessageKey} from './i18n.ts';
 import {useStateVersion} from './store.ts';
 import {hallModel} from './model.ts';
@@ -212,17 +213,25 @@ function Header(){
 // Where a device's figures come from (catalog.json sources): linked titles with their type, the ranges the sources give, and when they were last checked.
 // Publisher names and titles stay in their original language
 const SOURCE_TYPE = {official: 'srcOfficial', reported: 'srcReported', estimate: 'srcEstimate'} as const;
+// What each sourced figure is called and how its range reads, so a range never shows a raw field name
+const RANGE_LABEL = {kw: 'rowPower', gpus: 'rowGpu', liq: 'rowCooling', liqCool: 'rowLiquidCap', airCool: 'rowAirCap',
+  dist: 'rowDistCap', ports: 'rowPorts', ovh: 'rowOverhead', cap: 'rowPrice'} as const satisfies Record<SourcedField, MessageKey>;
+const rangeValue = (field: SourcedField, lo: number, hi: number): string =>
+  field === 'cap' ? tr('rangeCap', {lo, hi})
+    : field === 'liq' ? tr('rangePct', {lo: Math.round(lo * 100), hi: Math.round(hi * 100)})
+    : field === 'gpus' || field === 'ports' ? tr('rangeCount', {lo, hi})
+    : tr('rangeKw', {lo, hi});
 // compact: publisher names only (details panel); the full titles are in the methodology dialog and in each link's title
 function SourceList({t, compact = false}: {t: CatalogItem; compact?: boolean}){
   const checked = t.sources.map(s => s.checked).sort().at(-1);
-  const ranges = Object.entries(t.ranges ?? {}).map(([f, [lo, hi]]) => f === 'cap' ? tr('rangeCap', {lo, hi}) : f === 'kw' ? tr('rangeKw', {lo, hi}) : `${f} ${lo}–${hi}`);
+  const ranges = Object.entries(t.ranges ?? {}).map(([f, [lo, hi]]) => tr('rangeField', {label: tr(RANGE_LABEL[f as SourcedField]), range: rangeValue(f as SourcedField, lo, hi)}));
   return (
     <p className="src sources">
       {tr('methodSources')}{' '}
       {t.sources.map((s, i) => (
         <span key={i}>
           {i > 0 && tr('listSep')}
-          {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" title={s.title}>{compact ? s.publisher : `${s.publisher}: ${s.title}`}</a> : compact ? tr('srcOwnEstimate') : s.title}
+          {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" title={s.title}>{compact ? s.publisher : `${s.publisher}: ${s.title}`}</a> : compact ? tr('srcOwnEstimate') : srcTitle(s)}
           {' '}({[s.date, tr(SOURCE_TYPE[s.type])].filter(Boolean).join(', ')})
         </span>
       ))}

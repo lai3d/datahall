@@ -18,6 +18,7 @@ export interface CatalogItem {
   cap: number;            // Estimated price, million USD
   h: number;              // Height, meters
   future?: boolean;       // Roadmap product
+  airDense?: boolean;     // Air-cooled and dense enough that the capacity check warns about it
   note: string;
   i18n?: Record<string, {name?: string; note?: string}>;
   sources: Source[];      // where the figures come from (spec/catalog.schema.json)
@@ -26,7 +27,7 @@ export interface CatalogItem {
 // A source behind catalog figures. official: vendor material; reported: journalists or analysts; estimate: this project's own reasoning (no URL)
 export type SourceType = 'official' | 'reported' | 'estimate';
 export type SourcedField = 'kw' | 'gpus' | 'liq' | 'liqCool' | 'airCool' | 'dist' | 'ports' | 'ovh' | 'cap';
-export interface Source {title: string; publisher?: string; url?: string; date?: string; checked: string; type: SourceType; supports: SourcedField[]}
+export interface Source {title: string; publisher?: string; url?: string; date?: string; checked: string; type: SourceType; supports: SourcedField[]; i18n?: Record<string, {title?: string}>}
 export type Catalog = Record<string, CatalogItem>;
 // Compile-time check that catalog.json matches CatalogItem
 export type CatalogJson = typeof catalog;

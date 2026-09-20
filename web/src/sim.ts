@@ -1,6 +1,6 @@
 // Capacity model: distribution, liquid cooling, air cooling, backend network, utility; if any one falls short, power-on is blocked
-import {tr} from './i18n.ts';
-import type {Catalog, Item} from './types.ts';
+import {tr, catName} from './i18n.ts';
+import type {Catalog, CatalogItem, Item} from './types.ts';
 
 export interface Issue {lvl: 'bad' | 'warn' | 'ok'; txt: string}
 // Result of compute. Field names match expected in spec/capacity-cases.json (see scripts/capacity-cases.ts)
@@ -28,6 +28,7 @@ export const over = (need: number, cap: number): boolean => need > cap + KW_EPS;
 export function fmt(kw: number): string{ return kw >= 1000 ? (kw / 1000).toFixed(2) + ' MW' : Math.round(kw) + ' kW'; }
 
 export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
+  let dense: CatalogItem | undefined;
   const s: Totals = {it:0, gpus:0, liqHeat:0, airHeat:0, liqCap:0, airCap:0, dist:0, ports:0, ovh:0, capex:0, future:false, dense:false,
     facility:0, pue:0, issues:[], blocking:false};
   for (const i of list){
@@ -37,7 +38,7 @@ export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
     s.liqCap += t.liqCool || 0; s.airCap += t.airCool || 0;
     s.dist += t.dist || 0; s.ports += t.ports || 0; s.ovh += t.ovh || 0; s.capex += t.cap || 0;
     if (t.future) s.future = true;
-    if (i.type === 'dgx') s.dense = true;
+    if (t.airDense){ dense ??= t; s.dense = true; }   // s.dense stays in Totals: it is part of the contract with Unity (capacity-cases.json)
   }
   // Simplified teaching PUE: cooling power for liquid and air heat, plus distribution losses (PUE_FACTORS)
   const chiller = s.liqHeat * PUE_FACTORS.liquid + s.airHeat * PUE_FACTORS.air;
@@ -51,7 +52,7 @@ export function compute(list: Item[], CAT: Catalog, utility: number): Totals{
   if (s.gpus > s.ports) add('bad', tr('issueNetwork', {gpus: s.gpus, ports: s.ports}));
   if (over(s.facility, utility * 1000)) add('bad', tr('issueUtility', {facility: fmt(s.facility), u: utility}));
   if (s.future) add('warn', tr('issueKyber'));
-  if (s.dense) add('warn', tr('issueDgx'));
+  if (dense) add('warn', tr('issueAirDense', {name: catName(dense), kw: dense.kw || 0}));
   s.blocking = s.issues.some(i => i.lvl === 'bad');
   return s;
 }

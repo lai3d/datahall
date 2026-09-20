@@ -34,4 +34,6 @@ export const loc = (x: number, z: number): string => tr('loc', {x: x + 1, z: z +
 // Catalog names and notes: name and note in catalog.json are the Chinese originals (kept in exported USD and layout.json);
 // other languages go under i18n.<lang>, and missing fields fall back to the original
 export const catName = (t: CatalogItem): string => t.i18n?.[lang]?.name ?? t.name;
+// Publication titles stay in their own language; only this project's own estimate notes are translated
+export const srcTitle = (s: {title: string; i18n?: Record<string, {title?: string}>}): string => s.i18n?.[lang]?.title ?? s.title;
 export const catNote = (t: CatalogItem): string => t.i18n?.[lang]?.note ?? t.note;
