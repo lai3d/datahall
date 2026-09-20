@@ -17,6 +17,8 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 
 | Item | Why | Estimate | Status |
 | --- | --- | --- | --- |
+| Keyboard and screen reader access | From the 2026-09-20 audit: a device can only be placed with a pointer, so the tutorial and every scenario are unusable from the keyboard (WCAG 2.1.1, level A). Also: `<main>` holds only the canvas while the whole app sits in `<aside>`, the capacity verdict is announced to nobody, and two light-theme colors miss 4.5:1 | 4–6 h | Not started |
+| Cold load and caching | From the same audit: fingerprinted assets are served `max-age=0`, so a repeat visit still round-trips for the bundle; and first paint waits on 270 KB of JS because three.js sits in front of the React panel. Headers first, the split after | 2–3 h | Not started |
 
 ## Next (mid-quarter, 1 to 2 months)
 
