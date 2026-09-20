@@ -12,6 +12,7 @@
     "sample": "node scripts/update-sample.ts",
     "capacity-cases": "node scripts/capacity-cases.ts",
     "examples": "node scripts/examples-doc.ts",
+    "catalog-check": "node scripts/catalog-freshness.ts",
     "social-images": "node scripts/social-images.ts"
   },
   "dependencies": {
