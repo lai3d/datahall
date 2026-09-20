@@ -338,6 +338,68 @@ test('exports a self-contained architecture report', async ({page}) => {
   expect(errors).toEqual([]);
 });
 
+// Accessibility: the 3D view has a keyboard path of its own, the landmarks name the app, and the
+// capacity verdict is announced. These cover WCAG 2.1.1 (keyboard) and the live-region findings
+test('places a device with the keyboard alone, never clicking the 3D view', async ({page}) => {
+  const errors = await openApp(page);
+  await page.locator('#palette button[data-t="rpp"]').press('Enter');
+  const canvas = page.locator('#stage canvas');
+  await expect(canvas).toHaveAttribute('role', 'application');
+  await expect(canvas).toHaveAttribute('tabindex', '0');
+  await canvas.focus();
+  // The cursor appears in the middle of the hall (column 9, row 6), where the preset has an RPP
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#cursorStatus')).toHaveText('Cursor on RPP power panel at column 9, row 6');
+  // Two cells towards the front is empty floor: Enter places the chosen device there
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#cursorStatus')).toHaveText('Cursor on the empty cell at column 9, row 8');
+  await page.keyboard.press('Enter');
+  expect((await layout(page)).items).toContain('rpp@8,7');
+  // Enter on an occupied cell selects that device instead
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#info')).toContainText('RPP power panel, column 9, row 8');
+  // Esc steps back one level at a time: the chosen device type, the selection, then the view itself
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#del')).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(canvas).not.toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test('places a whole row with the keyboard', async ({page}) => {
+  const errors = await openApp(page);
+  await page.locator('#palette button[data-t="crah"]').press('Enter');
+  await page.locator('#placeMode button[data-mode="row"]').press('Enter');
+  await page.locator('#stage canvas').focus();
+  await page.keyboard.press('ArrowDown');      // cursor at column 9, row 6
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');   // down to row 10, the last one
+  await page.keyboard.press('Enter');          // first cell of the row
+  await expect(page.locator('#placeHint')).toContainText('last cell');
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Enter');
+  const row = (await layout(page)).items.filter(i => i.startsWith('crah@') && i.endsWith(',9'));
+  expect(row).toHaveLength(4);
+  expect(errors).toEqual([]);
+});
+
+test('the panel is the main landmark and the stage is only the 3D view', async ({page}) => {
+  await openApp(page);
+  await expect(page.locator('main')).toHaveCount(1);
+  await expect(page.locator('main')).toHaveAttribute('id', 'panel');
+  await expect(page.locator('#stage')).toHaveJSProperty('tagName', 'DIV');
+});
+
+test('the capacity verdict and the result messages are announced', async ({page}) => {
+  await openApp(page);
+  await expect(page.locator('#issues')).toHaveAttribute('aria-live', 'polite');
+  await expect(page.locator('#shareMsg')).toHaveAttribute('role', 'status');
+  await expect(page.locator('#usdMsg')).toHaveAttribute('role', 'status');
+  // The HUD is three numbers and a sentence: with the verdict announced, it no longer speaks on every edit
+  await expect(page.locator('#hud')).not.toHaveAttribute('aria-live', /.*/);
+});
+
 test('keyboard: focus stays on the button after activating it', async ({page}) => {
   await openApp(page);
   await page.locator('#utility button[data-u="5"]').focus();

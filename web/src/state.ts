@@ -39,6 +39,7 @@ export interface AppState {
   selected: string | null;
   placeMode: 'one' | 'row';
   rowAnchor: Pos | null;
+  cursor: Pos | null;
   assignFrom: string | null;
   phase: number;
   viewPhase: number | null;
@@ -60,6 +61,7 @@ export const state: AppState = {
   selected: null,     // Key of the currently selected placed device
   placeMode: 'one',   // Placement mode: 'one' single, 'row' whole row
   rowAnchor: null,    // First cell already clicked during row placement {x, z}
+  cursor: null,       // Keyboard cursor cell in the 3D view (main.ts); view state, set on the first arrow key
   assignFrom: null,   // Assign mode: picking devices for this CDU / RPP (key)
   phase: 1,           // Growth planning: phase that newly placed devices go into
   viewPhase: null,    // Growth planning: view only up to this phase (null for all); devices in later phases are excluded from computation

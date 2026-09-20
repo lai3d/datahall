@@ -107,7 +107,7 @@ function App({stage}: {stage: HTMLElement}){
       <Tutorial model={model} version={version} />
       <ScenarioCard model={model} />
       <h2>{tr('hUtility')}</h2>
-      <div className="row seg" id="utility">
+      <div className="row seg" id="utility" role="group" aria-label={tr('hUtility')}>
         {UTILITY_OPTIONS.map(u => <button key={u} type="button" data-u={u} aria-pressed={u === state.utility} onClick={() => actions.setUtility(u)}>{u} MW</button>)}
       </div>
       <Devices />
@@ -133,13 +133,15 @@ function StageOverlay({model}: {model: HallModel}){
   const s = model.totals;
   return (
     <>
-      <div id="hud" aria-live="polite">
+      <div id="hud">
         <div><b id="hGpu">{s.gpus.toLocaleString()}</b><span>GPU</span></div>
         <div><b id="hIt">{fmt(s.it)}</b><span>{tr('hudIt')}</span></div>
         <div><b id="hPue">{s.it ? s.pue.toFixed(2) : '–'}</b><span>{tr('hudPue')}</span></div>
         {s.it > 0 && <p id="hScale">{tr('hudScale', {sparks: scaleRefs(s.it).sparks.toLocaleString(), homes: scaleRefs(s.it).homes.toLocaleString()})}</p>}
       </div>
       <StageBar />
+      {/* Keyboard cursor in the 3D view (main.ts): where the arrows are pointing, for screen readers */}
+      <p id="cursorStatus" className="sr-only" role="status">{cursorText()}</p>
       <div id="stageTools">
         <button id="undo" type="button" title={MAC ? '⌘Z' : 'Ctrl+Z'} aria-keyshortcuts="Meta+Z Control+Z" disabled={!state.ui.canUndo} onClick={() => actions.undo()}>{tr('undo')}</button>
         <button id="redo" type="button" title={MAC ? '⇧⌘Z' : 'Ctrl+Y'} aria-keyshortcuts="Meta+Shift+Z Control+Y" disabled={!state.ui.canRedo} onClick={() => actions.redo()}>{tr('redo')}</button>
@@ -147,6 +149,14 @@ function StageOverlay({model}: {model: HallModel}){
       </div>
     </>
   );
+}
+
+// What the keyboard cursor is on, empty until the arrow keys are used
+function cursorText(): string{
+  const c = state.cursor;
+  if (!c) return '';
+  const it = state.items.get(keyOf(c.x, c.z));
+  return it ? tr('cursorOn', {name: catName(CAT[it.type]), loc: loc(c.x, c.z)}) : tr('cursorEmpty', {loc: loc(c.x, c.z)});
 }
 
 // Narrow screens only (hidden by CSS on wide ones): what a tap on the 3D view will do, with the matching buttons,
@@ -382,7 +392,7 @@ function Capacity({model}: {model: HallModel}){
         <Gauge label={tr('gaugeUtility')} value={s.facility} cap={state.utility * 1000} cssVar="--ink" />
         <div className="gauge"><div className="top"><span>{tr('gaugeCapex')}</span><em>{tr('capex', {m: s.capex.toFixed(1)})}</em></div></div>
       </div>
-      <ul className="issues" id="issues">
+      <ul className="issues" id="issues" aria-live="polite">
         {!s.it
           ? <li className="warn">{tr('issueEmpty')}</li>
           : <>
@@ -658,10 +668,12 @@ function Growth({model}: {model: HallModel}){
           {plan.map(p => {
             const ok = !p.reasons.length, current = state.viewPhase === p.phase || (state.viewPhase === null && p === plan[plan.length - 1]);
             return (
-              <tr key={p.phase} data-phase={p.phase} className={current ? 'current' : ''} tabIndex={0}
-                onClick={() => toggleView(p.phase)}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleView(p.phase); } }}>
-                <td>{p.phase}</td><td>{p.gpus.toLocaleString()}</td><td>{fmt(p.itKw)}</td>
+              // The whole row stays clickable, but the control a keyboard or screen reader gets is a real button in the
+              // phase cell: a row carrying role="button" would take its cells out of the table
+              <tr key={p.phase} data-phase={p.phase} className={current ? 'current' : ''} onClick={() => toggleView(p.phase)}>
+                <td><button type="button" aria-pressed={current} aria-label={tr('viewUpTo', {n: p.phase})}
+                  onClick={e => { e.stopPropagation(); toggleView(p.phase); }}>{p.phase}</button></td>
+                <td>{p.gpus.toLocaleString()}</td><td>{fmt(p.itKw)}</td>
                 <td>{tr(KIND_LABEL[p.tightest.kind])} {pct(p.tightest.ratio)}</td>
                 <td style={{color: `var(${ok ? '--ok' : '--bad'})`}}>{tr(ok ? 'statusOk' : 'statusFail')}</td>
               </tr>
@@ -818,7 +830,7 @@ function GoalForm(){
         <label className="check"><input id="goalN1" type="checkbox" checked={n1} onChange={e => setN1(e.target.checked)} /><span>{tr('goalN1')}</span></label>
         <button type="submit" id="goalGenerate" disabled={!(asked > 0)}>{tr('goalGenerate')}</button>
       </form>
-      {message && <p className="sub" id="goalMsg" style={{marginTop: 6}}>{message}</p>}
+      {message && <p className="sub" id="goalMsg" role="status" style={{marginTop: 6}}>{message}</p>}
     </>
   );
 }
@@ -900,7 +912,7 @@ function Share({notice}: {notice: Notice}){
         <button type="button" id="shareCopy" onClick={() => actions.copyShareLink()}>{tr('shareCopy')}</button>
         <button type="button" id="imageSave" disabled={!state.ui.exportReady || state.ui.exporting} onClick={() => actions.saveImage()}>{tr('imageSave')}</button>
       </div>
-      <p className="sub" id="shareMsg" style={{marginTop: 6}}>{notice.text ?? tr('shareHint')}</p>
+      <p className="sub" id="shareMsg" role="status" style={{marginTop: 6}}>{notice.text ?? tr('shareHint')}</p>
       <Warnings id="shareWarnings" warnings={notice.warnings} />
     </>
   );
@@ -922,7 +934,7 @@ function Usd({notice}: {notice: Notice}){
           if (f) actions.importUsdFile(f);
         }} />
       </div>
-      <p className="sub" id="usdMsg" style={{marginTop: 6}}>{notice.text ?? (state.ui.exportReady ? actions.exportHint() : '')}</p>
+      <p className="sub" id="usdMsg" role="status" style={{marginTop: 6}}>{notice.text ?? (state.ui.exportReady ? actions.exportHint() : '')}</p>
       <Warnings id="usdWarnings" warnings={notice.warnings} />
     </div>
   );

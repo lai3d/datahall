@@ -23,9 +23,10 @@
 <link rel="stylesheet" href="./src/style.css">
 </head>
 <body>
-<!-- The 3D view (scene.ts) and the React panel and overlay (ui.tsx) render into these -->
-<main id="stage"></main>
-<aside id="panel"></aside>
+<!-- The 3D view (scene.ts) and the React panel and overlay (ui.tsx) render into these.
+     The panel is the main landmark: it holds the whole application, while the stage is only the 3D view it drives -->
+<div id="stage"></div>
+<main id="panel"></main>
 
 <script type="module" src="./src/main.ts"></script>
 </body>
