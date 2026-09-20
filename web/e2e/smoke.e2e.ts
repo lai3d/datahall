@@ -323,6 +323,21 @@ test('imports the sample .usda and exports OpenUSD and layout.json', async ({pag
   await expect(page.locator('#methodVersions')).toContainText(`Catalog version ${layoutJson.catalogVersion}, capacity model ${layoutJson.modelVersion}`);
 });
 
+test('exports a self-contained architecture report', async ({page}) => {
+  const errors = await openApp(page);
+  const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#reportExport').click()]);
+  expect(download.suggestedFilename()).toBe('datahall-report.html');
+  const html = readFileSync((await download.path())!, 'utf8');
+  expect(html).toContain('Data hall architecture report');
+  expect(html).toContain('576');                                  // GPUs of the default GB200 preset
+  expect(html).toMatch(/Catalog version \d{4}-\d{2}-\d{2}, capacity model [^.]+\./);
+  expect(html).toContain('<img src="data:image/png;base64,');     // the 3D view travels inside the file
+  expect(html).not.toMatch(/<script|<link/);                      // self-contained: nothing is fetched when it opens
+  expect(html.trimEnd().endsWith('</html>')).toBe(true);
+  await expect(page.locator('#usdMsg')).toContainText('Exported datahall-report.html');
+  expect(errors).toEqual([]);
+});
+
 test('keyboard: focus stays on the button after activating it', async ({page}) => {
   await openApp(page);
   await page.locator('#utility button[data-u="5"]').focus();

@@ -51,6 +51,7 @@ export default {
   usdExport: 'Export OpenUSD',
   usdImport: 'Import .usda',
   layoutExport: 'Export for Unity',
+  reportExport: 'Export report',
   foot: 'Power and price figures come from vendor documents, press reports and estimates, with sources listed in "How the model works". They are for learning only; do not use them for engineering design.',
 
   // Palette chips
@@ -330,6 +331,33 @@ export default {
   exportFailed: 'Export failed. This environment may not allow downloads.',
   exportUsdDone: ({n}: {n: number}) => `Exported ${plural(n, 'device', 'devices')}.`,
   exportLayoutDone: ({n}: {n: number}) => `Exported layout.json (${plural(n, 'device', 'devices')}). Open it in the Unity app.`,
+  exportReportDone: ({n}: {n: number}) => `Exported datahall-report.html (${plural(n, 'device', 'devices')}). Open it in a browser, or print it to PDF.`,
+  reportHint: 'The report is one self-contained HTML file: the current hall with its bill of materials, checks, assumptions and share link.',
+
+  // Architecture report (report.ts). Its copy follows the UI language; everything else in it comes from the hall
+  repTitle: 'Data hall architecture report',
+  repGenerated: ({date}: {date: string}) => `Generated ${date} by the GPU data hall builder. Figures are teaching estimates, not engineering data.`,
+  repHSummary: 'Summary',
+  repGpus: 'GPUs',
+  repFacility: 'Facility load',
+  repFloor: 'Floor',
+  repFloorValue: ({used, total, area}: {used: number; total: number; area: number}) => `${used} of ${total} cells, about ${area} m²`,
+  repDevices: 'Devices',
+  repPhases: 'Deployment phases',
+  repHBom: 'Bill of materials',
+  repColDevice: 'Device',
+  repColCount: 'Count',
+  repColUnit: 'Power per unit',
+  repColSubtotal: 'Power subtotal',
+  repColCost: 'Estimated cost',
+  repTotal: 'Total',
+  repBomNote: 'Power per unit is the IT power of a rack, or the equipment overhead of a facility unit. Costs are rough public estimates for the hardware only.',
+  repHChecks: 'Capacity checks',
+  repHRedundancy: 'Redundancy',
+  repHAssumptions: 'Assumptions and exclusions',
+  repEnergyInputs: ({rate, pct}: {rate: number; pct: number}) => `At $${rate}/kWh and ${pct}% average load.`,
+  repViewAlt: '3D view of the hall',
+  repLink: 'Share link:',
 
   // usd-import.ts
   usdBinary: 'This is a binary .usd (usdc) file. Only text .usda is supported. Convert it with usdcat: usdcat in.usd -o out.usda',

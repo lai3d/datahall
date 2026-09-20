@@ -24,7 +24,6 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 
 | Item | Why | Estimate |
 | --- | --- | --- |
-| Architecture report export (P3) | Turn an experiment into an auditable artifact: scenario name and date, screenshot, bill of materials, GPU count, IT and facility load, PUE, floor space, hardware and annual energy estimates, bottlenecks and redundancy findings, assumptions, catalog and model versions, and the share link. Generated in the browser, no server | 3–4 h |
 | Compare two designs (P3) | The rack comparison compares theoretical halls; this compares two halls the user built, on equipment and GPU counts, power, floor cells, PUE, hardware estimate, annual energy, bottlenecks and single points of failure. Two local snapshots or an imported layout against the current hall; no accounts, no backend | 2–3 h |
 | Progressive disclosure of the panel | The panel now has ten sections. Group them into Learn, Design and Drill (the proposal's information architecture) so a first visit stays simple and the depth is still there | 2–3 h |
 
@@ -65,13 +64,14 @@ Dates are when the work merged to main.
 - ✅ TypeScript (strict) migration, React panel, Playwright smoke tests in CI, English docs and comments (2026-09-17).
 - ✅ Social preview image, favicon, one-click screenshot of the 3D view (2026-09-17).
 - ✅ Mobile polish: foldable panel, stage bar, placement feedback (2026-09-17).
+- ✅ Architecture report export: one self-contained HTML file with the screenshot, bill of materials, checks, redundancy findings, energy estimate, assumptions, versions and the share link (2026-09-20).
 - ✅ Vercel Web Analytics with no layout content sent (2026-09-17).
 - ✅ AMD Helios and MI355X racks in the catalog (2026-09-17).
 - ✅ Review fixes: the three bugs from the 2026-09-17 review, and eight defects plus the smaller items from the 2026-09-18 review (order-dependent capacity checks, prototype device types, tutorial and scenario completion, repair suggestions around manual assignments and phases) (2026-09-17 and 2026-09-18).
 
 ## Risks and dependencies
 
-- **The panel keeps growing**: ten sections is already a lot for a first visit. Group them before adding the report export and the design comparison.
+- **The panel keeps growing**: ten sections is already a lot for a first visit. Group them before adding the design comparison.
 - **Data credibility is the weak spot for spreading**: being called out for a wrong number hurts more than a missing feature. Every new figure needs a source, and `checked` dates go stale (see the data reliability section in `CLAUDE.md`).
 - **Cost modelling invites false precision**: the ownership estimate has to keep saying what it leaves out, the way the energy estimate does.
 - **Parallel sessions**: check branches before editing `web/src`, and keep feature items from overlapping files.

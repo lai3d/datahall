@@ -15,7 +15,7 @@ import type {Goal} from './goal.ts';
 import type {SourcedField} from './types.ts';
 import {SCENARIO_IDS, scenarioResult, startLayout} from './scenarios.ts';
 import type {ScenarioId} from './scenarios.ts';
-import {annualEnergy, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
+import {annualEnergy, fmtEnergy, fmtMoney, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
 import {BANDS, MAINT_RANGE, YEAR_OPTIONS, ownership} from './ownership.ts';
 import type {OwnershipInputs} from './ownership.ts';
@@ -75,6 +75,7 @@ export interface Actions {
   importUsdFile(file: File): void;
   exportUsd(): void;
   exportLayout(): void;
+  exportReport(): void;
   saveImage(): void;
   exportHint(): string;
 }
@@ -525,10 +526,6 @@ function Info({model}: {model: HallModel}){
 const KIND_LABEL = {dist: 'gaugeDist', liquid: 'gaugeLiquid', air: 'gaugeAir', network: 'gaugeNetwork', utility: 'gaugeUtility'} as const satisfies Record<ReasonKind, MessageKey>;
 const pct = (r: number): string => r === Infinity ? '∞' : Math.round(r * 100) + '%';
 
-const fmtEnergy = (mwh: number): string => mwh >= 1000 ? (mwh / 1000).toFixed(mwh >= 10000 ? 1 : 2) + ' GWh' : Math.round(mwh).toLocaleString() + ' MWh';
-const fmtMoney = (usd: number): string => usd >= 1e9 ? '$' + (usd / 1e9).toFixed(2) + 'B'
-  : usd >= 1e6 ? '$' + (usd / 1e6).toFixed(2) + 'M' : '$' + Math.round(usd / 1e3).toLocaleString() + 'K';
-
 // Annual energy and electricity cost for the devices in the current calculation (energy.ts). The price field keeps its own text
 // while typing, so partial input such as "0." is not rewritten; only valid numbers reach the state
 function Energy({model}: {model: HallModel}){
@@ -918,6 +915,7 @@ function Usd({notice}: {notice: Notice}){
         <button type="button" id="usdExport" disabled={state.ui.exporting} onClick={() => actions.exportUsd()}>{tr('usdExport')}</button>
         <button type="button" id="usdImport" onClick={() => file.current?.click()}>{tr('usdImport')}</button>
         <button type="button" id="layoutExport" disabled={state.ui.exporting} onClick={() => actions.exportLayout()}>{tr('layoutExport')}</button>
+        <button type="button" id="reportExport" disabled={state.ui.exporting} onClick={() => actions.exportReport()}>{tr('reportExport')}</button>
         <input type="file" id="usdFile" accept=".usda,.usd" hidden ref={file} onChange={e => {
           const f = e.target.files?.[0];
           e.target.value = '';   // allow choosing the same file again
