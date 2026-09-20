@@ -1,5 +1,5 @@
 import {CAT} from './catalog.ts';
-import {GRID, keyOf, FEEDS} from './grid.ts';
+import {GRID, clamp, keyOf, FEEDS} from './grid.ts';
 import {phasesIn, MAX_PHASE} from './growth.ts';
 import {cleanInputs} from './energy.ts';
 import {cleanOwnership} from './ownership.ts';
@@ -182,7 +182,7 @@ let hoverCell: Pos | null = null;
 function updateGhost(){
   let cells: Pos[] = [];
   if (state.tool){
-    const end = hoverCell || state.rowAnchor;
+    const end = hoverCell || state.cursor || state.rowAnchor;
     if (state.placeMode === 'row' && state.rowAnchor) cells = lineCells(state.rowAnchor, end || state.rowAnchor);
     else if (end) cells = [end];
   }
@@ -316,6 +316,44 @@ function assignTap(key: string){
 }
 
 // ---------- keyboard ----------
+// The 3D view is focusable and carries role="application", so the arrow keys, Enter and Space reach it:
+// the arrows move a cursor cell (previewed by the same ghost as the mouse), Enter or Space acts on that cell
+// exactly like a tap on it, and Esc steps back one level and finally leaves the view.
+const ARROW: Record<string, Pos> = {ArrowLeft: {x: -1, z: 0}, ArrowRight: {x: 1, z: 0}, ArrowUp: {x: 0, z: -1}, ArrowDown: {x: 0, z: 1}};
+// Where the cursor appears on the first arrow key: the selected device, otherwise the middle of the hall
+const startCell = (): Pos => {
+  const sel = state.selected ? state.items.get(state.selected) : undefined;
+  return sel ? {x: sel.x, z: sel.z} : {x: Math.floor(GRID.GW / 2), z: Math.floor(GRID.GD / 2)};
+};
+function moveCursor(d: Pos){
+  const c = state.cursor;
+  state.cursor = c ? {x: clamp(c.x + d.x, 0, GRID.GW - 1), z: clamp(c.z + d.z, 0, GRID.GD - 1)} : startCell();
+  updateGhost();
+  notify();
+}
+// Enter or Space on the cursor cell: the same paths as tap(), so placement, row placement and assign mode all behave alike
+function cursorActivate(){
+  const c = state.cursor || startCell();
+  state.cursor = c;
+  const key = keyOf(c.x, c.z);
+  if (state.assignFrom){
+    if (key === state.assignFrom){ state.assignFrom = null; notify(); }
+    else if (state.items.has(key)) assignTap(key);
+    return;
+  }
+  const tool = state.tool;
+  if (tool && state.placeMode === 'row'){
+    if (!state.rowAnchor){ state.rowAnchor = c; state.selected = null; view.setOutline(); notify(); updateGhost(); return; }
+    const cells = freeCells(lineCells(state.rowAnchor, c), state.items);
+    state.rowAnchor = null;
+    edit(() => cells.forEach(p => place(tool, p.x, p.z, newProps())));
+    placedFeedback(tool, cells);
+    return;
+  }
+  if (state.items.has(key)){ select(key); return; }
+  if (tool){ edit(() => place(tool, c.x, c.z, newProps())); placedFeedback(tool, [c]); return; }
+  select(null);
+}
 function escape(){
   if (state.assignFrom){ state.assignFrom = null; notify(); return; }
   if (state.rowAnchor) state.rowAnchor = null;
@@ -323,7 +361,15 @@ function escape(){
   else if (state.selected){ select(null); return; }
   notify(); updateGhost();
 }
-function initKeyboard(){
+function initKeyboard(view3d: HTMLElement){
+  view3d.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const d = ARROW[e.key];
+    if (d){ e.preventDefault(); moveCursor(d); }
+    else if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); cursorActivate(); }
+    // Esc is handled below; once there is nothing left to step back from, it also gives the focus back to the page
+    else if (e.key === 'Escape' && !state.assignFrom && !state.rowAnchor && !state.tool && !state.selected) view3d.blur();
+  });
   window.addEventListener('keydown', e => {
     if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable]')) return;
     const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
@@ -386,23 +432,24 @@ function tap(e: PointerEvent){
     state.rowAnchor = null;
     const tool = state.tool;
     edit(() => cells.forEach(p => place(tool, p.x, p.z, newProps())));
-    placedFeedback(e, tool, cells);
+    placedFeedback(tool, cells, e.pointerType);
     return;
   }
   const key = view.pickItem(e);
   if (key){ select(key); return; }
   const c = view.pickCell(e);
   const tool = state.tool;
-  if (c && tool && !state.items.has(keyOf(c.x, c.z))){ edit(() => place(tool, c.x, c.z, newProps())); placedFeedback(e, tool, [c]); return; }
+  if (c && tool && !state.items.has(keyOf(c.x, c.z))){ edit(() => place(tool, c.x, c.z, newProps())); placedFeedback(tool, [c], e.pointerType); return; }
   select(null);
 }
 // Feedback for a placement tap: the new devices pop up, touch devices get a short vibration where supported,
 // and the stage bar (narrow screens) switches to "placed"
-function placedFeedback(e: PointerEvent, tool: string, cells: Pos[]){
+// pointerType is empty when the placement came from the keyboard, which never vibrates
+function placedFeedback(tool: string, cells: Pos[], pointerType = ''){
   const placed = cells.map(p => state.items.get(keyOf(p.x, p.z))).filter(it => it?.type === tool);
   if (!placed.length) return;
   placed.forEach(view.popMesh);
-  if (e.pointerType !== 'mouse') try { navigator.vibrate?.(12); } catch (err) {}
+  if (pointerType && pointerType !== 'mouse') try { navigator.vibrate?.(12); } catch (err) {}
   state.ui.lastPlaced = tool;
   notify();
 }
@@ -501,6 +548,7 @@ function applyLang(id: string, persist: boolean){
 // Redraw panels after switching; replace the last result messages in the share and export sections with the default hint in the current language
 function switchLang(id: string){
   applyLang(id, true);
+  labelStage();
   updateShareLink();
   state.ui.usd = {text: null, warnings: []};
   refresh();
@@ -512,6 +560,13 @@ const openedFromShareLink = hasShareLink(location.hash);
 applyLang(initialLang(), false);
 const stage = $('#stage');
 const el = view.initScene(stage);
+// Keyboard path into the 3D view (see the keyboard section); the labels are re-read when the language changes.
+// The panel is the page's main landmark, so the stage is a region of its own, holding the HUD and the overlay buttons
+el.tabIndex = 0;
+el.setAttribute('role', 'application');
+stage.setAttribute('role', 'region');
+const labelStage = () => { stage.setAttribute('aria-label', tr('stageRegion')); el.setAttribute('aria-label', tr('stageLabel')); };
+labelStage();
 const controls = initControls(el, view.camera, {
   onTap: tap,
   onHover: e => { hoverCell = view.pickCell(e); updateGhost(); },
@@ -563,7 +618,7 @@ const actions: Actions = {
 mountUI(actions, stage, $('#panel'));
 void initExport();
 window.addEventListener('hashchange', () => loadFromLink(true));
-initKeyboard();
+initKeyboard(el);
 
 const mq = window.matchMedia('(prefers-color-scheme: dark)');
 mq.addEventListener?.('change', () => { view.retheme(); refresh(); });

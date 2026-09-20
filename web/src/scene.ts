@@ -352,8 +352,10 @@ export function snapshotDataUrl(): string{
 }
 
 export function startLoop(): void{
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Read the preference every frame, like the rest of the code, so turning it on takes effect without a reload
+  const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
   function frame(now: number){
+    const reduce = reduceMq.matches;
     state.items.forEach((it, key) => {
       const m = it.mesh.userData.stripeMat;
       // Failed facilities and overloaded or unconnected devices do not light up
