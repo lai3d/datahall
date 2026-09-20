@@ -17,7 +17,6 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 
 | Item | Why | Estimate | Status |
 | --- | --- | --- | --- |
-| Keyboard and screen reader access | From the 2026-09-20 audit: a device can only be placed with a pointer, so the tutorial and every scenario are unusable from the keyboard (WCAG 2.1.1, level A). Also: `<main>` holds only the canvas while the whole app sits in `<aside>`, the capacity verdict is announced to nobody, and two light-theme colors miss 4.5:1 | 4–6 h | Not started |
 | Cold load and caching | From the same audit: fingerprinted assets are served `max-age=0`, so a repeat visit still round-trips for the bundle; and first paint waits on 270 KB of JS because three.js sits in front of the React panel. Headers first, the split after | 2–3 h | Not started |
 
 ## Next (mid-quarter, 1 to 2 months)
@@ -60,6 +59,7 @@ Dates are when the work merged to main.
 - ✅ Versioned exports: `.usda` and `layout.json` name the catalog data version and the model version; imports flag a different catalog (2026-09-18).
 
 **Reach and craft**
+- ✅ Keyboard and screen reader access: a keyboard cursor places, selects and moves devices in the 3D view, the panel is the main landmark, the capacity verdict is announced, and the two light-theme colors below 4.5:1 are fixed (2026-09-20).
 - ✅ Example gallery: six halls kept in the repo as share links, generated into `docs/examples.md`, each checked against what it claims (2026-09-20).
 - ✅ TypeScript (strict) migration, React panel, Playwright smoke tests in CI, English docs and comments (2026-09-17).
 - ✅ Social preview image, favicon, one-click screenshot of the 3D view (2026-09-17).
