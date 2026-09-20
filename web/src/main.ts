@@ -20,6 +20,7 @@ import {notify} from './store.ts';
 import {hallModel} from './model.ts';
 import {PRESETS, saveLayout, restoreLayout} from './layout.ts';
 import {buildUsda} from './usd-export.ts';
+import {buildReport} from './report.ts';
 import {importUsda, UsdImportError} from './usd-import.ts';
 import {buildLayout, layoutToText} from './layout-export.ts';
 import {createSaver} from './download.ts';
@@ -429,7 +430,7 @@ async function importUsdFile(file: File){
 
 let saver: Saver | null = null;
 const today = () => { const now = new Date(); return [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(n => String(n).padStart(2, '0')).join('-'); };
-const exportHint = () => saver ? saver.hint() + tr('usdHint') : '';
+const exportHint = () => saver ? saver.hint() + tr('usdHint') + ' ' + tr('reportHint') : '';
 async function initExport(){
   saver = await createSaver();
   state.ui.exportReady = true;
@@ -457,6 +458,12 @@ const exportUsd = () => exportWith('datahall.usda', meta => buildUsda(itemList()
   () => tr('exportUsdDone', {n: state.items.size}));
 const exportLayout = () => exportWith('layout.json', meta => layoutToText(buildLayout(itemList(), CAT, state.utility, GRID, meta)),
   () => tr('exportLayoutDone', {n: state.items.size}));
+// Architecture report: the whole hall (every phase, ignoring the failure drill) as one self-contained HTML file.
+// The screenshot has to be taken in the same task as the render, which is why it is read inside the build callback
+const exportReport = () => exportWith('datahall-report.html',
+  meta => buildReport(itemList(), CAT, state.utility, GRID, state.energy,
+    {...meta, link: location.href, shot: view.snapshotDataUrl()}),
+  () => tr('exportReportDone', {n: state.items.size}));
 
 // One-click screenshot of the 3D view; the message goes to the share section, where the button is
 async function saveImage(){
@@ -549,6 +556,7 @@ const actions: Actions = {
   importUsdFile: file => { void importUsdFile(file); },
   exportUsd: () => { void exportUsd(); },
   exportLayout: () => { void exportLayout(); },
+  exportReport: () => { void exportReport(); },
   saveImage: () => { void saveImage(); },
   exportHint,
 };

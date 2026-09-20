@@ -343,6 +343,14 @@ export function snapshotPng(): Promise<Blob | null>{
   return new Promise(resolve => renderer.domElement.toBlob(resolve, 'image/png'));
 }
 
+// The same frame as a PNG data URL, for embedding in the architecture report. toDataURL also has to run in the
+// same task as the render; it returns 'data:,' when the canvas cannot be read
+export function snapshotDataUrl(): string{
+  renderOnce();
+  const url = renderer.domElement.toDataURL('image/png');
+  return url.startsWith('data:image/') ? url : '';
+}
+
 export function startLoop(): void{
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function frame(now: number){

@@ -32,6 +32,7 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 - **Rack comparison.** For the current utility feed, how many racks of each type fit with just enough support equipment, their GPUs, floor space, PUE and price. The HUD puts the IT load in everyday terms (DGX Sparks, US homes).
 - **Works on phones.** The panel folds away to give the 3D view the screen, and a bar on the 3D view shows what a tap will do.
 - **Share links.** The layout is encoded in the URL hash, so the address bar always links to the current hall. Shared links show a preview image, and "Save image" downloads the 3D view as a PNG.
+- **Architecture report.** One click writes a self-contained HTML report of the current hall: the 3D view, a bill of materials, GPU count, loads, PUE, floor space, hardware and annual energy estimates, bottlenecks, redundancy findings, the assumptions behind the model, the catalog and model versions, and the share link. No server, and it prints to PDF.
 - **English and Simplified Chinese UI.**
 - **Unity app (macOS, paused).** It reads the same layout through `layout.json` plus glTF models converted from USD.
 
@@ -50,7 +51,7 @@ Ready-made halls you can open in the live demo, layout and all. The full set, wi
 | Web app | TypeScript 7 (strict), Vite 8, React 19 for the panel, three.js 0.186 for the 3D view (plain three.js, no React bindings) |
 | Web tests | vitest for the pure logic, ajv (layout.json schema), Khronos glTF-Validator, Playwright browser smoke tests |
 | Hosting | Vercel (production from `main`, preview per pull request), Vercel Web Analytics |
-| Provenance | Exported `.usda` and `layout.json` name the catalog data version and the capacity model version behind their figures |
+| Provenance | Exported `.usda`, `layout.json` and the architecture report name the catalog data version and the capacity model version behind their figures |
 | Data formats | OpenUSD `.usda` with a codeless applied API schema (`dchall:`), `layout.json` (JSON Schema 2020-12), share links in the URL hash |
 | USD tooling | Python with `usd-core` 26.8 (OpenUSD), `usdGenSchema`, NVIDIA SimReady Foundation / OAV rules for the audit |
 | Unity app | Unity 6000.6 (URP), glTFast, a small Objective-C plugin for the macOS file dialog and drag and drop |

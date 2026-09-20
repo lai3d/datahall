@@ -23,6 +23,11 @@ export function annualEnergy(s: Totals, {price, load}: EnergyInputs): AnnualEner
   return {itMWh, overheadMWh, totalMWh, pue: itMWh ? totalMWh / itMWh : 0, cost: totalMWh * 1000 * price};
 }
 
+// Shared formatting for the panel and the architecture report: GWh above a thousand MWh, and money in millions or thousands
+export const fmtEnergy = (mwh: number): string => mwh >= 1000 ? (mwh / 1000).toFixed(mwh >= 10000 ? 1 : 2) + ' GWh' : Math.round(mwh).toLocaleString() + ' MWh';
+export const fmtMoney = (usd: number): string => usd >= 1e9 ? '$' + (usd / 1e9).toFixed(2) + 'B'
+  : usd >= 1e6 ? '$' + (usd / 1e6).toFixed(2) + 'M' : '$' + Math.round(usd / 1e3).toLocaleString() + 'K';
+
 // User-entered inputs come from form fields and localStorage: clamp to the allowed range, fall back to defaults when not a number
 export function cleanInputs(raw: {price?: unknown; load?: unknown}): EnergyInputs{
   const num = (v: unknown, [lo, hi]: readonly [number, number], fallback: number) =>
