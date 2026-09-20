@@ -45,6 +45,8 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
     Totals only, like `headroom`: no per-device nearest assignment check, and the floor limit is the cell count, not a real placement. The panel section explains that GPU counts drop for newer racks because per-GPU performance is not modeled
   - `src/energy.ts`: annual energy and electricity cost, pure functions. Uses `sim.ts`'s facility formula split by what follows load: IT, cooling and distribution losses scale with the average load, equipment overhead runs all year, so the annual PUE rises at lower load.
     Inputs (price, average load) are view state in `state.energy`, kept in localStorage `datahall.energy` and cleaned by `cleanInputs`; they are not part of the layout, share links or analytics
+  - `src/ownership.ts`: simplified three- or five-year ownership estimate, pure functions. Hardware capex from `compute()`, electricity from `energy.ts`'s `annualEnergy` repeated per year (the formula is never duplicated), and an optional maintenance assumption as a share of hardware per year.
+    `BANDS` sweeps the electricity price, the average load and the overhead share of the energy (what a different PUE would do) together to give the low and high cases, so the panel says "between X and Y". Inputs (years, maintenance) are view state in `state.ownership`, kept in localStorage `datahall.ownership` and cleaned by `cleanOwnership`; like the energy inputs they are not part of the layout, share links or analytics. The UI lives inside the annual energy section (`#ownership`), not a section of its own
   - `src/viz.ts`: pure helpers for the load visualization (meter segments and level, points along a link path, flow dot positions)
   - `src/scale.ts`: everyday scale references for the IT load in the HUD (DGX Sparks, US homes), rounded to two significant figures
   - `src/feeds.ts`: maintenance of manually assigned supply equipment (setting, cleaning up stale assignments, following supply equipment when it moves), pure functions
@@ -203,7 +205,7 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # open a layou
 - **Provenance of exports**: `.usda` (`customLayerData`'s `dchall:catalogVersion` and `dchall:modelVersion`), `layout.json` (the same two fields, written by both generators) and `spec/capacity-cases.json` record which catalog data and which capacity model produced the figures; the methodology dialog shows both (`#methodVersions`).
   `CATALOG_VERSION` comes from the catalog file, `MODEL_VERSION` lives in `sim.ts` and is bumped when `compute()` or `PUE_FACTORS` change. Importing a `.usda` from a different catalog version says so and still computes from the current catalog.
   Share links carry no version on purpose: adding one would need a new link version, and every link already out there must keep working
-- **Methodology dialog** (`ui.tsx`'s `Method`, a modal `<dialog id="method">`): explains the five checks, the per-device check, the PUE formula and why its coefficients are what they are, prices and energy, the limits of the planning estimates, and lists every catalog note.
+- **Methodology dialog** (`ui.tsx`'s `Method`, a modal `<dialog id="method">`): explains the five checks, the per-device check, the PUE formula and why its coefficients are what they are, prices, energy and the ownership estimate, the limits of the planning estimates, and lists every catalog note.
   Opened from "How the model works" under the subtitle or from links next to the sections it explains (`data-method="checks" | "cost" | "planning"`), which scroll to that section (`state.ui.method`, view state).
   Capacities and coefficients in the text are read from the catalog and `PUE_FACTORS`, never typed into the copy, so changing the model updates the explanation
 - **Load visualization** (`scene.ts`):
@@ -244,6 +246,7 @@ Last full check 2026-09-18. Choices made then:
 - Support units: CDU 800 kW within Vertiv's 600–2300 kW range; the 120 kW in-row cooler stands in for about two real units (58–70 kW each); the 800 kW RPP is a high-density panel; IB rack of 288 ports is about two Q3400 switches; all their prices are estimates
 - PUE context in the methodology dialog: weighted average annual PUE 1.54 in 2025, 1.44 for facilities of 20 MW and above (Uptime Institute Global Data Center Survey 2025)
 - Default electricity price (`energy.ts`): 8.62 ¢/kWh, the 2025 US industrial average (US EIA, Electric Power Monthly, table 5.3), excluding taxes, demand charges and fixed fees. The 80% average load is an assumption
+- Ownership estimate (`ownership.ts`): the 5% of hardware per year for maintenance and the ±30% / ±20% / ±25% sensitivity bands are assumptions with no source, labeled as such in the UI, like the 80% average load
 - Scale references (`scale.ts`): DGX Spark 240 W (its power adapter rating), US home about 1.2 kW average (about 10,500 kWh a year, US EIA). A Mac Studio reference waits for a sourced power figure
 
 ## Style
