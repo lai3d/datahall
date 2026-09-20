@@ -70,7 +70,7 @@ The data format is OpenUSD-compatible, leaving room to adopt NVIDIA SimReady ass
 - `samples/datahall.usda`: export sample, validated with OpenUSD 26.08 and the schema, also the golden file for export regression tests
 - `tools/validate_usd.py`: schema-based USD validation, registers the `schema/` plugin automatically; `tools/test_validate_usd.py` is its test
 - `tools/simready_setup.sh` + `tools/simready_audit.py`: checks against NVIDIA SimReady Foundation (pinned version) and the OAV default rules, environment in `.simready/`
-- `docs/simready-audit.md`: SimReady audit report; `docs/unity-options.md`: Unity option comparison and decision; `docs/roadmap.md`: quarterly roadmap (Now / Next / Later), Chinese version `docs/roadmap.zh.md`, edit both together
+- `docs/simready-audit.md`: SimReady audit report; `docs/unity-options.md`: Unity option comparison and decision; `docs/roadmap.md`: quarterly roadmap (Now / Next / Later / Shipped, ✅ per shipped item), Chinese version `docs/roadmap.zh.md`, edit both together; `docs/product-roadmap-proposal.md`: longer-term proposal the P0–P4 labels refer to
 - `.gitattributes`: Git LFS rules, binary assets only (glb, usdc/usdz/usd, textures, audio/video, fonts, native libraries); `.usda`, `.gltf`, JSON and Unity YAML stay in regular git. `web/public/*.png` is excluded from LFS, because Vercel does not fetch LFS objects by default.
   `tools/check_lfs.sh` checks whether LFS files have been pulled, called automatically when Unity scripts start
 - `tools/usd_to_unity.py`: `.usda` → layout bundle (`layout.json` + `assets/<id>.glb`), tested by `tools/test_usd_to_unity.py`
