@@ -512,7 +512,7 @@ const exportLayout = () => exportWith('layout.json', meta => layoutToText(buildL
 // The screenshot has to be taken in the same task as the render, which is why it is read inside the build callback
 const exportReport = () => exportWith('datahall-report.html',
   meta => buildReport(itemList(), CAT, state.utility, GRID, state.energy,
-    {...meta, link: location.href, shot: view.snapshotDataUrl()}),
+    {...meta, fabric: state.fabric, link: location.href, shot: view.snapshotDataUrl()}),
   () => tr('exportReportDone', {n: state.items.size}));
 
 // One-click screenshot of the 3D view; the message goes to the share section, where the button is
@@ -582,6 +582,7 @@ const actions: Actions = {
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
   setEnergy,
   setOwnership,
+  setFabric: change => { state.fabric = {...state.fabric, ...change}; notify(); },
   applyRepair,
   generateGoal,
   openMethod: section => { state.ui.method = section; notify(); },

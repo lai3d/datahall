@@ -27,6 +27,13 @@
       "items": {
         "$ref": "#/$defs/item"
       }
+    },
+    "cables": {
+      "type": "array",
+      "description": "Cable and optics classes for the back-end fabric, shortest reach first",
+      "items": {
+        "$ref": "#/$defs/cable"
+      }
     }
   },
   "$defs": {
@@ -92,6 +99,16 @@
           "type": "integer",
           "minimum": 1
         },
+        "radix": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Ports per switch (back-end fabric)"
+        },
+        "portGbps": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Speed of one switch port, Gb/s"
+        },
         "ovh": {
           "type": "number",
           "minimum": 0
@@ -111,6 +128,35 @@
         "airDense": {
           "type": "boolean",
           "description": "Air-cooled rack dense enough that real deployments need rear-door heat exchangers; the capacity check warns about it"
+        },
+        "fabric": {
+          "enum": [
+            "x800",
+            "quantum2",
+            "ethernet",
+            "unsourced"
+          ],
+          "description": "Back-end (scale-out) fabric: x800 = modeled on Quantum-X800 InfiniBand; the others say why it is not modeled"
+        },
+        "nics": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Back-end NIC ports per rack (scale-out endpoints), across all planes"
+        },
+        "rails": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Rails across all planes: NIC positions within a compute tray"
+        },
+        "planes": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Independent fabrics the NICs are split over; 1 when omitted"
+        },
+        "nicGbps": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Speed of one back-end NIC port, Gb/s"
         },
         "note": {
           "type": "string",
@@ -171,7 +217,15 @@
         "dist",
         "ports",
         "ovh",
-        "cap"
+        "cap",
+        "radix",
+        "portGbps",
+        "fabric",
+        "nics",
+        "rails",
+        "planes",
+        "nicGbps",
+        "maxM"
       ]
     },
     "source": {
@@ -251,6 +305,48 @@
         ]
       },
       "additionalProperties": false
+    },
+    "cable": {
+      "type": "object",
+      "required": [
+        "id",
+        "gbps",
+        "ends",
+        "maxM",
+        "sources"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+$"
+        },
+        "gbps": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Port speed the class is for, Gb/s"
+        },
+        "ends": {
+          "enum": [
+            "nic",
+            "switch",
+            "any"
+          ],
+          "description": "nic: switch to NIC runs only; switch: switch to switch only; any: both"
+        },
+        "maxM": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Longest run, m"
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/source"
+          }
+        }
+      }
     }
   }
 }

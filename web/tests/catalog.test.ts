@@ -2,15 +2,16 @@
 import {describe, expect, it} from 'vitest';
 import Ajv2020 from 'ajv/dist/2020.js';
 import {readFileSync} from 'node:fs';
-import {CATALOG, CATALOG_VERSION} from '../src/catalog.ts';
-import type {SourcedField} from '../src/types.ts';
+import {CABLES, CATALOG, CATALOG_VERSION} from '../src/catalog.ts';
+import type {ItemField, RangeField} from '../src/types.ts';
 
 const json = (p: string) => JSON.parse(readFileSync(new URL(p, import.meta.url), 'utf8'));
 
 describe('catalog', () => {
   it('data version is the newest checked date of its sources', () => {
-    const cat = json('../../spec/catalog.json') as {version: string; items: {sources: {checked: string}[]}[]};
-    const newest = cat.items.flatMap(t => t.sources.map(s => s.checked)).sort().at(-1);
+    type Sourced = {sources: {checked: string}[]};
+    const cat = json('../../spec/catalog.json') as {version: string; items: Sourced[]; cables: Sourced[]};
+    const newest = [...cat.items, ...cat.cables].flatMap(t => t.sources.map(s => s.checked)).sort().at(-1);
     expect(cat.version).toBe(newest);
     expect(CATALOG_VERSION).toBe(cat.version);
   });
@@ -21,20 +22,47 @@ describe('catalog', () => {
   });
 
   // Figures the capacity model and the price estimate use; each one needs at least one source
-  const FIELDS: SourcedField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap'];
+  const FIELDS: ItemField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap', 'radix', 'portGbps', 'fabric', 'nics', 'rails', 'planes', 'nicGbps'];
   for (const t of CATALOG){
     it(`${t.id}: every figure is backed by a source`, () => {
       const backed = new Set(t.sources.flatMap(s => s.supports));
       for (const f of FIELDS) if (t[f] !== undefined) expect(backed.has(f), `${t.id}.${f}`).toBe(true);
-      for (const s of t.sources) for (const f of s.supports) expect(t[f], `${t.id}: source "${s.title}" supports missing field ${f}`).not.toBeUndefined();
+      for (const s of t.sources) for (const f of s.supports) expect(t[f as ItemField], `${t.id}: source "${s.title}" supports missing field ${f}`).not.toBeUndefined();
     });
 
     it(`${t.id}: simulation values fall inside the ranges the sources give`, () => {
-      for (const [f, [lo, hi]] of Object.entries(t.ranges ?? {}) as [SourcedField, [number, number]][]){
+      for (const [f, [lo, hi]] of Object.entries(t.ranges ?? {}) as [RangeField, [number, number]][]){
         expect(lo, `${t.id}.${f} range`).toBeLessThanOrEqual(hi);
         expect(t[f], `${t.id}.${f}`).toBeGreaterThanOrEqual(lo);
         expect(t[f], `${t.id}.${f}`).toBeLessThanOrEqual(hi);
       }
     });
   }
+
+  // Back-end fabric: every GPU rack says whether its fabric is modeled; a modeled one needs its NIC figures and a switch at its speed
+  it('GPU racks declare their back-end fabric', () => {
+    const sw = CATALOG.filter(t => t.radix);
+    expect(sw.length).toBe(1);
+    for (const t of CATALOG.filter(t => t.gpus)){
+      expect(t.fabric, t.id).toBeDefined();
+      if (t.fabric !== 'x800') continue;
+      expect(t.nics && t.rails && t.nicGbps, t.id).toBeTruthy();
+      expect(t.nicGbps, t.id).toBe(sw[0]!.portGbps);
+      expect((t.nics ?? 0) % (t.planes ?? 1), `${t.id} NICs split evenly over planes`).toBe(0);
+      expect((t.rails ?? 0) % (t.planes ?? 1), `${t.id} rails split evenly over planes`).toBe(0);
+      expect((t.nics ?? 0) % (t.rails ?? 1), `${t.id} NICs split evenly over rails`).toBe(0);
+    }
+    for (const t of CATALOG.filter(t => !t.gpus)) expect(t.fabric, t.id).toBeUndefined();
+  });
+
+  it('cable classes are sourced and ordered by reach', () => {
+    for (const c of CABLES){
+      expect(c.sources.some(s => s.supports.includes('maxM')), c.id).toBe(true);
+      for (const s of c.sources) for (const f of s.supports) expect(f, `${c.id}: ${s.title}`).toBe('maxM');
+    }
+    for (const g of new Set(CABLES.map(c => c.gbps))){
+      const reach = CABLES.filter(c => c.gbps === g).map(c => c.maxM);
+      expect(reach).toEqual([...reach].sort((a, b) => a - b));
+    }
+  });
 });

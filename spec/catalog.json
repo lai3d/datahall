@@ -1,6 +1,6 @@
 {
   "schemaVersion": "0.2",
-  "version": "2026-09-18",
+  "version": "2026-09-21",
   "units": {
     "power": "kW",
     "length": "m",
@@ -17,6 +17,7 @@
       "liq": 0.85,
       "cap": 3.0,
       "h": 2.3,
+      "fabric": "quantum2",
       "note": "72 颗 Blackwell GPU + 36 颗 Grace CPU，Oberon 机柜，NVLink 72 卡全互联。计算和交换托盘液冷，其余部分仍需风冷。NVIDIA 给出整柜约 120 kW 的冷却需求，Vertiv 参考设计按每柜最高 132 kW 设计；QCT 资料中液冷约 115 kW、风冷约 17 kW，液冷比例按 85% 取整。价格约 $3M（Wolfe Research，2026-01）。",
       "i18n": {
         "en": {
@@ -77,6 +78,16 @@
           "supports": [
             "cap"
           ]
+        },
+        {
+          "title": "Key Components of the DGX SuperPOD — Reference Architecture Featuring DGX GB200",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/dgx-superpod/reference-architecture-scalable-infrastructure-gb200/latest/dgx-superpod-components.html",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "fabric"
+          ]
         }
       ],
       "ranges": {
@@ -96,6 +107,10 @@
       "liq": 0.9,
       "cap": 4.3,
       "h": 2.3,
+      "fabric": "x800",
+      "nics": 72,
+      "rails": 4,
+      "nicGbps": 800,
       "note": "Blackwell Ultra 版本，机柜形态与 GB200 相同。NVIDIA 参考架构写整柜最高 142 kW，Supermicro 配置为 132 kW，Lenovo 标 135 kW TDP（峰值约 155 kW），约 90% 热量走液冷。价格约 $4.3M（Wolfe Research，2026-01）。",
       "i18n": {
         "en": {
@@ -147,6 +162,31 @@
           "supports": [
             "cap"
           ]
+        },
+        {
+          "title": "Hardware — NVIDIA DGX GB Rack Scale Systems User Guide",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/dgx/dgxgb200-user-guide/hardware.html",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "nics",
+            "nicGbps"
+          ]
+        },
+        {
+          "title": "NVIDIA DGX SuperPOD: Next Generation Scalable Infrastructure for AI Factories Reference Architecture Featuring NVIDIA DGX GB300 Systems",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/pdf/dgx-spod-gb300-ra.pdf",
+          "date": "2025-11",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "fabric",
+            "nics",
+            "rails",
+            "nicGbps"
+          ]
         }
       ],
       "ranges": {
@@ -166,6 +206,11 @@
       "liq": 1,
       "cap": 6,
       "h": 2.3,
+      "fabric": "x800",
+      "nics": 144,
+      "rails": 8,
+      "planes": 2,
+      "nicGbps": 800,
       "note": "72 颗 Rubin GPU + 36 颗 Vera CPU，HBM4 与 NVLink 6，2026 下半年出货。计算托盘无风扇，NVIDIA 称可 100% 液冷。NVIDIA 未公布整柜功率：郭明錤供应链调查称 Max-Q 约 190 kW、Max-P 约 230 kW（2026-01），这里用 Max-Q。报价约 $5–7M，含约 $1M 存储（Tom's Hardware，2026-03）。",
       "i18n": {
         "en": {
@@ -215,6 +260,21 @@
           "supports": [
             "cap"
           ]
+        },
+        {
+          "title": "NVIDIA DGX SuperPOD: Next Generation Scalable Infrastructure for AI Factories Reference Architecture Featuring NVIDIA DGX Vera Rubin NVL72 Systems",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/dgx-superpod-reference-architecture-with-dgx-vera-rubin-nvl72.pdf",
+          "date": "2026-09",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "fabric",
+            "nics",
+            "rails",
+            "planes",
+            "nicGbps"
+          ]
         }
       ],
       "ranges": {
@@ -238,6 +298,7 @@
       "liq": 0,
       "cap": 2,
       "h": 2.2,
+      "fabric": "quantum2",
       "airDense": true,
       "note": "一柜 4 台 10U DGX B200，每台 8 GPU、最大约 14.3 kW（NVIDIA）。纯风冷，单柜接近 60 kW；NVIDIA 给后续 DGX B300 的 4 台一柜方案（平均约 58 kW）配的是主动式背门换热器。每柜价格为估算。",
       "i18n": {
@@ -282,6 +343,16 @@
               "title": "一柜 4 台、纯风冷，以及每台约 $500K 的价格，都是估算"
             }
           }
+        },
+        {
+          "title": "Key Components of the DGX SuperPOD — Reference Architecture Featuring DGX B200",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/dgx-superpod/reference-architecture-scalable-infrastructure-b200/latest/dgx-superpod-components.html",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "fabric"
+          ]
         }
       ]
     },
@@ -295,6 +366,7 @@
       "liq": 1,
       "cap": 8.8,
       "h": 2.6,
+      "fabric": "unsourced",
       "future": true,
       "note": "Kyber 机柜，每柜 144 颗 Rubin Ultra GPU（按封装计；NVL576 现在指 8 个 72 GPU 机柜组成的 NVLink 域），全液冷，需要 800 VDC 供电。约 600 kW 是 GTC 2025 旧设计的数字，NVIDIA 没有为 2026 年的新设计重新公布功耗。官方时间是 2027 年，SemiAnalysis 报道推迟到 2028 年（NVIDIA 称路线图不变）。报价约 $7–8.8M（Tom's Hardware，2026-03）。",
       "i18n": {
@@ -355,6 +427,19 @@
           "supports": [
             "cap"
           ]
+        },
+        {
+          "title": "No NVIDIA source gives Kyber's scale-out NIC count; only the 2025 design mentions ConnectX-9, so its back-end fabric is not modeled",
+          "checked": "2026-09-21",
+          "type": "estimate",
+          "supports": [
+            "fabric"
+          ],
+          "i18n": {
+            "zh": {
+              "title": "NVIDIA 没有公开 Kyber 的后端网卡数量，只有 2025 年的设计提到 ConnectX-9，所以不建模它的后端网络"
+            }
+          }
         }
       ],
       "ranges": {
@@ -374,6 +459,7 @@
       "liq": 1,
       "cap": 5.25,
       "h": 2.3,
+      "fabric": "ethernet",
       "note": "72 颗 MI455X + 18 颗 EPYC Venice，UALink over Ethernet 72 卡互联，计算和交换托盘液冷（这里按全液冷简化），2026 年三季度末开始出货。整柜约 225–245 kW（StorageReview，2026-07），售价约 $5–5.5M（Futurum 经 CNBC，2026-07）。真实机柜是 1.2 m 宽的 Open Rack Wide，这里按一格简化。",
       "i18n": {
         "en": {
@@ -424,6 +510,17 @@
           "supports": [
             "cap"
           ]
+        },
+        {
+          "title": "AMD Pensando™ Vulcano 800 AI NIC: Built to Scale-Out and Across",
+          "publisher": "AMD",
+          "url": "https://www.amd.com/en/blogs/2026/amd-pensando-vulcano-800-ai-nic-scale-out-and-across.html",
+          "date": "2026-07-23",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "fabric"
+          ]
         }
       ],
       "ranges": {
@@ -447,6 +544,7 @@
       "liq": 0.8,
       "cap": 2.4,
       "h": 2.2,
+      "fabric": "ethernet",
       "note": "一柜 8 台 GIGABYTE G4L3 4U 液冷服务器，每台 8 颗 MI355X（典型板卡功耗 1400 W）+ 2 颗 EPYC 9005/9004，整柜 64 GPU、功耗最高约 120 kW（GIGABYTE GIGAPOD）。GPU 冷板液冷，其余风冷；机柜内 CDU 冷量 100 kW，液冷比例按 80% 估算。价格按 2025 年报道的每颗约 $25–30k 加整机估算。",
       "i18n": {
         "en": {
@@ -496,6 +594,16 @@
               "title": "液冷比例按机柜内 100 kW 的 CDU 对整柜最高 120 kW 估算；价格按每颗 GPU 约 $25–30k 加整机估算"
             }
           }
+        },
+        {
+          "title": "OCI GPU Quick Starts: AMD MI355X Instinct GPUs",
+          "publisher": "Oracle",
+          "url": "https://docs.oracle.com/en-us/iaas/Content/Compute/gpu-quick-start/amd/MI355X/README-MI355X-Pollara.htm",
+          "checked": "2026-09-21",
+          "type": "reported",
+          "supports": [
+            "fabric"
+          ]
         }
       ]
     },
@@ -509,6 +617,7 @@
       "liq": 0.7,
       "cap": 0.67,
       "h": 2.25,
+      "fabric": "ethernet",
       "note": "华为 Atlas 900 A3 SuperPoD（华为云称 CloudMatrix384）的计算柜。整套 16 柜：12 个计算柜，每柜 4 个节点、共 32 颗昇腾 910C NPU（这里按 GPU 计，同样要占 IB 交换柜的后端端口）；4 个总线交换柜承载全光 UnifiedBus 超节点互联（6,912 个 LPO 光模块），这里不单独建模，功耗和价格摊进计算柜。计算柜液冷、总线柜风冷（华为）。整套约 559 kW，含网络和存储（SemiAnalysis 经 Tom's Hardware，2025-04），约 $8M（FT 经 TrendForce，2025-07）；每柜功耗、液冷比例和价格都是按整套平摊的估算。2025 年 3 月开始交付；后续的 Atlas 950 SuperPoD 每个计算柜 64 颗 NPU、约 100 kW，计划 2026 年四季度上市。",
       "i18n": {
         "en": {
@@ -584,6 +693,17 @@
               "title": "每柜功耗（559 kW ÷ 12）、液冷比例和价格（$8M ÷ 12）都是把整套（含 4 个交换柜）平摊到 12 个计算柜"
             }
           }
+        },
+        {
+          "title": "Serving Large Language Models on Huawei CloudMatrix384",
+          "publisher": "Huawei (arXiv)",
+          "url": "https://arxiv.org/html/2506.12708v1",
+          "date": "2025-06-15",
+          "checked": "2026-09-21",
+          "type": "reported",
+          "supports": [
+            "fabric"
+          ]
         }
       ]
     },
@@ -595,12 +715,14 @@
       "kw": 24,
       "liq": 0,
       "ports": 288,
+      "radix": 144,
+      "portGbps": 800,
       "cap": 0.9,
       "h": 2.2,
-      "note": "800G InfiniBand 交换机柜。一台 Quantum-X800 Q3400 交换机有 144 个 800G 端口，典型功耗约 2.9 kW、最大 7 kW（NVIDIA）。这里简化为每柜 288 个 GPU 后端端口（约两台交换机）、24 kW（含光模块等余量），不是真实拓扑。价格为估算。",
+      "note": "800G InfiniBand 交换机柜。一台 Quantum-X800 Q3400 交换机有 144 个 800G 端口，典型功耗约 2.9 kW、最大 7 kW（NVIDIA）。这里每柜按两台交换机算：288 个端口、24 kW（含光模块等余量）。开机检查按每个 GPU 至少占一个端口计算；无阻塞的两层胖树每个 GPU 约占三个交换机端口（叶交换机上下行各一个、脊交换机一个），见“后端网络”一节。价格为估算。",
       "i18n": {
         "en": {
-          "note": "800G InfiniBand switch rack. One Quantum-X800 Q3400 switch has 144 ports at 800G and draws about 2.9 kW typical, 7 kW maximum (NVIDIA). Simplified here to 288 back-end GPU ports per rack (about two switches) and 24 kW including optics and overhead; it is not a real topology. The price is an estimate."
+          "note": "800G InfiniBand switch rack. One Quantum-X800 Q3400 switch has 144 ports at 800G and draws about 2.9 kW typical, 7 kW maximum (NVIDIA). Each rack is counted as two switches: 288 ports and 24 kW including optics and overhead. The power-on check counts at least one port per GPU; a non-blocking two-tier fat tree uses about three switch ports per GPU (one down and one up on a leaf, one on a spine), see Back-end fabric. The price is an estimate."
         }
       },
       "sources": [
@@ -608,11 +730,14 @@
           "title": "Introduction | NVIDIA Q32xx and Q34xx XDR 800Gb/s InfiniBand Switch Systems User Manual",
           "publisher": "NVIDIA",
           "url": "https://networking-docs.nvidia.com/xdrswitcheshw/introduction",
-          "checked": "2026-09-18",
+          "checked": "2026-09-21",
           "type": "official",
           "supports": [
-            "ports"
-          ]
+            "ports",
+            "radix",
+            "portGbps"
+          ],
+          "date": "2026-08-21"
         },
         {
           "title": "Specifications | NVIDIA Q32xx and Q34xx XDR 800Gb/s InfiniBand Switch Systems User Manual",
@@ -625,8 +750,17 @@
           ]
         },
         {
+          "title": "NVIDIA DGX SuperPOD: Next Generation Scalable Infrastructure for AI Factories Reference Architecture Featuring NVIDIA DGX GB300 Systems",
+          "publisher": "NVIDIA",
+          "url": "https://docs.nvidia.com/pdf/dgx-spod-gb300-ra.pdf",
+          "date": "2025-11",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": []
+        },
+        {
           "title": "288 ports and 24 kW model about two Q3400 switches plus optics and overhead; air cooling and price are estimates",
-          "checked": "2026-09-18",
+          "checked": "2026-09-21",
           "type": "estimate",
           "supports": [
             "kw",
@@ -832,6 +966,104 @@
               "title": "800 kW 约相当于 415 V 下 1,200 A；价格为估算"
             }
           }
+        }
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": "acc",
+      "gbps": 800,
+      "ends": "nic",
+      "maxM": 2,
+      "sources": [
+        {
+          "title": "MCA7K10 1600Gb/s to 2x800Gb/s, OSFP to 2xOSFP, IHS to RHS Active Copper Splitter Cable",
+          "publisher": "NVIDIA",
+          "url": "https://networking-docs.nvidia.com/9809iao500xxxxrhs2x800",
+          "date": "2026-08-31",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "maxM"
+          ]
+        },
+        {
+          "title": "NVIDIA Quantum-X800 (XDR) Clusters",
+          "publisher": "NVIDIA",
+          "url": "https://networking-docs.nvidia.com/nvidia-quantum-x800-xdr-clusters",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "maxM"
+          ]
+        },
+        {
+          "title": "Optical Transceivers and Cables for AI Networking | NVIDIA",
+          "publisher": "NVIDIA",
+          "url": "https://www.nvidia.com/en-us/networking/interconnect/",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": []
+        }
+      ]
+    },
+    {
+      "id": "aec",
+      "gbps": 800,
+      "ends": "switch",
+      "maxM": 3,
+      "sources": [
+        {
+          "title": "NVIDIA MCA4K50 1600Gbps to 1600Gbps OSFP Active Copper Cable",
+          "publisher": "NVIDIA",
+          "url": "https://networking-docs.nvidia.com/mca4k50osfp1600",
+          "date": "2026-07-20",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "maxM"
+          ]
+        },
+        {
+          "title": "Optical Transceivers and Cables for AI Networking | NVIDIA",
+          "publisher": "NVIDIA",
+          "url": "https://www.nvidia.com/en-us/networking/interconnect/",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "maxM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dr4",
+      "gbps": 800,
+      "ends": "any",
+      "maxM": 500,
+      "sources": [
+        {
+          "title": "NVIDIA MMS4A00 1600Gbps, 2xDR4, Twin-port OSFP, 2xMPO, 1310nm Single Mode Transceiver (up to 500m)",
+          "publisher": "NVIDIA",
+          "url": "https://networking-docs.nvidia.com/9iahx00xmosfptcvr1600",
+          "date": "2026-08-31",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "maxM"
+          ]
+        },
+        {
+          "title": "NVIDIA MMS4A20 800Gbps, DR4 Single-port OSFP, MPO, 1310nm Single Mode, RHS (500m) Transceiver",
+          "publisher": "NVIDIA",
+          "url": "https://networking-docs.nvidia.com/9iat0mosfp800sprhs",
+          "date": "2026-09-02",
+          "checked": "2026-09-21",
+          "type": "official",
+          "supports": [
+            "maxM"
+          ]
         }
       ]
     }

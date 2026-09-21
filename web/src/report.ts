@@ -11,12 +11,15 @@ import type {Reason} from './redundancy.ts';
 import {annualEnergy, fmtEnergy, fmtMoney} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
 import {phasesIn} from './growth.ts';
-import {CATALOG_VERSION} from './catalog.ts';
+import {CABLES, CATALOG_VERSION} from './catalog.ts';
+import {cableLabel, DEFAULT_FABRIC, fabricText, hallFabric, IN_RACK_M, RUN} from './fabric.ts';
+import type {FabricOptions} from './fabric.ts';
 import {tr, loc, catName, catNote, srcTitle, htmlLang} from './i18n.ts';
 import type {Catalog, CatalogItem, Grid, Item, Source} from './types.ts';
 
-// meta.date: generation date YYYY-MM-DD; link: the share link for this hall; shot: PNG data URL of the 3D view
-export interface ReportMeta {date: string; link?: string; shot?: string}
+// meta.date: generation date YYYY-MM-DD; link: the share link for this hall; shot: PNG data URL of the 3D view;
+// fabric: the back-end fabric options chosen in the panel (the defaults when omitted)
+export interface ReportMeta {date: string; link?: string; shot?: string; fabric?: FabricOptions}
 
 // One row of the bill of materials: a device type, how many are in the hall, the power one draws and the totals
 export interface BomRow {id: string; item: CatalogItem; count: number; unitKw: number; kw: number; capex: number}
@@ -95,7 +98,7 @@ const reasonText = (r: Reason): string =>
 
 const SOURCE_TYPE = {official: 'srcOfficial', reported: 'srcReported', estimate: 'srcEstimate'} as const;
 // Sources behind a device's figures. Titles and publishers keep their own language; a URL is linked only when it is a web address
-function sourceLine(t: CatalogItem): string{
+function sourceLine(t: {sources: Source[]}): string{
   const checked = t.sources.map(s => s.checked).sort().at(-1);
   const one = (s: Source) => {
     const label = esc(s.publisher ? `${s.publisher}: ${srcTitle(s)}` : srcTitle(s));
@@ -165,6 +168,25 @@ function energySection(s: Totals, energy: EnergyInputs): string{
     `<p class="sub">${esc(tr('repEnergyInputs', {rate: energy.price, pct: Math.round(energy.load * 100)}))}</p></section>`;
 }
 
+// Back-end fabric, with the same rows as the panel; a hall without a modeled fabric only says which racks are left out
+function fabricSection(list: Item[], CAT: Catalog, opts: FabricOptions): string{
+  const f = hallFabric(list, CAT, CABLES, opts);
+  if (!f.modeled.length && !f.skipped.length) return '';
+  const text = fabricText(f, CAT, CABLES);
+  const items = [
+    ...(text.status ? [`<li class="${text.status.lvl}">${esc(text.status.txt)}</li>`] : []),
+    ...text.skipped.map(s => `<li>${esc(s)}</li>`),
+  ];
+  const cables = CABLES.filter(c => text.rows.length && f.switchType && c.gbps === CAT[f.switchType]!.portGbps)
+    .map(c => `<li><strong>${esc(cableLabel(c))}</strong>${sourceLine(c)}</li>`);
+  return `<section id="fabric"><h2>${esc(tr('repHFabric'))}</h2>` +
+    (text.rows.length ? `<p class="sub">${esc(tr('repFabricOptions', {r: opts.oversubscription, rails: tr(opts.railOptimized ? 'repRailsOn' : 'repRailsOff')}))}</p>` +
+      table(text.rows.map(([k, v]) => row(k, v))) : '') +
+    (items.length ? `<ul>\n${items.join('\n')}\n</ul>` : '') +
+    (text.rows.length ? `<p class="sub">${esc(tr('fabricNote', {rise: RUN.riseM, slack: RUN.slackM, inRack: IN_RACK_M}))}</p>` : '') +
+    (cables.length ? `<ul class="devices">\n${cables.join('\n')}\n</ul>` : '') + '</section>';
+}
+
 function devicesSection(bom: BomRow[]): string{
   const items = bom.map(b => `<li><strong>${esc(catName(b.item))}</strong> ${esc(catNote(b.item))}${sourceLine(b.item)}</li>`);
   return `<section id="devices"><h2>${esc(tr('mHDevices'))}</h2><p class="sub">${esc(tr('mDevicesIntro'))}</p>` +
@@ -176,7 +198,7 @@ function assumptionsSection(): string{
   const {liquid, air, losses} = PUE_FACTORS, f = (n: number) => n.toFixed(2);
   const paras = [
     tr('mIntro'), tr('mPerDevice'), tr('mPueFormula', {liq: f(liquid), air: f(air), loss: f(losses)}),
-    tr('mPueLeaves'), tr('mCost'), tr('mEnergy'), tr('mPlanning'),
+    tr('mPueLeaves'), tr('mCost'), tr('mEnergy'), tr('mPlanning'), tr('mFabricLeaves'),
   ];
   return `<section id="assumptions"><h2>${esc(tr('repHAssumptions'))}</h2>\n` +
     paras.map(p => `<p>${esc(p)}</p>`).join('\n') + '</section>';
@@ -219,6 +241,7 @@ ${bomSection(bom)}
 ${checksSection(s, perDevice, problems.length > 0)}
 ${redundancySection(placed, CAT, utility)}
 ${energySection(s, energy)}
+${fabricSection(placed, CAT, meta.fabric ?? DEFAULT_FABRIC)}
 ${devicesSection(bom)}
 ${assumptionsSection()}
 <footer>

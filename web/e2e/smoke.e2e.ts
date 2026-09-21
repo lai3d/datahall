@@ -184,12 +184,17 @@ test('methodology dialog opens from the header and from section links, and close
   await expect(dialog.locator('#m-checks')).toContainText('800 kW each');
   await expect(dialog.locator('#m-devices li[data-t="vr200"]')).toContainText('Vera Rubin NVL72');
   // Every device lists its sources, with links for everything that is not this project's own estimate
-  await expect(dialog.locator('#m-devices li[data-t="vr200"] .sources a')).toHaveCount(4);
+  await expect(dialog.locator('#m-devices li[data-t="vr200"] .sources a')).toHaveCount(5);
+  // Cable classes of the back-end fabric carry their sources too
+  await expect(dialog.locator('#m-fabric li[data-cable="dr4"] .sources a')).toHaveCount(2);
   await expect(dialog.locator('#m-devices li[data-t="vr200"] .sources')).toContainText('range in sources: power 190–230 kW, estimated price $5–7M');
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
   await page.locator('button[data-method="planning"]').click();
   await expect(dialog.locator('#m-planning')).toBeInViewport();
+  await page.keyboard.press('Escape');
+  await page.locator('button[data-method="fabric"]').click();
+  await expect(dialog.locator('#m-fabric')).toBeInViewport();
   await page.locator('#methodClose').click();
   await expect(dialog).toBeHidden();
   expect(errors).toEqual([]);
@@ -472,5 +477,25 @@ test('mobile: the panel folds away to give the 3D view the screen @mobile', asyn
   await expect(page.locator('#power')).toBeAttached();
   await page.locator('#power').scrollIntoViewIfNeeded();
   await expect(page.locator('#power')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('back-end fabric: switches and cables for GB300, the options change the plan, other racks are left out', async ({page}) => {
+  const racks = [0, 1, 2, 3, 4, 5, 6, 7].map(x => `${x}.3`).join('-');
+  const errors = await openApp(page, `/?lang=en#layout=1,5,gb300:${racks},ib:0.5-1.5-2.5,gb200:0.7`);
+  const fabric = page.locator('#fabric');
+  // One scalable unit of GB300: 8 leaves and 4 spines, six IB racks, where three satisfy the port check for every GPU
+  await expect(fabric).toHaveAttribute('data-switches', '12');
+  await expect(fabric).toHaveAttribute('data-ib-needed', '6');
+  await expect(page.locator('#fabricStatus')).toContainText('The port check passes with 864 ports for 648 GPUs, but this fabric needs 6 IB racks and the hall has 3.');
+  await expect(page.locator('#fabricSkipped')).toContainText('GB200 NVL72: not modeled');
+  await expect(fabric).toContainText('Single-mode optics, DR4');
+  await page.locator('#fabricOversub button[data-r="3"]').click();
+  await expect(page.locator('#fabricOversub button[data-r="3"]')).toHaveAttribute('aria-pressed', 'true');
+  expect(Number(await fabric.getAttribute('data-switches'))).toBeLessThan(12);
+  await page.locator('#fabricRails').uncheck();
+  await expect(page.locator('#fabricRails')).not.toBeChecked();
+  // View state only: the layout in the link does not change
+  expect(page.url()).toContain(`gb300:${racks}`);
   expect(errors).toEqual([]);
 });
