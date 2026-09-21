@@ -20,6 +20,11 @@ export let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer, scene: THREE.Scene, itemRoot: THREE.Group;
 let floor: THREE.Mesh | undefined, gridLines: THREE.LineSegments | undefined, linkObj: THREE.Group | undefined, outline: THREE.LineSegments | null = null;
 type Ghost = THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>;
+// Render on demand: a frame is drawn only when the scene changed (every exported mutator sets `dirty`), the camera moved,
+// or something animates (a placement pop, or the powered-on glow and flow). An idle hall costs no GPU time, which matters
+// for laptop batteries and for CI, where WebGL is software rendered
+let dirty = true;
+const lastView = new THREE.Matrix4();
 const ghosts: Ghost[] = [];   // Placement previews, one per cell during row placement
 const ray = new THREE.Raycaster();
 const FOV = 45;   // vertical field of view in degrees for landscape and square views
@@ -51,6 +56,7 @@ export function initScene(stage: HTMLElement): HTMLCanvasElement{
     // Portrait views (a phone with the panel folded away) keep the horizontal field of view of a square one, so the hall still fits across
     camera.fov = camera.aspect >= 1 ? FOV : Math.min(2 * Math.atan(Math.tan(FOV * Math.PI / 360) / camera.aspect) * 180 / Math.PI, 100);
     camera.updateProjectionMatrix();
+    dirty = true;
   };
   new ResizeObserver(resize).observe(stage);
   resize();
@@ -125,21 +131,25 @@ function makeMesh(key: string, it: Item): THREE.Group{
 
 // The model is built before it goes into state.items, so mesh may not exist yet in the parameter type
 export function addMesh(key: string, it: Item & {mesh?: THREE.Group}): void{
+  dirty = true;
   it.mesh = makeMesh(key, it);
   itemRoot.add(it.mesh);
 }
 // Drag move: the device already has its new position and key in state; only move the model here
 export function moveMesh(it: PlacedItem, key: string): void{
+  dirty = true;
   it.mesh.position.copy(cellPos(it.x, it.z));
   it.mesh.traverse(o => o.userData.key = key);
 }
 export function removeMesh(it: PlacedItem): void{
+  dirty = true;
   itemRoot.remove(it.mesh);
   it.mesh.traverse(o => { if (o instanceof THREE.Mesh) o.geometry.dispose(); });
 }
 
 // Coolant and power links, same topology as the USD export (supplyLinks). Links to overloaded CDUs/RPPs are drawn red, manual assignments dashed
 export function rebuildLinks(): void{
+  dirty = true;
   if (linkObj){
     scene.remove(linkObj);
     linkObj.traverse(o => {
@@ -188,6 +198,7 @@ export function rebuildLinks(): void{
 // calculation (failed, later phase) show an empty meter. Call before setDimmed: swapping materials resets the dimming cache
 const LEVEL_COLOR = {ok: '', warn: '--warn', bad: '--bad'} as const;
 export function setLoads(loads: Loads): void{
+  dirty = true;
   const byKey = new Map([...loads.supplies].map(([it, s]) => [keyOf(it.x, it.z), s]));
   state.items.forEach((it, key) => {
     const {meter, accent} = it.mesh.userData;
@@ -246,11 +257,13 @@ export const flowDots = (): number => flows.reduce((n, f) => n + (f.points.visib
 
 // keys: devices that should show the red cap (overloaded CDUs/RPPs, unconnected devices)
 export function setAlerts(keys: Set<string>): void{
+  dirty = true;
   state.items.forEach((it, key) => { it.mesh.userData.alert.visible = keys.has(key); });
 }
 
 // Devices excluded from computation are drawn semi-transparent without shadows (red caps unaffected): failed facilities in the failure drill, and devices after the viewed phase (fainter)
 export function setDimmed(): void{
+  dirty = true;
   state.items.forEach((it, key) => {
     const opacity = !inView(it) ? .12 : state.failed.has(key) ? .25 : 1, g = it.mesh;
     if (g.userData.opacity === opacity) return;
@@ -265,6 +278,7 @@ export function setDimmed(): void{
 }
 
 export function setOutline(): void{
+  dirty = true;
   // Rebuilt on every selection change and on every cell a drag passes through, so the old one has to go
   if (outline){ scene.remove(outline); outline.geometry.dispose(); (Array.isArray(outline.material) ? outline.material : [outline.material]).forEach(m => m.dispose()); outline = null; }
   const it = state.selected && state.items.get(state.selected); if (!it) return;
@@ -278,6 +292,7 @@ export function setOutline(): void{
 export const visibleGhosts = (): Pos[] => ghosts.filter(g => g.visible).map(g => ({x: +g.position.x.toFixed(2), z: +g.position.z.toFixed(2)}));
 // cells: empty cells to preview; type: device type, empty hides all previews
 export function setGhost(cells: Pos[], type: string | null): void{
+  dirty = true;
   if (!type) cells = [];
   while (ghosts.length < cells.length){
     const g = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, 1, CZ * .94),
@@ -297,6 +312,7 @@ export function setGhost(cells: Pos[], type: string | null): void{
 
 // Theme switch: rebuild the floor and all devices from the new CSS variables
 export function retheme(): void{
+  dirty = true;
   buildHall();
   clearFaces();
   state.items.forEach((it, key) => { removeMesh(it); addMesh(key, it); });
@@ -333,6 +349,7 @@ export function pickCell(e: PointerEvent): Pos | null{
 const POP_MS = 220;
 const pops = new Map<THREE.Group, number>();
 export function popMesh(it: {mesh?: THREE.Group} | undefined): void{
+  dirty = true;
   if (!it?.mesh || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   pops.set(it.mesh, performance.now());
   it.mesh.scale.y = .01;
@@ -377,9 +394,16 @@ export function startLoop(): void{
       const k = .12 + on * (reduce ? .9 : .8 + .12 * Math.sin(now / 350 + it.x));
       mats.forEach(m => { m.emissiveIntensity = k; });
     });
-    applyPops(now);
-    updateFlows(now);
-    renderer.render(scene, camera);
+    const animating = pops.size > 0 || (state.powered && !reduce) || (state.powered && now - state.powerStart < 3000);
+    camera.updateMatrixWorld();
+    const moved = !camera.matrixWorld.equals(lastView);
+    if (dirty || moved || animating){
+      applyPops(now);
+      updateFlows(now);
+      renderer.render(scene, camera);
+      lastView.copy(camera.matrixWorld);
+      dirty = false;
+    }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
