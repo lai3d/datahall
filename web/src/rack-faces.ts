@@ -33,9 +33,11 @@ class Painter{
   private color: CanvasRenderingContext2D; private bump: CanvasRenderingContext2D; private glow: CanvasRenderingContext2D;
   constructor(w: number, h: number, base: string){
     this.w = w; this.h = h;
+    // CPU-backed canvases: a GPU-backed one is read back from the GPU on every texture upload, which under software
+    // rendering (CI) nearly doubled page load
     const ctx = (fill: string) => {
       const c = document.createElement('canvas'); c.width = w; c.height = h;
-      const x = c.getContext('2d')!; x.fillStyle = fill; x.fillRect(0, 0, w, h); return x;
+      const x = c.getContext('2d', {willReadFrequently: true})!; x.fillStyle = fill; x.fillRect(0, 0, w, h); return x;
     };
     this.color = ctx(base); this.bump = ctx('#808080'); this.glow = ctx('#000');
   }

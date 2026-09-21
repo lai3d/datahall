@@ -229,7 +229,7 @@ build/DataHall.app/Contents/MacOS/* -layout path/to/layout.json   # open a layou
 - **3D rendering** (three 0.186): color management is on by default; CSS colors are read as sRGB, converted to linear space for computation, and output as sRGB; no tone mapping, so palette colors do not shift.
   Lighting uses physical units, and intensities must be π times the r128 values for equivalent brightness; the sun light casts shadows (only equipment bodies cast, the floor receives, the shadow camera covers the whole hall).
   `PCFSoftShadowMap` was removed in r186; use the default `PCFShadowMap`.
-  Device bodies are one box with six materials (+x, -x, top, bottom, front +Z, back); the front carries the `rack-faces.ts` maps, and `setDimmed` walks material arrays. No environment map: a PMREM room reflection barely showed but tripled load time under software rendering (Playwright's SwiftShader), so it was dropped
+  Device bodies are one box with six materials (+x, -x, top, bottom, front +Z, back); the front carries the `rack-faces.ts` maps, and `setDimmed` walks material arrays. No environment map: a PMREM room reflection barely showed but tripled load time under software rendering (Playwright's SwiftShader), so it was dropped. The face canvases are CPU-backed (`willReadFrequently`): uploading GPU-backed canvases as textures read them back and made CI's e2e runs time out
 - **Grid coordinates**: three.js on the web is Y-up; on export `(x, y, z)_three → (x, -z, y)_usd`. Cells are 0.6m × 1.2m, 16 columns × 10 rows.
 
 ## Next steps (by priority)
