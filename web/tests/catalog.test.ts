@@ -22,7 +22,7 @@ describe('catalog', () => {
   });
 
   // Figures the capacity model and the price estimate use; each one needs at least one source
-  const FIELDS: ItemField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap', 'radix', 'portGbps', 'fabric', 'nics', 'rails', 'planes', 'nicGbps'];
+  const FIELDS: ItemField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap', 'radix', 'portGbps', 'fabric', 'nics', 'rails', 'planes', 'nicGbps', 'parts'];
   for (const t of CATALOG){
     it(`${t.id}: every figure is backed by a source`, () => {
       const backed = new Set(t.sources.flatMap(s => s.supports));
@@ -63,6 +63,16 @@ describe('catalog', () => {
     for (const g of new Set(CABLES.map(c => c.gbps))){
       const reach = CABLES.filter(c => c.gbps === g).map(c => c.maxM);
       expect(reach).toEqual([...reach].sort((a, b) => a - b));
+    }
+  });
+
+  // The parts add up to the rack's own figures, so the details panel and the 3D front cannot disagree with the capacity model
+  it('rack parts add up to the GPU and port counts', () => {
+    for (const t of CATALOG.filter(t => t.parts)){
+      const gpus = t.parts!.reduce((n, p) => n + p.n * (p.gpus ?? 0), 0);
+      if (t.gpus) expect(gpus, t.id).toBe(t.gpus);
+      const ports = t.parts!.reduce((n, p) => n + p.n * (p.ports ?? 0), 0);
+      if (ports) expect(ports, t.id).toBe(t.ports);
     }
   });
 });

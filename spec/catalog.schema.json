@@ -122,6 +122,14 @@
           "type": "number",
           "exclusiveMinimum": 0
         },
+        "parts": {
+          "type": "array",
+          "minItems": 1,
+          "description": "What the rack holds, as the maker documents it; the 3D front draws the same counts",
+          "items": {
+            "$ref": "#/$defs/part"
+          }
+        },
         "future": {
           "type": "boolean"
         },
@@ -225,7 +233,8 @@
         "rails",
         "planes",
         "nicGbps",
-        "maxM"
+        "maxM",
+        "parts"
       ]
     },
     "source": {
@@ -345,6 +354,56 @@
           "items": {
             "$ref": "#/$defs/source"
           }
+        }
+      }
+    },
+    "part": {
+      "type": "object",
+      "required": [
+        "kind",
+        "n"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "compute",
+            "nvswitch",
+            "power",
+            "system",
+            "npunode",
+            "ibswitch"
+          ],
+          "description": "compute: compute tray; nvswitch: NVLink switch tray; power: power shelf; system: a whole server; npunode: an NPU server node; ibswitch: InfiniBand switch"
+        },
+        "n": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "u": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "description": "Height in rack units"
+        },
+        "gpus": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cpus": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "psus": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "kw": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "ports": {
+          "type": "integer",
+          "minimum": 1
         }
       }
     }

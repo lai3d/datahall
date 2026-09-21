@@ -108,6 +108,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .info select{font:inherit;font-size:13px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:210px}
 .energy{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:10px}
 .energy label,.energy .field{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.parts{margin:8px 0}
+.parts ul{margin:4px 0 4px;padding-left:18px}
+.parts li{margin-bottom:2px}
 .energy label.check{flex-direction:row;align-items:center;gap:6px}
 #fabricSkipped{margin:6px 0 0;padding-left:18px}
 #fabricStatus{margin:8px 0 0;padding-left:8px;border-left:3px solid var(--ok)}

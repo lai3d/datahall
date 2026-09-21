@@ -4,26 +4,50 @@
 // vendor artwork is used. Glow marks the status lights: the material's emissive color is the device's accent color, so
 // they light up with the power-on animation in scene.ts
 import * as THREE from 'three';
-import type {CatalogItem} from './types.ts';
+import type {CatalogItem, Part} from './types.ts';
 
 export interface FacePalette {body: string; accent: string}
 export interface FaceMaps {map: THREE.CanvasTexture; bumpMap: THREE.CanvasTexture; emissiveMap: THREE.CanvasTexture}
 
 const PX_PER_M = 440;
 type Kind = 'compute' | 'switch' | 'psu' | 'blank' | 'grill' | 'bays' | 'ports' | 'cable' | 'blades';
-type Stack = [kind: Kind, units: number, repeat?: number][];
+export type Stack = [kind: Kind, units: number, repeat?: number][];
+
+// Racks whose makers document what they hold (catalog `parts`) are drawn from those counts, so the picture and the
+// details panel agree: NVL72 racks as power shelves, compute trays split around the NVLink switch trays, power shelves
+// (the documented order); servers, NPU nodes and switches as stacked units. Unsourced unit heights use a nominal
+// size, and blank panels fill the rest of the rack (about 44U usable). The stacks below are only for racks without parts
+const UNIT_KIND = {compute: 'compute', nvswitch: 'switch', power: 'psu', system: 'grill', npunode: 'compute', ibswitch: 'ports'} as const;
+const RACK_U = 44;
+export function partsStack(parts: Part[]): Stack{
+  const get = (k: Part['kind']) => parts.find(p => p.kind === k);
+  const compute = get('compute'), nvswitch = get('nvswitch'), power = get('power');
+  const stack: Stack = [];
+  if (compute && nvswitch){
+    const top = Math.ceil(compute.n / 2) + 1, powerTop = Math.ceil((power?.n ?? 0) / 2);
+    if (power) stack.push(['psu', power.u ?? 1, powerTop]);
+    stack.push(['compute', compute.u ?? 1, top], ['switch', nvswitch.u ?? 1, nvswitch.n], ['compute', compute.u ?? 1, compute.n - top]);
+    if (power && power.n > powerTop) stack.push(['psu', power.u ?? 1, power.n - powerTop]);
+  } else {
+    for (const p of parts){
+      const u = p.u ?? 8;
+      for (let i = 0; i < p.n; i++){
+        if (p.kind === 'system') stack.push(['grill', u * .8], ['bays', u * .2]);
+        else if (p.kind === 'ibswitch') stack.push(['ports', u], ['cable', u * .8]);
+        else stack.push([UNIT_KIND[p.kind], u]);
+      }
+    }
+  }
+  const used = stack.reduce((s, [, u, n = 1]) => s + u * n, 0);
+  if (used < RACK_U) stack.push(['blank', RACK_U - used]);
+  return stack;
+}
 
 // Front layouts, top to bottom, in rack units scaled to the face height
 const NVL72: Stack = [['switch', 1], ['psu', 1, 4], ['compute', 1, 10], ['switch', 1, 9], ['compute', 1, 8], ['psu', 1, 4], ['blank', 2]];
 const STACKS: Record<string, Stack> = {
-  gb200: NVL72, gb300: NVL72, vr200: NVL72,
   kyber: [['psu', 1, 3], ['blades', 9], ['blank', .5], ['blades', 9], ['blank', .5], ['blades', 9], ['blank', .5], ['blades', 9], ['psu', 1, 3]],
-  dgx: [['switch', 1], ['grill', 8], ['bays', 2], ['grill', 8], ['bays', 2], ['grill', 8], ['bays', 2], ['grill', 8], ['bays', 2], ['blank', 2]],
   helios: [['switch', 1], ['psu', 1, 3], ['compute', 1, 9], ['switch', 1, 6], ['compute', 1, 9], ['psu', 1, 3], ['blank', 2]],
-  mi355: [['switch', 1], ['psu', 1, 2], ['grill', 3], ['bays', 1], ['grill', 3], ['bays', 1], ['grill', 3], ['bays', 1], ['grill', 3], ['bays', 1],
-    ['grill', 3], ['bays', 1], ['grill', 3], ['bays', 1], ['grill', 3], ['bays', 1], ['grill', 3], ['bays', 1], ['blank', 3]],
-  cm384: [['switch', 1], ['psu', 1, 2], ['compute', 2, 8], ['switch', 1, 2], ['blank', 6], ['psu', 1, 2]],
-  ib: [['switch', 1], ['blank', 3], ['ports', 4], ['cable', 5], ['ports', 4], ['cable', 5], ['blank', 8], ['psu', 1, 2]],
   stor: [['switch', 1], ['bays', 2, 14], ['blank', 3], ['psu', 1, 2]],
 };
 
@@ -205,7 +229,7 @@ export function faceMaps(t: CatalogItem, width: number, pal: FacePalette): FaceM
   const hit = cache.get(key);
   if (hit) return hit;
   const p = new Painter(Math.round(width * PX_PER_M), Math.round(t.h * PX_PER_M), pal.body);
-  const stack = STACKS[t.id] ?? (t.group === 'gpu' ? NVL72 : null);
+  const stack = t.parts ? partsStack(t.parts) : STACKS[t.id] ?? (t.group === 'gpu' ? NVL72 : null);
   if (stack) drawStack(p, stack, pal); else drawFacility(p, t.id, pal);
   const maps = p.textures();
   cache.set(key, maps);

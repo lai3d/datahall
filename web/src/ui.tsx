@@ -34,7 +34,7 @@ import {hallModel} from './model.ts';
 import type {HallModel, SupplyInfo} from './model.ts';
 import type {Reason, ReasonKind} from './redundancy.ts';
 import type {PresetName} from './layout.ts';
-import type {CatalogItem, FeedField, Item} from './types.ts';
+import type {CatalogItem, FeedField, Item, Part} from './types.ts';
 import {STEPS, LAST, RACKS} from './tutorial.ts';
 import type {TutorialStep} from './tutorial.ts';
 
@@ -497,6 +497,30 @@ function supplyRows(t: CatalogItem, info: SupplyInfo | undefined, key: string): 
   return rows;
 }
 
+// What a rack holds (catalog parts), as its maker documents it; GPU racks without a published layout say their 3D front is illustrative
+function partText(p: Part): string{
+  // The height only when a source gives it
+  const u = p.u ? tr('partHeight', {u: p.u}) : '', gpus = p.gpus ?? 0, cpus = p.cpus ?? 0;
+  switch (p.kind){
+    case 'compute': return tr('partCompute', {n: p.n, u, gpus, cpus});
+    case 'nvswitch': return tr('partNvswitch', {n: p.n, u});
+    case 'power': return tr('partPower', {n: p.n, psus: p.psus ?? 0, kw: p.kw ?? 0});
+    case 'system': return tr('partSystem', {n: p.n, u, gpus});
+    case 'npunode': return tr('partNpunode', {n: p.n, gpus, cpus});
+    case 'ibswitch': return tr('partIbswitch', {n: p.n, u, ports: p.ports ?? 0});
+  }
+}
+function Parts({t}: {t: CatalogItem}){
+  if (!t.parts) return t.group === 'gpu' ? <p className="sub" id="parts" data-parts="none">{tr('partsNone')}</p> : null;
+  return (
+    <div className="parts" id="parts" data-parts={t.parts.map(p => `${p.kind}:${p.n}`).join(',')}>
+      <strong>{tr('hParts')}</strong>
+      <ul>{t.parts.map(p => <li key={p.kind}>{partText(p)}</li>)}</ul>
+      <p className="sub">{tr('partsNote')}</p>
+    </div>
+  );
+}
+
 function Info({model}: {model: HallModel}){
   const key = state.selected, it = key ? state.items.get(key) : undefined;
   const t = it ? CAT[it.type] : state.tool ? CAT[state.tool] : null;
@@ -532,6 +556,7 @@ function Info({model}: {model: HallModel}){
       <strong>{catName(t)}</strong><span style={muted}>{at}</span>
       <table><tbody>{rows.map(([label, value]) => <tr key={label}><td>{label}</td><td>{value}</td></tr>)}</tbody></table>
       {it && assigning && <p className="assign-hint">{tr('assignHint', {label: it.type.toUpperCase()})}</p>}
+      <Parts t={t} />
       <p>{catNote(t)}</p>
       <SourceList t={t} compact />
       {it && key && (
