@@ -227,6 +227,8 @@ test('repair suggestion: when the feed is the limit, raise it or remove racks in
 });
 
 test('start from a goal: generates a hall that passes, explains the limit, and can be undone', async ({page}) => {
+  // The largest hall in the suite, rendered by software GL in CI: 25 s of the 30 s limit before the drawn fronts, 31 s after
+  test.slow();
   const errors = await openApp(page);
   const before = (await layout(page)).items;
   await page.locator('#goalType').selectOption('gb200');
