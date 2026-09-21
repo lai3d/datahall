@@ -1,5 +1,6 @@
 // three.js scene: floor grid, device models, supply links, selection box, placement preview, picking, render loop
 import * as THREE from 'three';
+import {clearFaces, faceMaps, sideMaps, METER_X} from './rack-faces.ts';
 import {CAT} from './catalog.ts';
 import {GRID, clamp, keyOf} from './grid.ts';
 import {supplyLoads} from './supply.ts';
@@ -72,21 +73,30 @@ function buildHall(){
 
 function makeMesh(key: string, it: Item): THREE.Group{
   const t = CAT[it.type], h = t.h, g = new THREE.Group();
-  const body = new THREE.Mesh(new THREE.BoxGeometry(CX * .92, h, CZ * .94),
-    new THREE.MeshStandardMaterial({color: col('--rack'), roughness: .55, metalness: .35}));
+  const accent = col(t.c), rack = css('--rack'), w = CX * .92, d = CZ * .94;
+  // Front panel drawn per device type (rack-faces.ts); its status lights glow in the accent color and follow the
+  // power-on animation, so it doubles as the stripe material the render loop drives
+  const front = faceMaps(t, w, {body: rack, accent: css(t.c)}), side = sideMaps(h, d, rack);
+  const stripeMat = new THREE.MeshStandardMaterial({map: front.map, bumpMap: front.bumpMap, bumpScale: 2, emissive: accent,
+    emissiveMap: front.emissiveMap, emissiveIntensity: .12, roughness: .5, metalness: .3});
+  const sideMat = new THREE.MeshStandardMaterial({map: side.map, bumpMap: side.bumpMap, bumpScale: 2, roughness: .55, metalness: .35});
+  const plainMat = new THREE.MeshStandardMaterial({color: col('--rack'), roughness: .55, metalness: .35});
+  // Box faces: +x, -x, top, bottom, front (+z), back
+  const body = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), [sideMat, sideMat.clone(), plainMat, plainMat.clone(), stripeMat, sideMat.clone()]);
   body.position.y = h / 2; body.castShadow = body.userData.castsShadow = true; g.add(body);
-  const accent = col(t.c);
-  const stripeMat = new THREE.MeshStandardMaterial({color: accent, emissive: accent, emissiveIntensity: .12});
-  // CDUs and RPPs show a load meter instead of plain stripes: segments light from the bottom, set by setLoads
+  // CDUs and RPPs show a load meter on the front: segments light from the bottom, set by setLoads
   const metered = !!(t.liqCool || t.dist);
-  const n = t.group === 'gpu' ? 9 : metered ? METER_SEGMENTS : 3;
-  const sGeo = new THREE.BoxGeometry(CX * .78, t.group === 'gpu' ? .04 : metered ? .2 : .12, .02);
   const offMat = metered ? new THREE.MeshStandardMaterial({color: col('--rack').lerp(col('--grid'), .08), roughness: .8}) : null;
+  const litMat = metered ? new THREE.MeshStandardMaterial({color: accent, emissive: accent, emissiveIntensity: .12}) : null;
   const segments: THREE.Mesh[] = [];
-  for (let i = 0; i < n; i++){
-    const s = new THREE.Mesh(sGeo, offMat || stripeMat);
-    s.position.set(0, .3 + i * (h - .5) / Math.max(n - 1, 1), CZ * .47 + .012);
-    g.add(s); segments.push(s);
+  if (metered){
+    // In the recess the front panel leaves for it, from 14% to 84% of the height
+    const sGeo = new THREE.BoxGeometry(w * .26, .16, .02);
+    for (let i = 0; i < METER_SEGMENTS; i++){
+      const s = new THREE.Mesh(sGeo, offMat!);
+      s.position.set((METER_X - .5) * w, h * .16 + .12 + i * (h * .66 - .24) / (METER_SEGMENTS - 1), CZ * .47 + .012);
+      g.add(s); segments.push(s);
+    }
   }
   if (t.liq || t.liqCool){
     const pipeMat = new THREE.MeshStandardMaterial({color: col('--coolant'), roughness: .3});
@@ -108,7 +118,7 @@ function makeMesh(key: string, it: Item): THREE.Group{
   alert.visible = false;
   g.add(alert);
   g.position.copy(cellPos(it.x, it.z));
-  g.userData = {key, stripeMat, alert, accent, meter: metered ? {segments, offMat, state: meterFor(0, 0)} : null};
+  g.userData = {key, stripeMat, glowMats: litMat ? [stripeMat, litMat] : [stripeMat], alert, accent, meter: metered ? {segments, offMat, litMat, state: meterFor(0, 0)} : null};
   g.traverse(o => o.userData.key = key);
   return g;
 }
@@ -180,14 +190,14 @@ const LEVEL_COLOR = {ok: '', warn: '--warn', bad: '--bad'} as const;
 export function setLoads(loads: Loads): void{
   const byKey = new Map([...loads.supplies].map(([it, s]) => [keyOf(it.x, it.z), s]));
   state.items.forEach((it, key) => {
-    const {meter, stripeMat, accent} = it.mesh.userData;
+    const {meter, accent} = it.mesh.userData;
     if (!meter) return;
     const s = byKey.get(key), next: Meter = s ? meterFor(s.loadKw, s.capacityKw) : meterFor(0, 0);
     if (next.lit === meter.state.lit && next.level === meter.state.level) return;
     meter.state = next;
     const c = LEVEL_COLOR[next.level] ? col(LEVEL_COLOR[next.level]) : accent;
-    stripeMat.color.copy(c); stripeMat.emissive.copy(c);
-    meter.segments.forEach((m: THREE.Mesh, i: number) => { m.material = i < next.lit ? stripeMat : meter.offMat; });
+    meter.litMat.color.copy(c); meter.litMat.emissive.copy(c);
+    meter.segments.forEach((m: THREE.Mesh, i: number) => { m.material = i < next.lit ? meter.litMat : meter.offMat; });
     it.mesh.userData.opacity = undefined;
   });
 }
@@ -248,7 +258,7 @@ export function setDimmed(): void{
     const dim = opacity < 1;
     g.traverse(o => {
       if (!(o instanceof THREE.Mesh) || o === g.userData.alert) return;
-      Object.assign(o.material, {transparent: dim, opacity, depthWrite: !dim, needsUpdate: true});
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) Object.assign(m, {transparent: dim, opacity, depthWrite: !dim, needsUpdate: true});
       o.castShadow = !dim && o.userData.castsShadow;
     });
   });
@@ -288,6 +298,7 @@ export function setGhost(cells: Pos[], type: string | null): void{
 // Theme switch: rebuild the floor and all devices from the new CSS variables
 export function retheme(): void{
   buildHall();
+  clearFaces();
   state.items.forEach((it, key) => { removeMesh(it); addMesh(key, it); });
   ghosts.splice(0).forEach(g => { scene.remove(g); g.geometry.dispose(); });
   rebuildLinks(); setOutline();
@@ -357,13 +368,14 @@ export function startLoop(): void{
   function frame(now: number){
     const reduce = reduceMq.matches;
     state.items.forEach((it, key) => {
-      const m = it.mesh.userData.stripeMat;
+      const mats: THREE.MeshStandardMaterial[] = it.mesh.userData.glowMats;
       // Failed facilities and overloaded or unconnected devices do not light up
-      if (!state.powered || !isActive(key, it) || it.mesh.userData.alert.visible){ m.emissiveIntensity = .12; return; }
+      if (!state.powered || !isActive(key, it) || it.mesh.userData.alert.visible){ mats.forEach(m => { m.emissiveIntensity = .12; }); return; }
       const delay = (Math.abs(it.x - GW / 2) + it.z) * 70;
       const t = (now - state.powerStart - delay) / 400;
       const on = reduce ? 1 : clamp(t, 0, 1);
-      m.emissiveIntensity = .12 + on * (reduce ? .9 : .8 + .12 * Math.sin(now / 350 + it.x));
+      const k = .12 + on * (reduce ? .9 : .8 + .12 * Math.sin(now / 350 + it.x));
+      mats.forEach(m => { m.emissiveIntensity = k; });
     });
     applyPops(now);
     updateFlows(now);

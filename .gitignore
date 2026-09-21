@@ -9,3 +9,7 @@ build/
 test-results/
 playwright-report/
 dist-e2e/
+
+# Local-only SimReady assets and overlays (docs/dsx-assets.md); never commit them
+/dsx/
+*_dsx.usda
