@@ -4,6 +4,8 @@ import type {Item, Layout, Pos} from './types.ts';
 import {DEFAULT_LOAD, DEFAULT_PRICE} from './energy.ts';
 import type {EnergyInputs} from './energy.ts';
 import {DEFAULT_MAINT, DEFAULT_YEARS} from './ownership.ts';
+import {DEFAULT_FABRIC} from './fabric.ts';
+import type {FabricOptions} from './fabric.ts';
 import type {OwnershipInputs} from './ownership.ts';
 import type {GoalLimit} from './goal.ts';
 import type {ScenarioId} from './scenarios.ts';
@@ -51,6 +53,7 @@ export interface AppState {
   scenario: {id: ScenarioId; done: boolean} | null;   // the scenario being played (scenarios.ts)
   energy: EnergyInputs;      // annual energy estimate inputs; view state, kept in localStorage, not in the layout or share links
   ownership: OwnershipInputs;   // ownership estimate inputs (years, maintenance); view state like energy
+  fabric: FabricOptions;     // back-end fabric options; view state, not in the layout, share links or localStorage
   ui: UiState;
 }
 
@@ -73,6 +76,7 @@ export const state: AppState = {
   scenario: null,
   energy: {price: DEFAULT_PRICE, load: DEFAULT_LOAD},
   ownership: {years: DEFAULT_YEARS, maint: DEFAULT_MAINT},
+  fabric: {...DEFAULT_FABRIC},
   ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, goal: null, method: null, lastPlaced: null},
 };
 

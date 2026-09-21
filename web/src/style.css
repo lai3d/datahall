@@ -107,7 +107,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .info p.assign-hint{color:var(--ink)}
 .info select{font:inherit;font-size:13px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:210px}
 .energy{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:10px}
-.energy label{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.energy label,.energy .field{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.energy label.check{flex-direction:row;align-items:center;gap:6px}
+#fabricSkipped{margin:6px 0 0;padding-left:18px}
+#fabricStatus{margin:8px 0 0;padding-left:8px;border-left:3px solid var(--ok)}
+#fabricStatus.fabric-warn{border-color:var(--warn)}
 .energy strong{display:block;margin-bottom:8px}
 .energy input[type=number],.energy select{font:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 6px;width:120px}
 /* 16px on phones: iOS zooms the page when focusing a smaller input */

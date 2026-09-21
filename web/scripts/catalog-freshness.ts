@@ -1,7 +1,7 @@
 // Reports where spec/catalog.json has gone stale: devices nobody has re-checked lately, and old sources still backing figures the app shows.
 // Nothing here reads the sources themselves, only their dates. Run by hand or in CI: npm run catalog-check (exit code 1 when a device is past the re-check threshold)
 import {CATALOG, CATALOG_VERSION} from '../src/catalog.ts';
-import type {CatalogItem, Source, SourcedField} from '../src/types.ts';
+import type {CatalogItem, ItemField, Source, SourcedField} from '../src/types.ts';
 
 // Devices are due for a re-check a quarter after their newest `checked` date: rack power, liquid share and price move
 // with each vendor announcement, and a quarter is about how long this project has gone between full passes (see CLAUDE.md, Data reliability)
@@ -11,7 +11,7 @@ export const CHECK_DAYS = 90;
 export const SOURCE_MONTHS = 18;
 
 // Fields the capacity model and price estimate read; the same list tests/catalog.test.ts requires a source for
-const FIELDS: SourcedField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap'];
+const FIELDS: ItemField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap', 'radix', 'portGbps', 'fabric', 'nics', 'rails', 'planes', 'nicGbps'];
 
 export interface StaleDevice {id: string; name: string; checked: string; days: number}
 export interface AgingSource {id: string; title: string; publisher?: string; date: string; months: number; supports: SourcedField[]}
@@ -38,7 +38,7 @@ function months(from: string, now: number): number {
 }
 
 // The figures a source still backs: a field it lists that the device actually has. A source backing nothing current is context, not evidence
-const backing = (t: CatalogItem, s: Source) => s.supports.filter(f => FIELDS.includes(f) && t[f] !== undefined);
+const backing = (t: CatalogItem, s: Source) => s.supports.filter((f): f is ItemField => (FIELDS as SourcedField[]).includes(f) && t[f as ItemField] !== undefined);
 
 // URL host without www., so the same publication counts once however it links
 function host(url: string): string | undefined {

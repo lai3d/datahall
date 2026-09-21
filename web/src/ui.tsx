@@ -5,14 +5,16 @@ import {StrictMode, useEffect, useMemo, useRef, useState} from 'react';
 import type {CSSProperties, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import {createPortal} from 'react-dom';
-import {CATALOG, CAT, CATALOG_VERSION} from './catalog.ts';
+import {CABLES, CATALOG, CAT, CATALOG_VERSION} from './catalog.ts';
+import {cableLabel, fabricText, hallFabric, IN_RACK_M, OVERSUBSCRIPTION, RUN} from './fabric.ts';
+import type {FabricOptions} from './fabric.ts';
 import {toItems} from './edit.ts';
 import {fmt, MODEL_VERSION, PUE_FACTORS, UTILITY_OPTIONS} from './sim.ts';
 import {compareRacks} from './compare.ts';
 import {addCounts, planRepair} from './repair.ts';
 import type {RepairOption, SupportType} from './repair.ts';
 import type {Goal} from './goal.ts';
-import type {SourcedField} from './types.ts';
+import type {RangeField} from './types.ts';
 import {SCENARIO_IDS, scenarioResult, startLayout} from './scenarios.ts';
 import type {ScenarioId} from './scenarios.ts';
 import {annualEnergy, fmtEnergy, fmtMoney, LOAD_RANGE, PRICE_RANGE} from './energy.ts';
@@ -53,6 +55,7 @@ export interface Actions {
   setHeadroomType(type: string): void;
   setEnergy(change: Partial<EnergyInputs>): void;
   setOwnership(change: Partial<OwnershipInputs>): void;
+  setFabric(change: Partial<FabricOptions>): void;
   applyRepair(index: number): void;
   generateGoal(goal: Goal): void;
   startScenario(id: ScenarioId): void;
@@ -117,6 +120,7 @@ function App({stage}: {stage: HTMLElement}){
       <Growth model={model} />
       <Energy model={model} />
       <Compare model={model} />
+      <Fabric model={model} />
       <Drill model={model} />
       <Presets />
       <Scenarios />
@@ -229,16 +233,16 @@ function Header(){
 const SOURCE_TYPE = {official: 'srcOfficial', reported: 'srcReported', estimate: 'srcEstimate'} as const;
 // What each sourced figure is called and how its range reads, so a range never shows a raw field name
 const RANGE_LABEL = {kw: 'rowPower', gpus: 'rowGpu', liq: 'rowCooling', liqCool: 'rowLiquidCap', airCool: 'rowAirCap',
-  dist: 'rowDistCap', ports: 'rowPorts', ovh: 'rowOverhead', cap: 'rowPrice'} as const satisfies Record<SourcedField, MessageKey>;
-const rangeValue = (field: SourcedField, lo: number, hi: number): string =>
+  dist: 'rowDistCap', ports: 'rowPorts', ovh: 'rowOverhead', cap: 'rowPrice'} as const satisfies Record<RangeField, MessageKey>;
+const rangeValue = (field: RangeField, lo: number, hi: number): string =>
   field === 'cap' ? tr('rangeCap', {lo, hi})
     : field === 'liq' ? tr('rangePct', {lo: Math.round(lo * 100), hi: Math.round(hi * 100)})
     : field === 'gpus' || field === 'ports' ? tr('rangeCount', {lo, hi})
     : tr('rangeKw', {lo, hi});
 // compact: publisher names only (details panel); the full titles are in the methodology dialog and in each link's title
-function SourceList({t, compact = false}: {t: CatalogItem; compact?: boolean}){
+function SourceList({t, compact = false}: {t: Pick<CatalogItem, 'sources' | 'ranges'>; compact?: boolean}){
   const checked = t.sources.map(s => s.checked).sort().at(-1);
-  const ranges = Object.entries(t.ranges ?? {}).map(([f, [lo, hi]]) => tr('rangeField', {label: tr(RANGE_LABEL[f as SourcedField]), range: rangeValue(f as SourcedField, lo, hi)}));
+  const ranges = Object.entries(t.ranges ?? {}).map(([f, [lo, hi]]) => tr('rangeField', {label: tr(RANGE_LABEL[f as RangeField]), range: rangeValue(f as RangeField, lo, hi)}));
   return (
     <p className="src sources">
       {tr('methodSources')}{' '}
@@ -257,7 +261,7 @@ function SourceList({t, compact = false}: {t: CatalogItem; compact?: boolean}){
 
 // Methodology and assumptions, in a modal dialog opened from the header or from "How it works" links next to the sections it explains.
 // Figures quoted in the text come from the catalog and PUE_FACTORS, so the explanation cannot drift from the model
-export type MethodSection = 'intro' | 'checks' | 'pue' | 'cost' | 'planning' | 'devices';
+export type MethodSection = 'intro' | 'checks' | 'pue' | 'cost' | 'planning' | 'fabric' | 'devices';
 const MethodLink = ({section, label = 'methodMore'}: {section: MethodSection; label?: 'methodMore' | 'methodHow'}) =>
   <button type="button" className="link" data-method={section} onClick={() => actions.openMethod(section)}>{tr(label)}</button>;
 
@@ -310,6 +314,15 @@ function Method(){
         <section id="m-planning">
           <h3>{tr('mHPlanning')}</h3>
           <p>{tr('mPlanning')}</p>
+        </section>
+        <section id="m-fabric">
+          <h3>{tr('mHFabric')}</h3>
+          <p>{tr('mFabric', {types: CATALOG.filter(t => t.fabric === 'x800').map(catName).join(tr('listSep')), k: CAT.ib.radix ?? 0, max: ((CAT.ib.radix ?? 0) ** 2 / 2).toLocaleString()})}</p>
+          <p>{tr('mFabricCables', {classes: CABLES.map(cableLabel).join(tr('listSep'))})}</p>
+          <p>{tr('mFabricLeaves')}</p>
+          <ul className="devices">
+            {CABLES.map(c => <li key={c.id} data-cable={c.id}><strong>{cableLabel(c)}</strong><SourceList t={c} /></li>)}
+          </ul>
         </section>
         <section id="m-devices">
           <h3>{tr('mHDevices')}</h3>
@@ -612,6 +625,41 @@ function Ownership({model}: {model: HallModel}){
         <p className="sub band" id="ownershipBand">{tr('ownershipBand', {low: fmtMoney(o.low), high: fmtMoney(o.high), price: asPct(BANDS.price), loadBand: asPct(BANDS.load), ovhBand: asPct(BANDS.overhead)})}</p>
       </> : <p className="sub">{tr('ownershipEmpty')}</p>}
     </div>
+  );
+}
+
+// Back-end fabric (fabric.ts): leaf and spine switches and cables for the GPU racks within the viewed phase. Informational;
+// the power-on check keeps counting one IB port per GPU. Options are view state
+function Fabric({model}: {model: HallModel}){
+  const {oversubscription, railOptimized} = state.fabric;
+  const f = useMemo(() => hallFabric(model.planned, CAT, CABLES, state.fabric), [model, oversubscription, railOptimized]);
+  const text = fabricText(f, CAT, CABLES);
+  const hasGpus = model.planned.some(i => CAT[i.type].gpus);
+  return (
+    <>
+      <h2>{tr('hFabric')}</h2>
+      <p className="sub">{tr('fabricIntro', {k: f.radix, gbps: CAT.ib.portGbps ?? 0})}</p>
+      <div className="energy" id="fabric" data-switches={f.switchesNeeded} data-ib-needed={f.ibRacksNeeded}>
+        <div className="field">
+          <span>{tr('fabricOversub')}</span>
+          <span className="row seg" id="fabricOversub" role="group" aria-label={tr('fabricOversub')}>
+            {OVERSUBSCRIPTION.map(r => <button key={r} type="button" data-r={r} aria-pressed={r === oversubscription}
+              onClick={() => actions.setFabric({oversubscription: r})}>{tr('fabricOversubValue', {r})}</button>)}
+          </span>
+        </div>
+        <label className="check">
+          <input id="fabricRails" type="checkbox" checked={railOptimized} onChange={ev => actions.setFabric({railOptimized: ev.target.checked})} />
+          <span>{tr('fabricRails')}</span>
+        </label>
+        <p className="sub" style={{margin: '-4px 0 8px'}}>{tr('fabricRailsHint')}</p>
+        {text.rows.length
+          ? <table><tbody>{text.rows.map(([k, v], i) => <tr key={i}><td>{k}</td><td>{v}</td></tr>)}</tbody></table>
+          : !hasGpus && <p className="sub">{tr('fabricEmpty')}</p>}
+        {text.status && <p className={`sub fabric-${text.status.lvl}`} id="fabricStatus">{text.status.txt}</p>}
+        {text.skipped.length > 0 && <ul className="sub" id="fabricSkipped">{text.skipped.map((s, i) => <li key={i}>{s}</li>)}</ul>}
+      </div>
+      <p className="sub" style={{marginTop: 6}}>{tr('fabricNote', {rise: RUN.riseM, slack: RUN.slackM, inRack: IN_RACK_M})} <MethodLink section="fabric" /></p>
+    </>
   );
 }
 

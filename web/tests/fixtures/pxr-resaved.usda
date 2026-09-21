@@ -5,8 +5,8 @@
         }
         string asset_name = "datahall"
         string asset_type = "data_hall_layout"
-        string "dchall:catalogVersion" = "2026-09-18"
-        string "dchall:modelVersion" = "1.0"
+        string "dchall:catalogVersion" = "2026-09-21"
+        string "dchall:modelVersion" = "1.1"
         string "dchall:schemaVersion" = "0.2"
         string generator = "GPU Data Hall Builder"
         string source_file = "GPU Data Hall Builder web layout"

@@ -117,4 +117,17 @@ describe('buildReport', () => {
     expect(html).not.toContain('nope');
     expect(html).toContain('1 of 160 cells');
   });
+
+  it('plans the back-end fabric of the racks it models and says which it leaves out', () => {
+    const list: Item[] = [...[0, 1, 2, 3, 4, 5, 6, 7].map(x => ({type: 'gb300', x, z: 2})), {type: 'ib', x: 0, z: 4}, {type: 'gb200', x: 0, z: 6}];
+    const html = report(list, CAT, 5);
+    expect(html).toContain('<section id="fabric">');
+    expect(html).toContain('Oversubscription 1:1, rail-optimized.');
+    expect(html).toContain('<td>Switches</td><td class="n">12</td>');
+    expect(html).toContain('GB200 NVL72: not modeled.');
+    expect(html).toContain('networking-docs.nvidia.com');
+    expect(report(list, CAT, 5, {...META, fabric: {oversubscription: 2, railOptimized: false}})).toContain('Oversubscription 2:1, plain leaf and spine.');
+    // No GPU racks, no section
+    expect(report([{type: 'ib', x: 0, z: 0}], CAT, 5)).not.toContain('id="fabric"');
+  });
 });

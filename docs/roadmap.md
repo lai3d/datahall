@@ -11,7 +11,7 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 
 - **Goal**: a stranger opens the link, understands within 5 minutes why an AI data hall "cannot power on", and wants to pass the link along.
 - **Measures**: visits, share of visitors who finish a scenario, and how often a `#layout=` share link is opened. All three are measured with Vercel Web Analytics from 2026-09-17: share-link visits show up as the page `/shared`, finishing the guided tutorial as `/tutorial-done`, and finishing a scenario as `/scenario-<id>-done` (compare with visits to `/`).
-- **Not this quarter**: real network topology (the IB switch rack stays a simplified 288-port model), user-editable device parameters, the Unity app.
+- **Not this quarter**: Ethernet, front-end and storage networks, network congestion, user-editable device parameters, the Unity app. The back-end fabric covers Quantum-X800 InfiniBand only, and the power-on check keeps its port count.
 
 ## Now (next 2 to 4 sessions)
 
@@ -27,7 +27,7 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 
 ## Later (after the quarter, directional)
 
-- Deeper infrastructure models (P4), one at a time and only after the teaching work: the power chain (transformer, switchgear, UPS, A/B feeds, 2N), liquid cooling loops (facility and technology loops, supply and return temperatures, flow), and a leaf/spine network topology replacing the port count.
+- Deeper infrastructure models (P4), one at a time and only after the teaching work: the power chain (transformer, switchgear, UPS, A/B feeds, 2N), liquid cooling loops (facility and technology loops, supply and return temperatures, flow), and the rest of the back-end fabric: a switch and link failure drill with N+1, leaf and spine links in the 3D view, and carrying the fabric through layout.json, USD, share links and the growth plan.
 - Multi-cell footprints: AMD Helios is a 1.2 m wide Open Rack Wide but occupies one 0.6 m cell today; supporting 2-cell devices touches placement, drag, share links, USD and layout.json.
 - Embed mode `?embed`: hide the panel, keep the 3D view and one sentence, for embedding in articles.
 - A third UI language (Japanese or Korean), decided by where visitors come from.
@@ -50,6 +50,7 @@ Dates are when the work merged to main.
 - ✅ Layout from a goal: rack type, GPU count, feed and optional N+1 give a hall that passes, with the reason when the goal does not fit (2026-09-18).
 - ✅ Annual energy and electricity cost, with an average-load input (2026-09-18).
 - ✅ Simplified three- or five-year ownership estimate: hardware, electricity and an optional maintenance assumption, with a sensitivity band on price, average load and the cooling and loss coefficients (2026-09-20).
+- ✅ Back-end fabric on Quantum-X800 InfiniBand: leaf and spine switches for GB300 and Vera Rubin (two planes), rail-optimized or plain, with an oversubscription choice, IB racks needed against placed, and a cable bill by class from rack positions. Leaf and spine counts match NVIDIA's DGX SuperPOD reference designs; racks NVIDIA pairs with Quantum-2 or Ethernet say so and are left out (2026-09-21).
 - ✅ Load visualization: load meters on CDUs and RPPs, and flow along the links while powered on (2026-09-17).
 
 **Credibility**

@@ -12,8 +12,8 @@ export interface Totals {
 
 // Teaching PUE coefficients: cooling energy per kW of liquid-cooled and air-cooled heat, and distribution losses per kW of IT.
 // Shared with energy.ts, growth.ts and the methodology dialog, which quotes them; the Unity C# port keeps its own copy
-// Version of the capacity and PUE model. Bump it when compute() or the PUE factors change; exports carry it so old results stay explainable
-export const MODEL_VERSION = '1.0';
+// Version of the capacity and PUE model (and, from 1.1, the back-end fabric plan in fabric.ts). Bump it when compute(), the PUE factors or the fabric rules change; exports carry it so old results stay explainable
+export const MODEL_VERSION = '1.1';
 
 // Utility feeds offered in the panel, in MW
 export const UTILITY_OPTIONS = [2, 5, 10];
