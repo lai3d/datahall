@@ -19,6 +19,10 @@ export interface Notice {text: string | null; warnings: string[]}
 // What the goal generator placed, for the message under its form
 export interface GoalSummary {type: string; asked: number; racks: number; gpus: number; limit: GoalLimit | null; maxRacks: number; utility: number; support: [string, number][]; found: boolean}
 
+// Panel groups below the always-visible builder: short lessons, capacity planning, failure drills
+export const PANEL_MODES = ['learn', 'design', 'drill'] as const;
+export type PanelMode = typeof PANEL_MODES[number];
+
 // Panel-only state that is not part of the layout
 export interface UiState {
   share: Notice;
@@ -32,6 +36,7 @@ export interface UiState {
   goal: GoalSummary | null;  // result of the last goal-based layout, shown under the form until the next change
   method: string | null;    // section of the methodology dialog to show; null when closed
   lastPlaced: string | null; // device type placed by the last tap, for the stage bar's feedback; cleared when the tool changes
+  mode: PanelMode;          // which panel group is open; view state, remembered in localStorage
 }
 
 export interface AppState {
@@ -77,7 +82,7 @@ export const state: AppState = {
   energy: {price: DEFAULT_PRICE, load: DEFAULT_LOAD},
   ownership: {years: DEFAULT_YEARS, maint: DEFAULT_MAINT},
   fabric: {...DEFAULT_FABRIC},
-  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, goal: null, method: null, lastPlaced: null},
+  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, goal: null, method: null, lastPlaced: null, mode: 'learn'},
 };
 
 // All deep copies: snapshots go into undo history and localStorage and must not follow later state changes

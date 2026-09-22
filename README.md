@@ -14,6 +14,9 @@ The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for
 
 ## Features
 
+The builder (utility feed, devices, capacity check, device details) is always on screen; everything else is grouped under three tabs: **Learn**, **Design** and **Drill**.
+
+
 - **Capacity model.** Five constraints must all hold before the hall can power on: power distribution (RPP), liquid cooling (CDU), air cooling (in-row coolers), back-end network ports and utility power. A simplified PUE estimate is shown alongside.
 - **Per-device checks.** Each rack is fed by its nearest CDU and RPP. An overloaded supply blocks power-on even when hall totals are fine. Overloaded supplies and unconnected devices are marked red in 3D.
 - **OpenUSD export and import.** The export is Z-up, in meters, and uses instanceable equipment that references catalog prototypes. Parameters are defined by a codeless applied API schema (`dchall:` namespace). The page can re-import its own `.usda` files, including files re-saved by usdview or Omniverse.

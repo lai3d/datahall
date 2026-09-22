@@ -108,6 +108,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .info select{font:inherit;font-size:13px;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:210px}
 .energy{font-size:14px;border:1px solid var(--line);border-radius:6px;padding:10px}
 .energy label,.energy .field{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:13px;color:var(--muted)}
+.modes{display:flex;gap:4px;margin:22px 0 4px;border-bottom:1px solid var(--line)}
+.modes button{flex:1;border:none;border-bottom:3px solid transparent;border-radius:6px 6px 0 0;background:none;padding:8px 4px;font-weight:600;color:var(--muted)}
+.modes button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--gpu)}
+.modes button:focus-visible{outline:2px solid var(--gpu);outline-offset:-2px}
+.mode-hint{margin:4px 0 0}
 .parts{margin:8px 0}
 .parts ul{margin:4px 0 4px;padding-left:18px}
 .parts li{margin-bottom:2px}

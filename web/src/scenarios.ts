@@ -50,6 +50,7 @@ export interface Scenario {
   id: ScenarioId;
   start(CAT: Catalog, grid: Grid): Layout;
   done(c: ScenarioContext, CAT: Catalog, grid: Grid): boolean;
+  panel?: 'design' | 'drill';   // the panel group holding the tools the lesson needs, opened when it starts
 }
 
 export const SCENARIOS: Record<ScenarioId, Scenario> = {
@@ -62,6 +63,7 @@ export const SCENARIOS: Record<ScenarioId, Scenario> = {
   // The densest GB200 hall a 2 MW feed can run; rebuild it with Vera Rubin racks on the same feed and compare
   sameFeed: {
     id: 'sameFeed',
+    panel: 'design',
     start: (CAT, grid) => ({u: SAME_FEED_MW, list: (generateLayout({type: 'gb200', gpus: 99999, utility: SAME_FEED_MW, n1: false}, CAT, grid)?.list ?? []).map(i => [i.type, i.x, i.z] as Entry)}),
     // The lesson is the same feed carrying as many Vera Rubin racks as it can, so the feed and the rack count both count
     done: (c, CAT, grid) => c.utility === SAME_FEED_MW && !c.blocking && !(c.counts.gb200 || 0)
@@ -70,6 +72,7 @@ export const SCENARIOS: Record<ScenarioId, Scenario> = {
   // A hall that passes every check but falls over when one facility fails
   redundancy: {
     id: 'redundancy',
+    panel: 'drill',
     start: () => PRESETS.gb200,
     // Deleting the racks would also remove every single point of failure, so the racks have to stay
     done: (c, CAT) => c.spof === 0 && c.racks >= PRESETS.gb200.list.filter(e => CAT[e[0]].gpus).length,
@@ -77,6 +80,7 @@ export const SCENARIOS: Record<ScenarioId, Scenario> = {
   // Phase 1 works; phase 2 doubles the racks without the support to carry them
   phases: {
     id: 'phases',
+    panel: 'design',
     start: (CAT, grid) => {
       const first = generateLayout({type: 'gb200', gpus: 4 * (CAT.gb200.gpus ?? 72), utility: 2, n1: false}, CAT, grid)?.list ?? [];
       const used = new Set(first.map(i => `${i.x},${i.z}`));
