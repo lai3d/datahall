@@ -418,6 +418,17 @@ const zh: typeof en = {
   repFabricOptions: ({r, rails}) => `收敛比 ${r}:1，${rails}。`,
   repRailsOn: '按轨道优化',
   repRailsOff: '普通叶脊',
+  // 设备详情里的机柜组成（目录 parts）
+  hParts: '机柜里有什么',
+  partCompute: ({n, u, gpus, cpus}) => `${n} 个计算托盘${u}，每个含 ${gpus} 颗 GPU 和 ${cpus} 颗 CPU`,
+  partNvswitch: ({n, u}) => `${n} 个 NVLink 交换托盘${u}`,
+  partPower: ({n, psus, kw}) => `${n} 个电源架，每个含 ${psus} 个电源模块，共 ${kw} kW`,
+  partSystem: ({n, u, gpus}) => `${n} 台服务器${u}，每台 ${gpus} 颗 GPU`,
+  partNpunode: ({n, gpus, cpus}) => `${n} 个服务器节点，每个含 ${gpus} 颗 NPU 和 ${cpus} 颗 CPU`,
+  partIbswitch: ({n, u, ports}) => `${n} 台 InfiniBand 交换机${u}，每台 ${ports} 个端口`,
+  partHeight: ({u}) => `（${u}U）`,
+  partsNote: '依据厂商公开的文档。3D 视图里的正面画的是同样的数量。',
+  partsNone: '厂商没有公开这个机柜的内部组成，3D 视图里的正面只是示意。',
 };
 
 export default zh;

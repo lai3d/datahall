@@ -437,4 +437,15 @@ export default {
   repFabricOptions: ({r, rails}: {r: number; rails: string}) => `Oversubscription ${r}:1, ${rails}.`,
   repRailsOn: 'rail-optimized',
   repRailsOff: 'plain leaf and spine',
+  // Rack contents in the device details (catalog parts)
+  hParts: 'Inside the rack',
+  partCompute: ({n, u, gpus, cpus}: {n: number; u: string; gpus: number; cpus: number}) => `${n} compute trays${u}, each with ${gpus} GPUs and ${cpus} CPUs`,
+  partNvswitch: ({n, u}: {n: number; u: string}) => `${n} NVLink switch trays${u}`,
+  partPower: ({n, psus, kw}: {n: number; psus: number; kw: number}) => `${n} power shelves, each with ${psus} power supplies and ${kw} kW`,
+  partSystem: ({n, u, gpus}: {n: number; u: string; gpus: number}) => `${n} servers${u}, each with ${gpus} GPUs`,
+  partNpunode: ({n, gpus, cpus}: {n: number; gpus: number; cpus: number}) => `${n} server nodes, each with ${gpus} NPUs and ${cpus} CPUs`,
+  partIbswitch: ({n, u, ports}: {n: number; u: string; ports: number}) => `${n} InfiniBand switches${u}, each with ${ports} ports`,
+  partHeight: ({u}: {u: number}) => ` (${u}U)`,
+  partsNote: 'As the maker documents it. The front in the 3D view shows the same counts.',
+  partsNone: 'The maker has not published what this rack holds, so the front in the 3D view is illustrative.',
 };

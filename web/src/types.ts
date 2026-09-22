@@ -19,6 +19,7 @@ export interface CatalogItem {
   ovh?: number;           // Device overhead
   cap: number;            // Estimated price, million USD
   h: number;              // Height, meters
+  parts?: Part[];         // What the rack holds, as the maker documents it (drawn by rack-faces.ts)
   future?: boolean;       // Roadmap product
   airDense?: boolean;     // Air-cooled and dense enough that the capacity check warns about it
   fabric?: FabricKind;    // Back-end fabric of a GPU rack: modeled (x800) or why not
@@ -36,7 +37,10 @@ export type SourceType = 'official' | 'reported' | 'estimate';
 // Figures a source can back. RangeField: the capacity and price figures, which may carry a source range;
 // ItemField adds the back-end fabric fields; maxM is a cable class's reach (catalog `cables`)
 export type RangeField = 'kw' | 'gpus' | 'liq' | 'liqCool' | 'airCool' | 'dist' | 'ports' | 'ovh' | 'cap';
-export type ItemField = RangeField | 'radix' | 'portGbps' | 'fabric' | 'nics' | 'rails' | 'planes' | 'nicGbps';
+export type ItemField = RangeField | 'radix' | 'portGbps' | 'fabric' | 'nics' | 'rails' | 'planes' | 'nicGbps' | 'parts';
+// One kind of unit in a rack: compute tray, NVLink switch tray, power shelf, whole server, NPU node or InfiniBand switch
+export type PartKind = 'compute' | 'nvswitch' | 'power' | 'system' | 'npunode' | 'ibswitch';
+export interface Part {kind: PartKind; n: number; u?: number; gpus?: number; cpus?: number; psus?: number; kw?: number; ports?: number}
 export type SourcedField = ItemField | 'maxM';
 // x800: back-end fabric modeled on Quantum-X800 InfiniBand; the others say why it is not
 export type FabricKind = 'x800' | 'quantum2' | 'ethernet' | 'unsourced';

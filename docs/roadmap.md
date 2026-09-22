@@ -64,6 +64,7 @@ Dates are when the work merged to main.
 - ✅ Example gallery: six halls kept in the repo as share links, generated into `docs/examples.md`, each checked against what it claims (2026-09-20).
 - ✅ TypeScript (strict) migration, React panel, Playwright smoke tests in CI, English docs and comments (2026-09-17).
 - ✅ Detailed device models: a drawn front per device type (trays, power shelves, ports, drive bays, doors) with glowing status lights, and a local-only overlay that swaps NVIDIA's DSX SimReady assets into an exported hall for usdview or Omniverse (2026-09-21).
+- ✅ "Inside the rack" in the device details: compute trays, NVLink switch trays, power shelves, servers or switches as the maker documents them, with sources; the 3D front draws the same counts, and racks without a published layout say theirs is illustrative (2026-09-22).
 - ✅ Social preview image, favicon, one-click screenshot of the 3D view (2026-09-17).
 - ✅ Mobile polish: foldable panel, stage bar, placement feedback (2026-09-17).
 - ✅ Architecture report export: one self-contained HTML file with the screenshot, bill of materials, checks, redundancy findings, energy estimate, assumptions, versions and the share link (2026-09-20).

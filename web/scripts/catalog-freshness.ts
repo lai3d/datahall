@@ -11,7 +11,7 @@ export const CHECK_DAYS = 90;
 export const SOURCE_MONTHS = 18;
 
 // Fields the capacity model and price estimate read; the same list tests/catalog.test.ts requires a source for
-const FIELDS: ItemField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap', 'radix', 'portGbps', 'fabric', 'nics', 'rails', 'planes', 'nicGbps'];
+const FIELDS: ItemField[] = ['kw', 'gpus', 'liq', 'liqCool', 'airCool', 'dist', 'ports', 'ovh', 'cap', 'radix', 'portGbps', 'fabric', 'nics', 'rails', 'planes', 'nicGbps', 'parts'];
 
 export interface StaleDevice {id: string; name: string; checked: string; days: number}
 export interface AgingSource {id: string; title: string; publisher?: string; date: string; months: number; supports: SourcedField[]}

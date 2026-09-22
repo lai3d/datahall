@@ -499,3 +499,15 @@ test('back-end fabric: switches and cables for GB300, the options change the pla
   expect(page.url()).toContain(`gb300:${racks}`);
   expect(errors).toEqual([]);
 });
+
+test('device details list what a rack holds, and say when the maker has not published it', async ({page}) => {
+  const errors = await openApp(page, '/?lang=en#layout=1,5,gb300:4.3,helios:6.3,ib:8.3');
+  await clickTop(page, 4, 3);
+  await expect(page.locator('#parts')).toHaveAttribute('data-parts', 'compute:18,nvswitch:9,power:8');
+  await expect(page.locator('#parts')).toContainText('18 compute trays, each with 4 GPUs and 2 CPUs');
+  await clickTop(page, 8, 3);
+  await expect(page.locator('#parts')).toContainText('2 InfiniBand switches (4U), each with 144 ports');
+  await clickTop(page, 6, 3);
+  await expect(page.locator('#parts')).toHaveAttribute('data-parts', 'none');
+  expect(errors).toEqual([]);
+});
