@@ -25,7 +25,8 @@ import {scaleRefs} from './scale.ts';
 import {GRID, keyOf, nearest, FEEDS} from './grid.ts';
 import {canFail, singlePointsOfFailure} from './redundancy.ts';
 import {state} from './state.ts';
-import type {Notice} from './state.ts';
+import {PANEL_MODES} from './state.ts';
+import type {Notice, PanelMode} from './state.ts';
 import {phasesIn, growthPlan, headroom, MAX_PHASE} from './growth.ts';
 import {LANGS, getLang, htmlLang, tr, loc, catName, catNote, srcTitle} from './i18n.ts';
 import type {MessageKey} from './i18n.ts';
@@ -55,6 +56,7 @@ export interface Actions {
   setHeadroomType(type: string): void;
   setEnergy(change: Partial<EnergyInputs>): void;
   setOwnership(change: Partial<OwnershipInputs>): void;
+  setMode(mode: PanelMode): void;
   setFabric(change: Partial<FabricOptions>): void;
   applyRepair(index: number): void;
   generateGoal(goal: Goal): void;
@@ -117,14 +119,22 @@ function App({stage}: {stage: HTMLElement}){
       <Capacity model={model} />
       <h2 id="hInfo">{tr('hInfo')}</h2>
       <Info model={model} />
-      <Growth model={model} />
-      <Energy model={model} />
-      <Compare model={model} />
-      <Fabric model={model} />
-      <Drill model={model} />
-      <Presets />
-      <Scenarios />
-      <GoalForm />
+      <ModeTabs />
+      {/* Groups stay mounted and are only hidden, so a half-typed form survives switching */}
+      <ModePanel mode="learn">
+        <Scenarios />
+        <Presets />
+        <Compare model={model} />
+      </ModePanel>
+      <ModePanel mode="design">
+        <GoalForm />
+        <Growth model={model} />
+        <Energy model={model} />
+        <Fabric model={model} />
+      </ModePanel>
+      <ModePanel mode="drill">
+        <Drill model={model} />
+      </ModePanel>
       <Share notice={state.ui.share} />
       <Usd notice={state.ui.usd} />
       <p className="foot">{tr('foot')}</p>
@@ -651,6 +661,36 @@ function Ownership({model}: {model: HallModel}){
       </> : <p className="sub">{tr('ownershipEmpty')}</p>}
     </div>
   );
+}
+
+// Progressive disclosure: the builder above (feed, devices, checks, details) is always shown; below it one of three groups is
+// open at a time (state.ui.mode). A tablist with arrow-key movement between tabs, as the ARIA authoring practices describe
+const MODE_LABEL = {learn: 'modeLearn', design: 'modeDesign', drill: 'modeDrill'} as const;
+const MODE_HINT = {learn: 'modeLearnHint', design: 'modeDesignHint', drill: 'modeDrillHint'} as const;
+function ModeTabs(){
+  const current = state.ui.mode;
+  const move = (e: React.KeyboardEvent, i: number) => {
+    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    const to = e.key === 'Home' ? 0 : e.key === 'End' ? PANEL_MODES.length - 1 : step ? (i + step + PANEL_MODES.length) % PANEL_MODES.length : -1;
+    if (to < 0) return;
+    e.preventDefault();
+    actions.setMode(PANEL_MODES[to]!);
+    document.getElementById('tab-' + PANEL_MODES[to])?.focus();
+  };
+  return (
+    <>
+      <div className="modes" id="modes" role="tablist" aria-label={tr('modesLabel')}>
+        {PANEL_MODES.map((m, i) => (
+          <button key={m} type="button" role="tab" id={'tab-' + m} data-mode={m} aria-selected={m === current} aria-controls={'mode-' + m}
+            tabIndex={m === current ? 0 : -1} onClick={() => actions.setMode(m)} onKeyDown={e => move(e, i)}>{tr(MODE_LABEL[m])}</button>
+        ))}
+      </div>
+      <p className="sub mode-hint">{tr(MODE_HINT[current])}</p>
+    </>
+  );
+}
+function ModePanel({mode, children}: {mode: PanelMode; children: ReactNode}){
+  return <div role="tabpanel" id={'mode-' + mode} aria-labelledby={'tab-' + mode} hidden={state.ui.mode !== mode}>{children}</div>;
 }
 
 // Back-end fabric (fabric.ts): leaf and spine switches and cables for the GPU racks within the viewed phase. Informational;

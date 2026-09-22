@@ -448,4 +448,12 @@ export default {
   partHeight: ({u}: {u: number}) => ` (${u}U)`,
   partsNote: 'As the maker documents it. The front in the 3D view shows the same counts.',
   partsNone: 'The maker has not published what this rack holds, so the front in the 3D view is illustrative.',
+  // Panel groups
+  modesLabel: 'More',
+  modeLearn: 'Learn',
+  modeDesign: 'Design',
+  modeDrill: 'Drill',
+  modeLearnHint: 'Short lessons, example halls, and how the rack types compare on your feed.',
+  modeDesignHint: 'Plan from a goal, in phases, with energy, cost and the back-end network.',
+  modeDrillHint: 'Fail a unit and see where its load goes, and check N+1.',
 };

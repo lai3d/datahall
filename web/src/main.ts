@@ -11,7 +11,7 @@ import type {Goal} from './goal.ts';
 import type {EnergyInputs} from './energy.ts';
 import type {OwnershipInputs} from './ownership.ts';
 import {setFeed, pruneFeeds, retargetFeeds} from './feeds.ts';
-import {state, itemList, snapshot} from './state.ts';
+import {state, itemList, snapshot, PANEL_MODES} from './state.ts';
 // The 3D scene and its controls pull in three.js, which is most of the bundle. They load after the panel is on screen
 // (see boot at the bottom), so first paint waits on the panel's own code instead. `view` is assigned before anything uses it
 type Scene = typeof import('./scene.ts');
@@ -36,7 +36,7 @@ import {advance, LAST} from './tutorial.ts';
 import type {TutorialContext} from './tutorial.ts';
 import {hasShareLink, initAnalytics, reportScenarioDone, reportTutorialDone} from './analytics.ts';
 import {$} from './dom.ts';
-import type {PlacedItem} from './state.ts';
+import type {PanelMode, PlacedItem} from './state.ts';
 import type {Actions} from './ui.tsx';
 import type {Notice} from './state.ts';
 import type {PresetName} from './layout.ts';
@@ -120,6 +120,14 @@ function setOwnership(change: Partial<OwnershipInputs>){
   try { localStorage.setItem(OWNERSHIP_KEY, JSON.stringify(state.ownership)); } catch (e) {}
   notify();
 }
+// The open panel group persists per browser; an unknown stored value falls back to the default
+const MODE_KEY = 'datahall.mode';
+function restoreMode(){ try { const m = localStorage.getItem(MODE_KEY); if (m && (PANEL_MODES as readonly string[]).includes(m)) state.ui.mode = m as PanelMode; } catch (e) {} }
+function setMode(mode: PanelMode){
+  state.ui.mode = mode;
+  try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
+  notify();
+}
 function tutorialSeen(): boolean{ try { return localStorage.getItem(TUTORIAL_SEEN) === '1'; } catch (e) { return false; } }
 function markTutorialSeen(){ try { localStorage.setItem(TUTORIAL_SEEN, '1'); } catch (e) {} state.ui.tutorialOffer = false; }
 
@@ -145,7 +153,9 @@ function stepTutorial(model: ReturnType<typeof hallModel>, next: boolean){
 function startScenario(id: ScenarioId){
   loadLayout(startLayout(id, CAT, GRID));
   state.scenario = {id, done: false};
-  notify();
+  // Open the group with the tools the lesson needs (the goal generator, the growth plan, the N+1 check)
+  const panel = SCENARIOS[id].panel;
+  if (panel) setMode(panel); else notify();
 }
 function checkScenario(model: ReturnType<typeof hallModel>){
   const s = state.scenario;
@@ -582,6 +592,7 @@ const actions: Actions = {
   setHeadroomType: type => setView(() => { state.headroomType = type; }),
   setEnergy,
   setOwnership,
+  setMode,
   setFabric: change => { state.fabric = {...state.fabric, ...change}; notify(); },
   applyRepair,
   generateGoal,
@@ -616,6 +627,7 @@ const scene = import('./scene.ts'), sceneControls = import('./controls.ts');
 // Read before the panel mounts, so the offer is not missing from its first render
 state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
 restoreEnergy();
+restoreMode();
 restoreOwnership();
 mountUI(actions, stage, $('#panel'));
 void initExport();

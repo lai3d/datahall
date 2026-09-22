@@ -56,3 +56,8 @@ export async function layout(page: Page): Promise<{version: number; utility: num
   }
   return {version: Number(version), utility: Number(utility), items: items.sort(), extra};
 }
+
+// Opens one of the panel groups below the builder (learn, design, drill); their sections are hidden otherwise
+export async function openMode(page: Page, mode: 'learn' | 'design' | 'drill'): Promise<void>{
+  await page.locator(`#modes button[data-mode="${mode}"]`).click();
+}

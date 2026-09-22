@@ -1,6 +1,6 @@
 import {expect, test} from '@playwright/test';
 import {readFileSync} from 'node:fs';
-import {cellPoint, clickCell, clickTop, layout, openApp} from './helpers.ts';
+import {cellPoint, clickCell, clickTop, layout, openApp, openMode} from './helpers.ts';
 
 // Default layout: the GB200 preset (8 racks in row 3, facilities in row 5), utility 2 MW
 const GB200_COUNT = 16;
@@ -70,6 +70,7 @@ test('drags a rack to another row and undoes it', async ({page}) => {
 
 test('failure drill: failing a CDU breaks liquid cooling, restore brings it back', async ({page}) => {
   await openApp(page);
+  await openMode(page, 'drill');
   await clickTop(page, 5, 5);
   await expect(page.locator('#failToggle')).toHaveText('Mark failed');
   await page.keyboard.press('f');
@@ -146,6 +147,7 @@ test('load meters on CDUs and RPPs follow the load, and power flows along the li
 
 test('annual energy: price and average load change the yearly cost and are remembered', async ({page}) => {
   const errors = await openApp(page);
+  await openMode(page, 'design');
   // GB200 preset at the default 8.62 ¢/kWh and 80% load
   await expect(page.locator('#energyCost')).toHaveText('$773K');
   await page.locator('#energyPrice').fill('0.12');
@@ -160,6 +162,7 @@ test('annual energy: price and average load change the yearly cost and are remem
 
 test('ownership estimate: the period and the maintenance assumption change the total and are remembered', async ({page}) => {
   const errors = await openApp(page);
+  await openMode(page, 'design');
   // GB200 preset: $27.16M of hardware, three years of electricity at the default price, plus 5% of hardware a year
   await expect(page.locator('#ownershipTotal')).toHaveText('$33.55M');
   await page.locator('#ownershipYears').selectOption('5');
@@ -193,6 +196,7 @@ test('methodology dialog opens from the header and from section links, and close
   await page.locator('button[data-method="planning"]').click();
   await expect(dialog.locator('#m-planning')).toBeInViewport();
   await page.keyboard.press('Escape');
+  await openMode(page, 'design');
   await page.locator('button[data-method="fabric"]').click();
   await expect(dialog.locator('#m-fabric')).toBeInViewport();
   await page.locator('#methodClose').click();
@@ -228,6 +232,7 @@ test('repair suggestion: when the feed is the limit, raise it or remove racks in
 
 test('start from a goal: generates a hall that passes, explains the limit, and can be undone', async ({page}) => {
   const errors = await openApp(page);
+  await openMode(page, 'design');
   const before = (await layout(page)).items;
   await page.locator('#goalType').selectOption('gb200');
   await page.locator('#goalGpus').fill('576');
@@ -285,6 +290,7 @@ test('scenario: rebuild the same feed with newer racks using the goal generator'
 test('repair suggestion: while viewing a phase, the new units join that phase', async ({page}) => {
   // Phase 1 has eight bare racks; phase 2 adds two more. Viewing phase 1 and applying must fix phase 1 itself
   const errors = await openApp(page, '/?lang=en#layout=3,2,gb200:4.3-5.3-6.3-7.3-8.3-9.3-10.3-11.3-12.3-13.3,@2:12.3-13.3');
+  await openMode(page, 'design');
   // New devices are set to go into phase 2, but the repair is for phase 1, so its units must land in phase 1
   await page.locator('#placePhase button[data-phase="2"]').click();
   await page.locator('#viewPhase button[data-phase="1"]').click();
@@ -296,6 +302,7 @@ test('repair suggestion: while viewing a phase, the new units join that phase', 
 
 test('growth plan: moving a rack to phase 2 adds a phase row', async ({page}) => {
   await openApp(page);
+  await openMode(page, 'design');
   await clickTop(page, 6, 3);
   await page.locator('#itemPhase').selectOption('2');
   await expect(page.locator('#growth tbody tr')).toHaveCount(2);
@@ -483,6 +490,7 @@ test('mobile: the panel folds away to give the 3D view the screen @mobile', asyn
 test('back-end fabric: switches and cables for GB300, the options change the plan, other racks are left out', async ({page}) => {
   const racks = [0, 1, 2, 3, 4, 5, 6, 7].map(x => `${x}.3`).join('-');
   const errors = await openApp(page, `/?lang=en#layout=1,5,gb300:${racks},ib:0.5-1.5-2.5,gb200:0.7`);
+  await openMode(page, 'design');
   const fabric = page.locator('#fabric');
   // One scalable unit of GB300: 8 leaves and 4 spines, six IB racks, where three satisfy the port check for every GPU
   await expect(fabric).toHaveAttribute('data-switches', '12');
@@ -509,5 +517,28 @@ test('device details list what a rack holds, and say when the maker has not publ
   await expect(page.locator('#parts')).toContainText('2 InfiniBand switches (4U), each with 144 ports');
   await clickTop(page, 6, 3);
   await expect(page.locator('#parts')).toHaveAttribute('data-parts', 'none');
+  expect(errors).toEqual([]);
+});
+
+test('panel groups: Learn opens first, the choice is remembered, arrow keys move between tabs, a scenario opens the tools it needs', async ({page}) => {
+  const errors = await openApp(page);
+  await expect(page.locator('#tab-learn')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#scenarios')).toBeVisible();
+  await expect(page.locator('#energy')).toBeHidden();
+  await openMode(page, 'design');
+  await expect(page.locator('#energy')).toBeVisible();
+  await expect(page.locator('#scenarios')).toBeHidden();
+  await page.reload();
+  await expect(page.locator('#tab-design')).toHaveAttribute('aria-selected', 'true');
+  await page.locator('#tab-design').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#tab-drill')).toBeFocused();
+  await expect(page.locator('#mode-drill')).toBeVisible();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#tab-learn')).toHaveAttribute('aria-selected', 'true');
+  // The redundancy lesson needs the N+1 check, which lives under Drill
+  await page.locator('#scenarios button[data-scenario="redundancy"]').click();
+  await expect(page.locator('#tab-drill')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#n1')).toBeVisible();
   expect(errors).toEqual([]);
 });

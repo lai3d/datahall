@@ -429,6 +429,14 @@ const zh: typeof en = {
   partHeight: ({u}) => `（${u}U）`,
   partsNote: '依据厂商公开的文档。3D 视图里的正面画的是同样的数量。',
   partsNone: '厂商没有公开这个机柜的内部组成，3D 视图里的正面只是示意。',
+  // 面板分组
+  modesLabel: '更多',
+  modeLearn: '学习',
+  modeDesign: '设计',
+  modeDrill: '演练',
+  modeLearnHint: '小课、示例机房，以及在当前市电下各种机柜的对比。',
+  modeDesignHint: '按目标生成、分期规划，看电费、成本和后端网络。',
+  modeDrillHint: '让一台设备故障，看它的负载去了哪里，并检查 N+1。',
 };
 
 export default zh;
