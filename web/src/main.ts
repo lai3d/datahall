@@ -21,7 +21,7 @@ import type {DragHandlers} from './controls.ts';
 import {mountUI} from './ui.tsx';
 import {notify} from './store.ts';
 import {hallModel} from './model.ts';
-import {PRESETS, saveLayout, restoreLayout} from './layout.ts';
+import {PRESETS, saveLayout, restoreLayout, parseSavedLayout} from './layout.ts';
 import {buildUsda} from './usd-export.ts';
 import {buildReport} from './report.ts';
 import {importUsda, UsdImportError} from './usd-import.ts';
@@ -36,7 +36,7 @@ import {advance, LAST} from './tutorial.ts';
 import type {TutorialContext} from './tutorial.ts';
 import {hasShareLink, initAnalytics, reportScenarioDone, reportTutorialDone} from './analytics.ts';
 import {$} from './dom.ts';
-import type {PanelMode, PlacedItem} from './state.ts';
+import type {PanelMode, PinnedDesign, PlacedItem} from './state.ts';
 import type {Actions} from './ui.tsx';
 import type {Notice} from './state.ts';
 import type {PresetName} from './layout.ts';
@@ -126,6 +126,40 @@ function restoreMode(){ try { const m = localStorage.getItem(MODE_KEY); if (m &&
 function setMode(mode: PanelMode){
   state.ui.mode = mode;
   try { localStorage.setItem(MODE_KEY, mode); } catch (e) {}
+  notify();
+}
+// Compare designs: the pinned layout persists per browser and is untrusted when read back, like the saved hall
+const PINNED_KEY = 'datahall.pinned';
+const stamp = () => { const d = new Date(), p = (n: number) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; };
+function restorePinned(){
+  try {
+    const raw = JSON.parse(localStorage.getItem(PINNED_KEY) || 'null');
+    const layout = raw && parseSavedLayout(JSON.stringify(raw.layout), CAT, GRID);
+    if (layout) state.ui.pinned = {layout, at: typeof raw.at === 'string' ? raw.at.slice(0, 16) : '', from: raw.from === 'link' ? 'link' : 'pin'};
+  } catch (e) {}
+}
+function setPinned(p: PinnedDesign | null){
+  state.ui.pinned = p;
+  try { if (p) localStorage.setItem(PINNED_KEY, JSON.stringify(p)); else localStorage.removeItem(PINNED_KEY); } catch (e) {}
+}
+function pinDesign(){ setPinned({layout: snapshot(), at: stamp(), from: 'pin'}); state.ui.designs = {text: tr('designsPinned'), warnings: []}; notify(); }
+function clearPinned(){ setPinned(null); state.ui.designs = {text: null, warnings: []}; notify(); }
+// Open the pinned design for editing and pin the current hall in its place, as one undo entry
+function swapPinned(){
+  const p = state.ui.pinned;
+  if (!p) return;
+  const current = snapshot();
+  setPinned({layout: current, at: stamp(), from: 'pin'});
+  state.ui.designs = {text: tr('designsSwapped'), warnings: []};
+  loadLayout(p.layout);
+}
+// Pin a design from a share link pasted into the comparison
+function pinFromLink(text: string){
+  const hash = text.includes('#') ? text.slice(text.indexOf('#')) : '#' + text;
+  const d = decodeLayout(hash.trim(), CAT, GRID);
+  if (!d || !d.list.length){ state.ui.designs = {text: tr('designsLinkBad'), warnings: d?.warnings ?? []}; notify(); return; }
+  setPinned({layout: {u: d.u, list: d.list}, at: stamp(), from: 'link'});
+  state.ui.designs = {text: tr('designsLinkPinned', {n: d.list.length}), warnings: d.warnings};
   notify();
 }
 function tutorialSeen(): boolean{ try { return localStorage.getItem(TUTORIAL_SEEN) === '1'; } catch (e) { return false; } }
@@ -593,6 +627,10 @@ const actions: Actions = {
   setEnergy,
   setOwnership,
   setMode,
+  pinDesign,
+  clearPinned,
+  swapPinned,
+  pinFromLink,
   setFabric: change => { state.fabric = {...state.fabric, ...change}; notify(); },
   applyRepair,
   generateGoal,
@@ -628,6 +666,7 @@ const scene = import('./scene.ts'), sceneControls = import('./controls.ts');
 state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
 restoreEnergy();
 restoreMode();
+restorePinned();
 restoreOwnership();
 mountUI(actions, stage, $('#panel'));
 void initExport();
