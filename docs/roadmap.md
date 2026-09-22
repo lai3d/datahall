@@ -22,7 +22,6 @@ Items marked P0–P4 come from [product-roadmap-proposal.md](product-roadmap-pro
 
 | Item | Why | Estimate |
 | --- | --- | --- |
-| Compare two designs (P3) | The rack comparison compares theoretical halls; this compares two halls the user built, on equipment and GPU counts, power, floor cells, PUE, hardware estimate, annual energy, bottlenecks and single points of failure. Two local snapshots or an imported layout against the current hall; no accounts, no backend | 2–3 h |
 
 ## Later (after the quarter, directional)
 
@@ -45,6 +44,7 @@ Dates are when the work merged to main.
 - ✅ Rack comparison cards and a scale reference in the HUD (DGX Sparks, US homes) (2026-09-17).
 
 **Planning**
+- ✅ Compare two designs (P3): pin a hall, change it, and see GPUs, power, PUE, hardware, energy, cost, the power-on check and redundancy side by side with the change marked; swap to edit the pinned one, or pin a hall from a share link. Local only, no accounts (2026-09-22).
 - ✅ Repair suggestions: what to add, a bigger feed or which racks to remove, each option re-checked and applied in one click (2026-09-18).
 - ✅ Layout from a goal: rack type, GPU count, feed and optional N+1 give a hall that passes, with the reason when the goal does not fit (2026-09-18).
 - ✅ Annual energy and electricity cost, with an average-load input (2026-09-18).

@@ -23,6 +23,10 @@ export interface GoalSummary {type: string; asked: number; racks: number; gpus: 
 export const PANEL_MODES = ['learn', 'design', 'drill'] as const;
 export type PanelMode = typeof PANEL_MODES[number];
 
+// A design pinned for comparison (designs.ts): a layout snapshot and when and how it was pinned. View state, kept in
+// localStorage `datahall.pinned`, never in the layout, share links or exports
+export interface PinnedDesign {layout: Layout; at: string; from: 'pin' | 'link'}
+
 // Panel-only state that is not part of the layout
 export interface UiState {
   share: Notice;
@@ -37,6 +41,8 @@ export interface UiState {
   method: string | null;    // section of the methodology dialog to show; null when closed
   lastPlaced: string | null; // device type placed by the last tap, for the stage bar's feedback; cleared when the tool changes
   mode: PanelMode;          // which panel group is open; view state, remembered in localStorage
+  pinned: PinnedDesign | null;  // the design the current hall is compared with
+  designs: Notice;          // messages under the comparison (a link that could not be read, skipped entries)
 }
 
 export interface AppState {
@@ -82,7 +88,7 @@ export const state: AppState = {
   energy: {price: DEFAULT_PRICE, load: DEFAULT_LOAD},
   ownership: {years: DEFAULT_YEARS, maint: DEFAULT_MAINT},
   fabric: {...DEFAULT_FABRIC},
-  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, goal: null, method: null, lastPlaced: null, mode: 'learn'},
+  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, goal: null, method: null, lastPlaced: null, mode: 'learn', pinned: null, designs: {text: null, warnings: []}},
 };
 
 // All deep copies: snapshots go into undo history and localStorage and must not follow later state changes

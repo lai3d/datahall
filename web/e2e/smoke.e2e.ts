@@ -542,3 +542,42 @@ test('panel groups: Learn opens first, the choice is remembered, arrow keys move
   await expect(page.locator('#n1')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('compare designs: pin a hall, change it, swap back, and compare with a share link', async ({page}) => {
+  const errors = await openApp(page);
+  await openMode(page, 'design');
+  await expect(page.locator('#designs')).toContainText('Nothing pinned yet.');
+  await page.locator('#designsPin').click();
+  await expect(page.locator('#designs')).toHaveAttribute('data-pinned', '16');
+  // Same hall on both sides: no change anywhere
+  await expect(page.locator('#designs tr[data-metric="gpus"] .delta')).toHaveText('=');
+  // Load the Vera Rubin preset from Learn and come back
+  await openMode(page, 'learn');
+  await page.locator('button[data-preset="rubin"]').click();
+  await openMode(page, 'design');
+  const gpus = page.locator('#designs tr[data-metric="gpus"] .delta');
+  await expect(gpus).toHaveAttribute('data-verdict', /better|worse/);
+  await expect(page.locator('#designs tr[data-metric="utilityMw"]')).toContainText('2 MW');
+  await expect(page.locator('#designs tr[data-metric="status"]')).toContainText('Passes');
+  // The pinned hall survives a reload
+  await page.reload();
+  await expect(page.locator('#designs')).toHaveAttribute('data-pinned', '16');
+  // Swap: the GB200 hall comes back for editing, the Rubin one is pinned, and undo reverses it
+  const rubin = (await layout(page)).items;
+  await page.locator('#designsSwap').click();
+  await expect(page.locator('#hGpu')).toHaveText('576');
+  await expect(page.locator('#designs')).toHaveAttribute('data-pinned', String(rubin.length));
+  await page.locator('#undo').click();
+  expect((await layout(page)).items).toEqual(rubin);
+  // A share link can be the other side
+  await page.locator('#designsLink').fill('https://example.org/#layout=1,5,vr200:3.3-4.3,cdu:3.5,rpp:4.5');
+  await page.locator('#designsLinkGo').click();
+  await expect(page.locator('#designsMsg')).toHaveText('Pinned the hall from the link (4 devices).');
+  await expect(page.locator('#designs')).toHaveAttribute('data-pinned', '4');
+  await page.locator('#designsLink').fill('https://example.org/');
+  await page.locator('#designsLinkGo').click();
+  await expect(page.locator('#designsMsg')).toHaveText('That is not a share link with a hall in it.');
+  await page.locator('#designsClear').click();
+  await expect(page.locator('#designs')).toContainText('Nothing pinned yet.');
+  expect(errors).toEqual([]);
+});

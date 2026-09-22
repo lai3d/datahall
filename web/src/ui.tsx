@@ -24,7 +24,7 @@ import type {OwnershipInputs} from './ownership.ts';
 import {scaleRefs} from './scale.ts';
 import {GRID, keyOf, nearest, FEEDS} from './grid.ts';
 import {canFail, singlePointsOfFailure} from './redundancy.ts';
-import {state} from './state.ts';
+import {state, snapshot as snapshotLayout} from './state.ts';
 import {PANEL_MODES} from './state.ts';
 import type {Notice, PanelMode} from './state.ts';
 import {phasesIn, growthPlan, headroom, MAX_PHASE} from './growth.ts';
@@ -32,6 +32,8 @@ import {LANGS, getLang, htmlLang, tr, loc, catName, catNote, srcTitle} from './i
 import type {MessageKey} from './i18n.ts';
 import {useStateVersion} from './store.ts';
 import {hallModel} from './model.ts';
+import {delta, METRICS, summarize} from './designs.ts';
+import type {DesignSummary, Metric} from './designs.ts';
 import type {HallModel, SupplyInfo} from './model.ts';
 import type {Reason, ReasonKind} from './redundancy.ts';
 import type {PresetName} from './layout.ts';
@@ -57,6 +59,10 @@ export interface Actions {
   setEnergy(change: Partial<EnergyInputs>): void;
   setOwnership(change: Partial<OwnershipInputs>): void;
   setMode(mode: PanelMode): void;
+  pinDesign(): void;
+  clearPinned(): void;
+  swapPinned(): void;
+  pinFromLink(text: string): void;
   setFabric(change: Partial<FabricOptions>): void;
   applyRepair(index: number): void;
   generateGoal(goal: Goal): void;
@@ -131,6 +137,7 @@ function App({stage}: {stage: HTMLElement}){
         <Growth model={model} />
         <Energy model={model} />
         <Fabric model={model} />
+        <Designs />
       </ModePanel>
       <ModePanel mode="drill">
         <Drill model={model} />
@@ -691,6 +698,73 @@ function ModeTabs(){
 }
 function ModePanel({mode, children}: {mode: PanelMode; children: ReactNode}){
   return <div role="tabpanel" id={'mode-' + mode} aria-labelledby={'tab-' + mode} hidden={state.ui.mode !== mode}>{children}</div>;
+}
+
+// Compare two designs (designs.ts): the hall on screen against a pinned one, both summarized from their whole layout.
+// Changes that are clearly better or worse (more GPUs, a lower PUE) are marked; the others are context
+const METRIC_LABEL = {gpus: 'rowGpu', devices: 'designsDevices', itKw: 'hudIt', facilityKw: 'repFacility', pue: 'hudPue',
+  utilityMw: 'hUtility', capexM: 'gaugeCapex', energyMWh: 'designsEnergy', costUsd: 'rowCost'} as const satisfies Record<Metric, MessageKey>;
+function metricText(key: Metric, v: number): string{
+  switch (key){
+    case 'itKw': case 'facilityKw': return fmt(v);
+    case 'pue': return v ? v.toFixed(2) : '–';
+    case 'utilityMw': return `${v} MW`;
+    case 'capexM': return tr('capex', {m: v.toFixed(1)});
+    case 'energyMWh': return fmtEnergy(v);
+    case 'costUsd': return fmtMoney(v);
+    default: return v.toLocaleString();
+  }
+}
+const deltaText = (key: Metric, d: number): string =>
+  d === 0 ? '=' : (d > 0 ? '+' : '−') + (key === 'pue' ? Math.abs(d).toFixed(2) : key === 'capexM' ? `$${Math.abs(d).toFixed(1)}M` : metricText(key, Math.abs(d)));
+const racksText = (s: DesignSummary) => s.racks.length ? s.racks.map(([t, n]) => `${n} × ${catName(CAT[t])}`).join(tr('listSep')) : '–';
+const statusText = (s: DesignSummary) => !s.devices ? '–' : !s.problems.length ? tr('designsOk')
+  : tr('designsBlocked', {reasons: s.problems.map(k => k === 'overload' ? tr('designsOverload') : tr(REASON_TEXT[k])).join(tr('listSep'))});
+const spofText = (s: DesignSummary) => s.spof === null ? '–' : s.spof ? tr('designsSpof', {n: s.spof}) : tr('designsN1');
+
+function Designs(){
+  const {pinned, designs: notice} = state.ui;
+  const [link, setLink] = useState('');
+  const version = useStateVersion();
+  const cur = useMemo(() => summarize(snapshotLayout(), CAT, state.energy), [version]);
+  const pin = useMemo(() => pinned && summarize(pinned.layout, CAT, state.energy), [pinned, version]);
+  return (
+    <>
+      <h2>{tr('hDesigns')}</h2>
+      <p className="sub">{tr('designsIntro')}</p>
+      <div className="energy" id="designs" data-pinned={pinned ? pinned.layout.list.length : undefined}>
+        {pin ? (
+          <table className="designs">
+            <thead><tr><th></th><th>{tr('designsPinnedCol')}</th><th>{tr('designsCurrentCol')}</th><th>{tr('designsChange')}</th></tr></thead>
+            <tbody>
+              <tr><td>{tr('designsRacks')}</td><td>{racksText(pin)}</td><td>{racksText(cur)}</td><td></td></tr>
+              {METRICS.map(({key}) => {
+                const {d, verdict} = delta(pin, cur, key);
+                return <tr key={key} data-metric={key}><td>{tr(METRIC_LABEL[key])}</td><td>{metricText(key, pin[key])}</td><td>{metricText(key, cur[key])}</td>
+                  <td className={'delta ' + verdict} data-verdict={verdict}>{deltaText(key, d)}</td></tr>;
+              })}
+              <tr data-metric="status"><td>{tr('designsStatus')}</td><td>{statusText(pin)}</td><td>{statusText(cur)}</td><td></td></tr>
+              <tr data-metric="spof"><td>{tr('designsRedundancy')}</td><td>{spofText(pin)}</td><td>{spofText(cur)}</td><td></td></tr>
+            </tbody>
+          </table>
+        ) : <p className="sub">{tr('designsEmpty')}</p>}
+        {pinned && <p className="sub" id="designsFrom">{tr(pinned.from === 'link' ? 'designsFromLink' : 'designsFromPin', {at: pinned.at})}</p>}
+        <div className="row" style={{marginTop: 8}}>
+          <button type="button" id="designsPin" onClick={() => actions.pinDesign()} disabled={!state.items.size}>{tr(pinned ? 'designsRepin' : 'designsPin')}</button>
+          {pinned && <button type="button" id="designsSwap" onClick={() => actions.swapPinned()}>{tr('designsSwap')}</button>}
+          {pinned && <button type="button" id="designsClear" onClick={() => actions.clearPinned()}>{tr('designsClear')}</button>}
+        </div>
+        <form className="row" style={{marginTop: 8}} onSubmit={e => { e.preventDefault(); if (link.trim()){ actions.pinFromLink(link); setLink(''); } }}>
+          <input id="designsLink" type="url" inputMode="url" placeholder={tr('designsLinkPlaceholder')} aria-label={tr('designsLinkLabel')}
+            value={link} onChange={e => setLink(e.target.value)} style={{flex: 1, minWidth: 0}} />
+          <button type="submit" id="designsLinkGo" disabled={!link.trim()}>{tr('designsLinkGo')}</button>
+        </form>
+        {notice.text && <p className="sub" id="designsMsg" role="status">{notice.text}</p>}
+        {notice.warnings.length > 0 && <ul className="sub">{notice.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>}
+      </div>
+      <p className="sub" style={{marginTop: 6}}>{tr('designsNote')}</p>
+    </>
+  );
 }
 
 // Back-end fabric (fabric.ts): leaf and spine switches and cables for the GPU racks within the viewed phase. Informational;
