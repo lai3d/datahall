@@ -108,6 +108,7 @@ npm test           # vitest
 npm run catalog-check  # catalog freshness: devices unchecked for over 90 days (exit 1), old sources and source hosts (information only)
 npm run build      # output in web/dist, base is a relative path, deployable under any subpath
 # Deploy: Vercel project lai3ds-projects/datahall is linked to this repo, Root Directory is web; merging to main publishes production, PRs get automatic previews
+# Production is https://datahall.qfc.network (custom domain since 2026-11-16); https://datahall-eight.vercel.app still serves the same deployment, so links already sent out keep working
 
 python3 -m venv .venv && .venv/bin/pip install usd-core jinja2
 .venv/bin/python tools/validate_usd.py samples/datahall.usda

@@ -10,7 +10,7 @@ import {CAT} from '../src/catalog.ts';
 import {GRID} from '../src/grid.ts';
 
 export const DOC_PATH = new URL('../../docs/examples.md', import.meta.url);
-const SITE = 'https://datahall-eight.vercel.app/';
+const SITE = 'https://datahall.qfc.network/';
 
 // encodeLayout returns the hash content without the leading '#'
 const linkFor = (ex: Example): string => `${SITE}#${encodeLayout(ex.layout)}`;

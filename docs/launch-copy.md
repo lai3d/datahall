@@ -1,6 +1,6 @@
 # Launch copy
 
-Draft material for launching the web app (https://datahall-eight.vercel.app, repo https://github.com/lai3d/datahall).
+Draft material for launching the web app (https://datahall.qfc.network, repo https://github.com/lai3d/datahall).
 Written 2026-09-20 against catalog version `2026-09-18` and model version `1.0`. Every number traces to the facts sheet at the
 bottom; if the catalog or the model changes, re-run the checks there before posting.
 
@@ -46,7 +46,7 @@ An AI data hall is quoted in megawatts, not racks. I built a browser simulator t
 GB200 or Vera Rubin racks on a floor grid and the hall stays dark until power, cooling, network and
 the utility feed all add up.
 
-https://datahall-eight.vercel.app
+https://datahall.qfc.network
 ```
 
 **2** (211 characters)
@@ -110,7 +110,7 @@ Vera Rubin NVL72，只有 576 张 GPU，但只占 15 个格。越新的机柜，
 里面的功率和价格都是公开资料的估算，不是厂商规格：每个数字都带来源（官方文档、媒体报道或我自己的估算）、来源给出的区间
 和最后核对日期。英伟达并没有公布 Vera Rubin 的整柜功率，190 kW 用的是分析师的 Max-Q 口径。
 
-地址：https://datahall-eight.vercel.app （代码 MIT：https://github.com/lai3d/datahall）
+地址：https://datahall.qfc.network （代码 MIT：https://github.com/lai3d/datahall）
 欢迎挑数字上的错，比提功能有用。
 ```
 
