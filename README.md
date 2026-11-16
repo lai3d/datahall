@@ -2,7 +2,7 @@
 
 A simulator for laying out an AI data hall around the latest AI GPU racks: NVIDIA GB200/GB300 NVL72, Vera Rubin NVL72 and Vera Rubin Ultra NVL144 (Kyber), AMD Helios and MI355X, and Huawei CloudMatrix 384. Place racks, power panels, coolant units and network switches on a grid. See whether power distribution, cooling, network ports and utility capacity can carry the load. Then export the hall as OpenUSD.
 
-**Live demo:** https://datahall-eight.vercel.app ([中文界面](https://datahall-eight.vercel.app/?lang=zh))
+**Live demo:** https://datahall.qfc.network ([中文界面](https://datahall.qfc.network/?lang=zh))
 
 The live demo uses [Vercel Web Analytics](https://vercel.com/docs/analytics) for aggregate page views. It sets no cookies, and the layout in the URL hash is not sent.
 
@@ -46,9 +46,9 @@ The builder (utility feed, devices, capacity check, device details) is always on
 
 Ready-made halls you can open in the live demo, layout and all. The full set, with the numbers behind each one, is in [docs/examples.md](docs/examples.md).
 
-- **[Small teaching hall](https://datahall-eight.vercel.app/#layout=1,2,gb200:4.3-5.3-6.3-7.3-8.3-9.3-10.3-11.3,cdu:4.5-5.5,ib:6.5-7.5,rpp:8.5-9.5,crah:10.5-11.5).** Eight GB200 racks with just enough power, cooling and network on a 2 MW feed.
-- **[A 5 MW Vera Rubin hall](https://datahall-eight.vercel.app/#layout=1,5,vr200:0.2-1.2-2.2-3.2-4.2-5.2-6.2-7.2-8.2-9.2-10.2-11.2-12.2-13.2-14.2-15.2-5.6-6.6-7.6-8.6-9.6,rpp:1.1-8.5-13.1-7.1-4.1-10.1-9.5,cdu:2.1-10.6-14.1-9.1-5.1-6.5,ib:1.3-13.3-7.5-6.1-9.3-11.6,crah:5.3-10.5).** The same exercise one generation later: fewer racks, far more power per rack.
-- **[A hall that cannot power on](https://datahall-eight.vercel.app/#layout=1,2,gb200:4.3-5.3-6.3-7.3-8.3-9.3-10.3-11.3).** Racks and nothing else, so the panel can say what is short and offer to fix it.
+- **[Small teaching hall](https://datahall.qfc.network/#layout=1,2,gb200:4.3-5.3-6.3-7.3-8.3-9.3-10.3-11.3,cdu:4.5-5.5,ib:6.5-7.5,rpp:8.5-9.5,crah:10.5-11.5).** Eight GB200 racks with just enough power, cooling and network on a 2 MW feed.
+- **[A 5 MW Vera Rubin hall](https://datahall.qfc.network/#layout=1,5,vr200:0.2-1.2-2.2-3.2-4.2-5.2-6.2-7.2-8.2-9.2-10.2-11.2-12.2-13.2-14.2-15.2-5.6-6.6-7.6-8.6-9.6,rpp:1.1-8.5-13.1-7.1-4.1-10.1-9.5,cdu:2.1-10.6-14.1-9.1-5.1-6.5,ib:1.3-13.3-7.5-6.1-9.3-11.6,crah:5.3-10.5).** The same exercise one generation later: fewer racks, far more power per rack.
+- **[A hall that cannot power on](https://datahall.qfc.network/#layout=1,2,gb200:4.3-5.3-6.3-7.3-8.3-9.3-10.3-11.3).** Racks and nothing else, so the panel can say what is short and offer to fix it.
 
 ## Tech stack
 

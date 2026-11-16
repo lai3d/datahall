@@ -10,15 +10,15 @@ describe('analytics URLs', () => {
   });
 
   it('drops the hash and query from reported page views', () => {
-    expect(reportedUrl('https://datahall-eight.vercel.app/?lang=zh#layout=1,2,gb200:4.3', false)).toBe('https://datahall-eight.vercel.app/');
+    expect(reportedUrl('https://datahall.qfc.network/?lang=zh#layout=1,2,gb200:4.3', false)).toBe('https://datahall.qfc.network/');
   });
 
   it('keeps virtual milestone pages as they are, even for share-link visits', () => {
-    expect(reportedUrl('https://datahall-eight.vercel.app/tutorial-done?x=1#layout=1,2', true)).toBe('https://datahall-eight.vercel.app/tutorial-done');
+    expect(reportedUrl('https://datahall.qfc.network/tutorial-done?x=1#layout=1,2', true)).toBe('https://datahall.qfc.network/tutorial-done');
   });
 
   it('reports share-link visits as /shared, also under a subpath or index.html', () => {
-    expect(reportedUrl('https://datahall-eight.vercel.app/#layout=1,2,gb200:4.3', true)).toBe('https://datahall-eight.vercel.app/shared');
+    expect(reportedUrl('https://datahall.qfc.network/#layout=1,2,gb200:4.3', true)).toBe('https://datahall.qfc.network/shared');
     expect(reportedUrl('https://example.com/tools/datahall/index.html?lang=en#layout=1,2', true)).toBe('https://example.com/tools/datahall/shared');
     expect(reportedUrl('https://example.com/tools/datahall', true)).toBe('https://example.com/tools/datahall/shared');
   });
