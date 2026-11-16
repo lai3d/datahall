@@ -37,3 +37,7 @@ export const catName = (t: CatalogItem): string => t.i18n?.[lang]?.name ?? t.nam
 // Publication titles stay in their own language; only this project's own estimate notes are translated
 export const srcTitle = (s: {title: string; i18n?: Record<string, {title?: string}>}): string => s.i18n?.[lang]?.title ?? s.title;
 export const catNote = (t: CatalogItem): string => t.i18n?.[lang]?.note ?? t.note;
+
+// What a device is in one line (power, GPUs, what it supplies), for the palette chips and the hover label in the 3D view
+export const catSpec = (t: CatalogItem): string => [t.kw ? t.kw + ' kW' : '', t.gpus ? t.gpus + ' GPU' : '', t.liqCool ? tr('chipCooling', {kw: t.liqCool}) : '',
+  t.airCool ? tr('chipCooling', {kw: t.airCool}) : '', t.dist ? tr('chipDist', {kw: t.dist}) : '', t.ports ? tr('chipPorts', {n: t.ports}) : ''].filter(Boolean).join(tr('listSep'));

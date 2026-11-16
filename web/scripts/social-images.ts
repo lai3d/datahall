@@ -2,7 +2,7 @@
 // (public/apple-touch-icon.png, 180 × 180, rendered from public/favicon.svg).
 // Run after visible changes to the 3D view: npm run social-images
 // Builds the app in e2e mode (for the window.__datahall hook), serves it with vite preview and captures
-// the Vera Rubin preset in the dark theme. Needs network access for the web font.
+// the Vera Rubin preset in the dark theme.
 import {execSync, spawn} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {chromium} from '@playwright/test';

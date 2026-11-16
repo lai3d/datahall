@@ -23,12 +23,12 @@ import {BANDS, MAINT_RANGE, YEAR_OPTIONS, ownership} from './ownership.ts';
 import type {OwnershipInputs} from './ownership.ts';
 import {scaleRefs} from './scale.ts';
 import {GRID, keyOf, nearest, FEEDS} from './grid.ts';
-import {canFail, singlePointsOfFailure} from './redundancy.ts';
+import {blockingReasons, canFail, singlePointsOfFailure} from './redundancy.ts';
 import {state, snapshot as snapshotLayout} from './state.ts';
 import {PANEL_MODES} from './state.ts';
 import type {Notice, PanelMode} from './state.ts';
 import {phasesIn, growthPlan, headroom, MAX_PHASE} from './growth.ts';
-import {LANGS, getLang, htmlLang, tr, loc, catName, catNote, srcTitle} from './i18n.ts';
+import {LANGS, getLang, htmlLang, tr, loc, catName, catNote, catSpec, srcTitle} from './i18n.ts';
 import type {MessageKey} from './i18n.ts';
 import {useStateVersion} from './store.ts';
 import {hallModel} from './model.ts';
@@ -75,6 +75,7 @@ export interface Actions {
   toggleAssignMode(key: string): void;
   restoreAll(): void;
   setLang(id: string): void;
+  toggleTheme(): void;
   startTutorial(): void;
   tutorialNext(): void;
   exitTutorial(): void;
@@ -160,6 +161,7 @@ function StageOverlay({model}: {model: HallModel}){
         <div><b id="hPue">{s.it ? s.pue.toFixed(2) : '–'}</b><span>{tr('hudPue')}</span></div>
         {s.it > 0 && <p id="hScale">{tr('hudScale', {sparks: scaleRefs(s.it).sparks.toLocaleString(), homes: scaleRefs(s.it).homes.toLocaleString()})}</p>}
       </div>
+      <Verdict model={model} />
       <StageBar />
       {/* Keyboard cursor in the 3D view (main.ts): where the arrows are pointing, for screen readers */}
       <p id="cursorStatus" className="sr-only" role="status">{cursorText()}</p>
@@ -169,6 +171,41 @@ function StageOverlay({model}: {model: HallModel}){
         <button id="camReset" type="button" onClick={() => actions.resetView()}>{tr('camReset')}</button>
       </div>
     </>
+  );
+}
+
+// The hall's state in a few words, shared by the verdict on the 3D view and the panel bar on narrow screens
+function hallStatus(model: HallModel): [text: string, cls: 'warn' | 'ok' | 'bad']{
+  const s = model.totals;
+  const problems = [...s.issues, ...model.perDevice].filter(i => i.lvl === 'bad').length;
+  return !s.it ? [tr('barEmpty'), 'warn'] : state.powered ? [tr('barPowered'), 'ok']
+    : model.blocking ? [tr('barBlocked', {n: Math.max(problems, 1)}), 'bad'] : [tr('barReady'), 'ok'];
+}
+
+// Verdict on the 3D view (wide screens; CSS hides it on narrow ones, which have the panel bar): whether the hall can power
+// on, the reasons when it cannot, and the power button, so none of it waits below the fold of the panel. The reasons are the
+// short phrases of the N+1 list (blockingReasons); the full sentences stay in the capacity check, which is the live region
+const VERDICT_REASONS = 4;
+function Verdict({model}: {model: HallModel}){
+  const [text, cls] = hallStatus(model);
+  const reasons = cls === 'bad' ? blockingReasons(model.active, CAT, state.utility) : [];
+  const canPower = model.totals.it > 0 && (!model.blocking || state.powered);
+  return (
+    <div id="verdict" className={cls} role="group" aria-label={tr('hCheck')}>
+      <strong id="verdictStatus">{text}</strong>
+      {reasons.length > 0 && (
+        <ul id="verdictReasons">
+          {reasons.slice(0, VERDICT_REASONS).map((r, i) => <li key={i}>{reasonText(r)}</li>)}
+          {reasons.length > VERDICT_REASONS && <li>{tr('verdictMore', {n: reasons.length - VERDICT_REASONS})}</li>}
+        </ul>
+      )}
+      {(canPower || cls === 'bad') && (
+        <div className="row">
+          {canPower && <button type="button" id="stagePower" className={state.powered ? 'on' : undefined} onClick={() => actions.togglePower()}>{tr(state.powered ? 'verdictPowerOff' : 'powerOn')}</button>}
+          {cls === 'bad' && <button type="button" className="link" id="verdictFix" onClick={() => scrollPanelTo('#issues')}>{tr('verdictFix')}</button>}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -217,11 +254,9 @@ function scrollPanelTo(selector: string){
 
 // Narrow screens only: hall status and a button that folds the panel away so the 3D view gets the whole screen
 function PanelBar({model}: {model: HallModel}){
-  const collapsed = state.ui.panelCollapsed, s = model.totals;
+  const collapsed = state.ui.panelCollapsed;
   useEffect(() => { document.body.classList.toggle('panel-collapsed', collapsed); }, [collapsed]);
-  const problems = [...s.issues, ...model.perDevice].filter(i => i.lvl === 'bad').length;
-  const [text, cls] = !s.it ? [tr('barEmpty'), 'warn'] : state.powered ? [tr('barPowered'), 'ok']
-    : model.blocking ? [tr('barBlocked', {n: Math.max(problems, 1)}), 'bad'] : [tr('barReady'), 'ok'];
+  const [text, cls] = hallStatus(model);
   return (
     <div id="panelBar">
       <span id="panelStatus" className={cls}>{text}</span>
@@ -240,7 +275,11 @@ function Header(){
         </div>
       </div>
       <p className="sub">{tr('subtitle')}</p>
-      <p className="sub method-open"><button type="button" className="link" id="methodOpen" onClick={() => actions.openMethod('intro')}>{tr('methodOpen')}</button></p>
+      <div className="sub method-open">
+        <button type="button" className="link" id="methodOpen" onClick={() => actions.openMethod('intro')}>{tr('methodOpen')}</button>
+        {/* Dark theme switch (main.ts's toggleTheme): pressed while the dark theme shows, whether chosen here or by the system */}
+        <span className="seg"><button type="button" id="theme" aria-pressed={state.ui.dark} onClick={() => actions.toggleTheme()}>{tr('themeDark')}</button></span>
+      </div>
     </>
   );
 }
@@ -379,8 +418,7 @@ function Devices(){
       <p className="sub" id="placeHint" hidden={!hint}>{hint}</p>
       <div className="palette" id="palette">
         {CATALOG.map(t => {
-          const bits = [t.kw ? t.kw + ' kW' : '', t.gpus ? t.gpus + ' GPU' : '', t.liqCool ? tr('chipCooling', {kw: t.liqCool}) : '',
-            t.airCool ? tr('chipCooling', {kw: t.airCool}) : '', t.dist ? tr('chipDist', {kw: t.dist}) : '', t.ports ? tr('chipPorts', {n: t.ports}) : ''].filter(Boolean).join(tr('listSep'));
+          const bits = catSpec(t);
           return (
             <button key={t.id} type="button" className="chip" data-t={t.id} aria-pressed={state.tool === t.id} onClick={() => actions.setTool(t.id)}>
               <i style={{background: `var(${t.c})`}}></i><div><strong>{catName(t)}</strong><small>{bits}</small></div>
@@ -954,7 +992,8 @@ function Tutorial({model, version}: {model: HallModel; version: number}){
     else if (t.bottom > bottom) panel.scrollBy({top: Math.min(t.bottom - bottom, t.top - top)});
   }, [step]);
   if (!step || index === null){
-    if (!state.ui.tutorialOffer) return null;
+    // The offer waits while a scenario is on: two cards asking for attention at once is one too many
+    if (!state.ui.tutorialOffer || state.scenario) return null;
     return (
       <div className="tutorial" id="tutorialOffer">
         <p>{tr('tutorialOffer')}</p>

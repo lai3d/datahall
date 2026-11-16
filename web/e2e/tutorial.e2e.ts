@@ -5,7 +5,7 @@ import {clickCell, layout, openApp} from './helpers.ts';
 const stepIs = (page: Page, id: string) => expect(page.locator('#tutorial')).toHaveAttribute('data-step', id);
 
 test('first visit offers the tutorial; "Not now" hides it for good', async ({page}) => {
-  await openApp(page);
+  await openApp(page, '/?lang=en', {fresh: true});
   await expect(page.locator('#tutorialOffer')).toBeVisible();
   await page.locator('#tutorialDismiss').click();
   await expect(page.locator('#tutorialOffer')).toHaveCount(0);
@@ -20,7 +20,7 @@ test('a share-link visit does not show the tutorial offer', async ({page}) => {
 });
 
 test('the tutorial walks from an empty hall to a powered-on GB200 row', async ({page}) => {
-  const errors = await openApp(page);
+  const errors = await openApp(page, '/?lang=en', {fresh: true});
   await page.locator('#tutorialStart').click();
   await stepIs(page, 'pick');
   expect((await layout(page)).items).toEqual([]);
@@ -70,4 +70,39 @@ test('loading a preset ends the tutorial', async ({page}) => {
   await stepIs(page, 'pick');
   await page.locator('[data-preset="rubin"]').click();
   await expect(page.locator('#tutorial')).toHaveCount(0);
+});
+
+test('first visit lands on a row of racks that cannot power on, and the 3D view says why', async ({page}) => {
+  const errors = await openApp(page, '/?lang=en', {fresh: true});
+  expect((await layout(page)).items).toEqual([4, 5, 6, 7, 8, 9, 10, 11].map(x => `gb200@${x},3`).sort());
+  await expect(page.locator('#verdict')).toHaveClass(/bad/);
+  await expect(page.locator('#verdictStatus')).toHaveText('Cannot power on: 4 problems');
+  await expect(page.locator('#verdictReasons li')).toHaveText(['power distribution short', 'liquid cooling short', 'air cooling short', 'not enough network ports']);
+  await expect(page.locator('#stagePower')).toHaveCount(0);
+  // The link brings the full reasons and the one-click fix into view
+  await page.locator('#verdictFix').click();
+  await expect(page.locator('#repairApply')).toBeInViewport();
+  await page.locator('#repairApply').click();
+  await expect(page.locator('#verdictStatus')).toHaveText('All checks pass');
+  await expect(page.locator('#verdictReasons')).toHaveCount(0);
+  // Power on from the 3D view; the panel's button follows
+  await page.locator('#stagePower').click();
+  await expect(page.locator('#verdictStatus')).toHaveText('Powered on');
+  await expect(page.locator('#power')).toHaveText('Powered on, click to power off');
+  await page.locator('#stagePower').click();
+  await expect(page.locator('#power')).toHaveText('Power on');
+  // A reload is a return visit: the hall that was left, not the first-visit row
+  await page.reload();
+  await expect(page.locator('#verdictStatus')).toHaveText('All checks pass');
+  expect(errors).toEqual([]);
+});
+
+test('the tutorial offer steps aside while a scenario is running', async ({page}) => {
+  await openApp(page, '/?lang=en', {fresh: true});
+  await expect(page.locator('#tutorialOffer')).toBeVisible();
+  await page.locator('#scenarios button').first().click();
+  await expect(page.locator('#scenario')).toBeVisible();
+  await expect(page.locator('#tutorialOffer')).toHaveCount(0);
+  await page.locator('#scenario button').click();
+  await expect(page.locator('#tutorialOffer')).toBeVisible();
 });

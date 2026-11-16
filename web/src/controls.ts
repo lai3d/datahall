@@ -2,6 +2,8 @@
 // If there is a device under the press (drag.start returns true), the drag moves the device instead of rotating; a second finger landing cancels the move
 import * as THREE from 'three';
 import {clamp} from './grid.ts';
+import {FRAME_ALL} from './viz.ts';
+import type {Framing} from './viz.ts';
 
 // Device dragging: start is called on press and returns whether there is a device at the pressed position
 export interface DragHandlers {
@@ -17,9 +19,10 @@ export interface ControlHandlers {
   drag: DragHandlers;
 }
 
-// Returns resetView, which puts the camera back to its initial orbit
-export function initControls(el: HTMLElement, camera: THREE.PerspectiveCamera, {onTap, onHover, onLeave, drag}: ControlHandlers): {resetView(): void}{
-  const orb = {theta: .75, phi: .95, r: 17, target: new THREE.Vector3(0, .8, 0)};
+// Returns frame, which points the orbit at a framing (viz.ts); resetAngles also puts the viewing direction back to the initial one
+export interface Controls {frame(f: Framing, resetAngles: boolean): void}
+export function initControls(el: HTMLElement, camera: THREE.PerspectiveCamera, {onTap, onHover, onLeave, drag}: ControlHandlers): Controls{
+  const orb = {theta: .75, phi: .95, r: FRAME_ALL.r, target: new THREE.Vector3(FRAME_ALL.x, .8, FRAME_ALL.z)};
   function updCam(){
     const sp = Math.sin(orb.phi);
     camera.position.set(orb.target.x + orb.r * sp * Math.sin(orb.theta),
@@ -70,5 +73,9 @@ export function initControls(el: HTMLElement, camera: THREE.PerspectiveCamera, {
   el.addEventListener('wheel', e => { e.preventDefault(); orb.r = clamp(orb.r * (1 + e.deltaY * .001), 5, 34); updCam(); }, {passive: false});
 
   updCam();
-  return {resetView(){ orb.theta = .75; orb.phi = .95; orb.r = 17; updCam(); }};
+  return {frame(f, resetAngles){
+    if (resetAngles){ orb.theta = .75; orb.phi = .95; }
+    orb.r = clamp(f.r, 5, 34); orb.target.x = f.x; orb.target.z = f.z;
+    updCam();
+  }};
 }
