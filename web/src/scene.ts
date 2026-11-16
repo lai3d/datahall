@@ -25,6 +25,28 @@ type Ghost = THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial>;
 // for laptop batteries and for CI, where WebGL is software rendered
 let dirty = true;
 const lastView = new THREE.Matrix4();
+// Powering on turns the hall lights down so the racks' own lights and the flow along the links carry the picture:
+// `ambience` runs from 0 (off) to 1 (on), turns the two lights down and fades the background, the floor and the grid lines toward NIGHT,
+// the same in both themes (the dark theme starts closer to it)
+const HEMI = .75 * Math.PI, SUN = .75 * Math.PI, AMBIENCE_MS = 600, NIGHT = new THREE.Color(0x0B1116);
+let hemi: THREE.HemisphereLight, sun: THREE.DirectionalLight;
+let ambience = 0, hallColor = new THREE.Color(), gridColor = new THREE.Color(), floorColor = new THREE.Color();
+function applyAmbience(){
+  hemi.intensity = HEMI * (1 - .72 * ambience);
+  sun.intensity = SUN * (1 - .8 * ambience);
+  (scene.background as THREE.Color).lerpColors(hallColor, NIGHT, ambience);
+  (floor?.material as THREE.MeshStandardMaterial | undefined)?.color.lerpColors(floorColor, NIGHT, .6 * ambience);
+  (gridLines?.material as THREE.LineBasicMaterial | undefined)?.color.lerpColors(gridColor, NIGHT, .7 * ambience);
+}
+// Move the ambience toward the power state; returns whether it is still on its way. dt in ms, Infinity finishes it
+function stepAmbience(dt: number): boolean{
+  const target = state.powered ? 1 : 0;
+  if (ambience === target) return false;
+  const step = dt / AMBIENCE_MS;
+  ambience = target > ambience ? Math.min(target, ambience + step) : Math.max(target, ambience - step);
+  applyAmbience();
+  return ambience !== target;
+}
 const ghosts: Ghost[] = [];   // Placement previews, one per cell during row placement
 const ray = new THREE.Raycaster();
 const FOV = 45;   // vertical field of view in degrees for landscape and square views
@@ -39,8 +61,9 @@ export function initScene(stage: HTMLElement): HTMLCanvasElement{
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 200);
   // Since three r155 lighting uses physical units; multiply intensity by π to match r128 brightness
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x333333, 0.75 * Math.PI));
-  const sun = new THREE.DirectionalLight(0xffffff, 0.75 * Math.PI); sun.position.set(6, 14, 9);
+  hemi = new THREE.HemisphereLight(0xffffff, 0x333333, HEMI);
+  scene.add(hemi);
+  sun = new THREE.DirectionalLight(0xffffff, SUN); sun.position.set(6, 14, 9);
   // Device shadows on the floor: the shadow camera covers the whole hall
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -65,16 +88,18 @@ export function initScene(stage: HTMLElement): HTMLCanvasElement{
 
 function buildHall(){
   [floor, gridLines].forEach(o => { if (o) scene.remove(o); });
-  scene.background = col('--hall');
+  hallColor = col('--hall'); gridColor = col('--grid'); floorColor = col('--floor');
+  scene.background = hallColor.clone();
   floor = new THREE.Mesh(new THREE.PlaneGeometry(GW * CX + .6, GD * CZ + .6),
-    new THREE.MeshStandardMaterial({color: col('--floor'), roughness: .95}));
+    new THREE.MeshStandardMaterial({color: floorColor.clone(), roughness: .95}));
   floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   const pts: THREE.Vector3[] = [], w = GW * CX / 2, d = GD * CZ / 2;
   for (let i = 0; i <= GW; i++){ const x = -w + i * CX; pts.push(new THREE.Vector3(x, .002, -d), new THREE.Vector3(x, .002, d)); }
   for (let j = 0; j <= GD; j++){ const z = -d + j * CZ; pts.push(new THREE.Vector3(-w, .002, z), new THREE.Vector3(w, .002, z)); }
   gridLines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),
-    new THREE.LineBasicMaterial({color: col('--grid')}));
+    new THREE.LineBasicMaterial({color: gridColor.clone()}));
   scene.add(gridLines);
+  applyAmbience();
 }
 
 function makeMesh(key: string, it: Item): THREE.Group{
@@ -362,7 +387,7 @@ function applyPops(now: number){
   });
 }
 
-export function renderOnce(): void{ applyPops(Infinity); updateFlows(performance.now()); camera.updateMatrixWorld(); renderer.render(scene, camera); }
+export function renderOnce(): void{ applyPops(Infinity); stepAmbience(Infinity); updateFlows(performance.now()); camera.updateMatrixWorld(); renderer.render(scene, camera); }
 
 // PNG of the 3D view at its current size. toBlob copies the canvas in the same task as the render, so the
 // renderer does not need preserveDrawingBuffer
@@ -379,11 +404,15 @@ export function snapshotDataUrl(): string{
   return url.startsWith('data:image/') ? url : '';
 }
 
+let lastAmbience = 0;
 export function startLoop(): void{
   // Read the preference every frame, like the rest of the code, so turning it on takes effect without a reload
   const reduceMq = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let last = performance.now();
   function frame(now: number){
     const reduce = reduceMq.matches;
+    const fading = stepAmbience(reduce ? Infinity : now - last) || ambience !== lastAmbience;
+    last = now; lastAmbience = ambience;
     state.items.forEach((it, key) => {
       const mats: THREE.MeshStandardMaterial[] = it.mesh.userData.glowMats;
       // Failed facilities and overloaded or unconnected devices do not light up
@@ -391,10 +420,10 @@ export function startLoop(): void{
       const delay = (Math.abs(it.x - GW / 2) + it.z) * 70;
       const t = (now - state.powerStart - delay) / 400;
       const on = reduce ? 1 : clamp(t, 0, 1);
-      const k = .12 + on * (reduce ? .9 : .8 + .12 * Math.sin(now / 350 + it.x));
+      const k = .12 + on * (reduce ? 1.2 : 1.1 + .14 * Math.sin(now / 350 + it.x));
       mats.forEach(m => { m.emissiveIntensity = k; });
     });
-    const animating = pops.size > 0 || (state.powered && !reduce) || (state.powered && now - state.powerStart < 3000);
+    const animating = fading || pops.size > 0 || (state.powered && !reduce) || (state.powered && now - state.powerStart < 3000);
     camera.updateMatrixWorld();
     const moved = !camera.matrixWorld.equals(lastView);
     if (dirty || moved || animating){

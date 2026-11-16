@@ -58,6 +58,7 @@ Dates are when the work merged to main.
 - ✅ Versioned exports: `.usda` and `layout.json` name the catalog data version and the model version; imports flag a different catalog (2026-09-18).
 
 **Reach and craft**
+- ✅ First screen (review of 2026-11-16): a first visit lands on a row of racks that cannot power on, the 3D view carries the verdict, the reasons and the power button, powering on turns the hall lights down, devices are named on hover, a loaded hall is framed by the camera, and there is a dark theme switch. The web font is self-hosted, so the page loads nothing from another origin before it paints (2026-11-16).
 - ✅ Panel groups: the builder (feed, devices, checks, details) stays on top, and the rest sits in three tabs, Learn (scenarios, examples, rack comparison), Design (goal, growth plan, energy and cost, back-end fabric) and Drill (failure drill, N+1); a scenario opens the tab with the tools it needs (2026-09-22).
 - ✅ Cold load: three.js loads after the panel (first paint 820–976 ms → about 350 ms on a throttled profile) and fingerprinted assets carry an immutable cache header (2026-09-20).
 - ✅ Keyboard and screen reader access: a keyboard cursor places, selects and moves devices in the 3D view, the panel is the main landmark, the capacity verdict is announced, and the two light-theme colors below 4.5:1 are fixed (2026-09-20).

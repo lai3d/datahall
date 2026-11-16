@@ -43,6 +43,7 @@ export interface UiState {
   mode: PanelMode;          // which panel group is open; view state, remembered in localStorage
   pinned: PinnedDesign | null;  // the design the current hall is compared with
   designs: Notice;          // messages under the comparison (a link that could not be read, skipped entries)
+  dark: boolean;            // the dark theme is showing, chosen with the switch or by the system
 }
 
 export interface AppState {
@@ -88,7 +89,7 @@ export const state: AppState = {
   energy: {price: DEFAULT_PRICE, load: DEFAULT_LOAD},
   ownership: {years: DEFAULT_YEARS, maint: DEFAULT_MAINT},
   fabric: {...DEFAULT_FABRIC},
-  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, goal: null, method: null, lastPlaced: null, mode: 'learn', pinned: null, designs: {text: null, warnings: []}},
+  ui: {share: {text: null, warnings: []}, usd: {text: null, warnings: []}, exportReady: false, exporting: false, canUndo: false, canRedo: false, tutorialOffer: false, panelCollapsed: false, goal: null, method: null, lastPlaced: null, mode: 'learn', pinned: null, designs: {text: null, warnings: []}, dark: false},
 };
 
 // All deep copies: snapshots go into undo history and localStorage and must not follow later state changes

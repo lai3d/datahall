@@ -9,7 +9,7 @@ export default {
 
   // Static page copy
   title: 'GPU data hall builder',
-  subtitle: 'Pick a device, then click an empty floor cell to place it. Drag a device to move it, drag the floor to orbit, pinch or scroll to zoom.',
+  subtitle: 'See what it takes to power on a hall of GPU racks. Pick a device, then click an empty floor cell to place it. Drag a device to move it, drag the floor to orbit, pinch or scroll to zoom.',
   language: 'Language',
   hudIt: 'IT load',
   hudPue: 'Estimated PUE',
@@ -23,6 +23,10 @@ export default {
   redo: 'Redo',
   panelHide: 'Hide panel',
   panelShow: 'Show panel',
+  themeDark: 'Dark',
+  verdictFix: 'How to fix it',
+  verdictMore: ({n}: {n: number}) => `and ${n} more`,
+  verdictPowerOff: 'Power off',
   barEmpty: 'The hall is empty',
   barBlocked: ({n}: {n: number}) => `Cannot power on: ${plural(n, 'problem', 'problems')}`,
   barReady: 'All checks pass',

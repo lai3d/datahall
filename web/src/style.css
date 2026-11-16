@@ -1,3 +1,7 @@
+/* Barlow Semi Condensed, self-hosted (src/fonts/README.md): no request to another origin before the page can paint */
+@font-face{font-family:"Barlow Semi Condensed";font-weight:500;font-style:normal;font-display:swap;src:url(./fonts/barlow-semi-condensed-500.woff2) format("woff2")}
+@font-face{font-family:"Barlow Semi Condensed";font-weight:600;font-style:normal;font-display:swap;src:url(./fonts/barlow-semi-condensed-600.woff2) format("woff2")}
+@font-face{font-family:"Barlow Semi Condensed";font-weight:700;font-style:normal;font-display:swap;src:url(./fonts/barlow-semi-condensed-700.woff2) format("woff2")}
 /* Text colors are checked against the surface they sit on: --coolant on --panel (button.link) and --ok on the
    highlighted growth row both need 4.5:1, which is why the light theme uses these darker shades */
 :root{
@@ -39,6 +43,23 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 #stageTools{position:absolute;right:10px;top:10px;display:flex;gap:6px}
 #stageTools button{background:color-mix(in srgb,var(--panel) 82%,transparent)}
+/* Verdict on the 3D view (wide screens; narrow ones have the panel bar): whether the hall can power on, why not, and the power button */
+#verdict{position:absolute;left:12px;bottom:12px;max-width:min(340px,calc(100% - 24px));padding:8px 12px 10px;border-radius:8px;
+  border:1px solid var(--line);border-left:4px solid var(--warn);background:color-mix(in srgb,var(--panel) 92%,transparent);
+  box-shadow:0 4px 12px -6px rgb(0 0 0 / .35);font-size:14px}
+#verdict.ok{border-left-color:var(--ok)}
+#verdict.bad{border-left-color:var(--bad)}
+#verdict strong{display:block;font-size:16px;font-weight:700}
+#verdict ul{margin:4px 0 0;padding-left:18px}
+#verdict li::first-letter{text-transform:uppercase}
+#verdict .row{margin-top:8px;align-items:center;gap:12px}
+#stagePower{padding:7px 16px;font-weight:700;border-color:var(--gpu);background:var(--panel)}
+#stagePower.on{background:var(--gpu);color:#0b1200}
+/* Name of the device under the mouse (main.ts); follows the pointer and never takes it */
+#hoverTip{position:absolute;left:0;top:0;z-index:1;pointer-events:none;white-space:nowrap;padding:3px 8px;border-radius:6px;font-size:13px;
+  border:1px solid var(--line);background:var(--panel);box-shadow:0 4px 12px -6px rgb(0 0 0 / .35)}
+#hoverTip b{font-weight:600}
+#hoverTip span{color:var(--muted)}
 #panel{background:var(--panel);border-top:1px solid var(--line);max-height:56vh;overflow-y:auto;padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
 @media (min-width:900px){
   body{flex-direction:row}
@@ -46,6 +67,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15p
 }
 h1{font-size:22px;font-weight:700;margin:0 0 2px;letter-spacing:.2px}
 .head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+#theme{padding:3px 8px;font-size:12px;min-height:0}
 .lang,.mini{flex:none;gap:0;flex-wrap:nowrap}
 .lang button,.mini button{padding:3px 8px;font-size:12px;min-height:0}
 .lang button:first-child,.mini button:first-child{border-radius:6px 0 0 6px}
@@ -138,7 +160,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .energy p.band{margin:8px 0 0}
 button.link{border:0;padding:0;background:none;color:var(--coolant);text-decoration:underline;text-underline-offset:2px;font-size:inherit;cursor:pointer}
 .h2row button.link{font-size:13px}
-.method-open{margin:-6px 0 12px}
+.method-open{margin:-6px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 dialog.method{width:min(680px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding:0;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);overflow:auto}
 dialog.method::backdrop{background:rgb(0 0 0 / .45)}
 .method-head{position:sticky;top:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line)}
@@ -180,6 +202,7 @@ dialog.method::backdrop{background:rgb(0 0 0 / .45)}
    the stage bar above them; the panel bar stays at the top of the scrolling panel and can fold the panel away */
 #stageBar,#panelBar{display:none}
 @media (max-width:899px){
+  #verdict{display:none}
   #hud{left:8px;top:8px;column-gap:12px;padding:4px 8px}
   #hud b{font-size:17px}
   #hud span{font-size:11px}

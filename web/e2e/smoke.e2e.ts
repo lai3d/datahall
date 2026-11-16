@@ -2,7 +2,7 @@ import {expect, test} from '@playwright/test';
 import {readFileSync} from 'node:fs';
 import {cellPoint, clickCell, clickTop, layout, openApp, openMode} from './helpers.ts';
 
-// Default layout: the GB200 preset (8 racks in row 3, facilities in row 5), utility 2 MW
+// The hall openApp starts from: the GB200 preset (8 racks in row 3, facilities in row 5), utility 2 MW, as a saved layout
 const GB200_COUNT = 16;
 
 test('loads in English with a passing capacity check and no errors', async ({page}) => {
@@ -112,7 +112,8 @@ test('a corrupt saved layout still loads the page, keeping the valid devices', a
   await page.goto('about:blank');
   await page.goto('/?lang=en');
   await expect(page.locator('#issues li').first()).toBeVisible();
-  expect((await layout(page)).items).toHaveLength(GB200_COUNT);
+  // Nothing usable is saved, so this is a first visit: the bare row of eight racks
+  expect((await layout(page)).items).toHaveLength(8);
   expect(errors).toEqual([]);
 });
 
@@ -580,4 +581,52 @@ test('compare designs: pin a hall, change it, swap back, and compare with a shar
   await page.locator('#designsClear').click();
   await expect(page.locator('#designs')).toContainText('Nothing pinned yet.');
   expect(errors).toEqual([]);
+});
+
+test('theme switch: dark is remembered across a reload, and switching back follows the system again', async ({page}) => {
+  const errors = await openApp(page);
+  const bg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const light = await bg();
+  await expect(page.locator('#theme')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('#theme').click();
+  await expect(page.locator('#theme')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(await bg()).not.toBe(light);
+  await page.reload();
+  await expect(page.locator('#theme')).toHaveAttribute('aria-pressed', 'true');
+  expect(await bg()).not.toBe(light);
+  // The system here is light, so choosing light again drops the stored choice
+  await page.locator('#theme').click();
+  await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.*/);
+  expect(await page.evaluate(() => localStorage.getItem('datahall.theme'))).toBeNull();
+  expect(await bg()).toBe(light);
+  expect(errors).toEqual([]);
+});
+
+test('hovering a device names it, and the label goes when the pointer leaves it', async ({page}) => {
+  await openApp(page);
+  const cdu = await cellPoint(page, 4, 5, 1);
+  await page.mouse.move(cdu.x, cdu.y);
+  await expect(page.locator('#hoverTip')).toHaveText('CDU coolant unit · cools 800 kW');
+  const rack = await cellPoint(page, 11, 3, 2.15);
+  await page.mouse.move(rack.x, rack.y);
+  await expect(page.locator('#hoverTip')).toHaveText('GB200 NVL72 · 125 kW, 72 GPU');
+  const floor = await cellPoint(page, 1, 8);
+  await page.mouse.move(floor.x, floor.y);
+  await expect(page.locator('#hoverTip')).toBeHidden();
+});
+
+test('a loaded hall is framed: the camera moves in on the devices, and an empty hall shows the whole floor', async ({page}) => {
+  // The e2e build frames only when asked, so the other tests can click cells anywhere on the grid
+  await openApp(page, '/?lang=en&frame');
+  const span = async () => { const a = await cellPoint(page, 4, 3), b = await cellPoint(page, 11, 3); return Math.hypot(a.x - b.x, a.y - b.y); };
+  const framed = await span();
+  await page.locator('[data-preset="empty"]').click();
+  const whole = await span();
+  expect(framed).toBeGreaterThan(whole * 1.3);
+  // Undo brings the hall back but leaves the camera alone; Reset view frames it again
+  await page.locator('#undo').click();
+  expect(await span()).toBeCloseTo(whole, 0);
+  await page.locator('#camReset').click();
+  expect(await span()).toBeCloseTo(framed, 0);
 });

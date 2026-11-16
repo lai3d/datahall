@@ -8,7 +8,7 @@ export default defineConfig({
   base: './',
   // The dev server only allows web/ by default; catalog.json is one level up in spec/
   server: {fs: {allow: [fileURLToPath(new URL('..', import.meta.url))]}},
-  // One bundle of about 850 kB: three 0.186 (~600 kB with this project's code) plus React 19 (~220 kB); not worth splitting
+  // The largest chunks are the panel's entry (about 440 kB with React 19) and the 3D scene with three 0.186 (about 370 kB), loaded after it
   build: {chunkSizeWarningLimit: 900},
   // Unit tests only; browser smoke tests live in e2e/ and run with Playwright
   test: {environment: 'node', include: ['tests/**/*.test.ts']},

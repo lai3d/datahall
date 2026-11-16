@@ -16,8 +16,9 @@ import {state, itemList, snapshot, PANEL_MODES} from './state.ts';
 // (see boot at the bottom), so first paint waits on the panel's own code instead. `view` is assigned before anything uses it
 type Scene = typeof import('./scene.ts');
 let view!: Scene;
-let controls: {resetView(): void} | null = null;
-import type {DragHandlers} from './controls.ts';
+let controls: Controls | null = null;
+import type {Controls, DragHandlers} from './controls.ts';
+import {frameFor} from './viz.ts';
 import {mountUI} from './ui.tsx';
 import {notify} from './store.ts';
 import {hallModel} from './model.ts';
@@ -29,7 +30,7 @@ import {buildLayout, layoutToText} from './layout-export.ts';
 import {createSaver} from './download.ts';
 import type {Saver} from './download.ts';
 import {encodeLayout, decodeLayout} from './share-link.ts';
-import {DEFAULT_LANG, setLang, htmlLang, tr} from './i18n.ts';
+import {DEFAULT_LANG, setLang, htmlLang, tr, catName, catSpec} from './i18n.ts';
 import {lineCells, freeCells, sameLayout, createHistory, toItem} from './edit.ts';
 import {canFail, blockingReasons} from './redundancy.ts';
 import {advance, LAST} from './tutorial.ts';
@@ -84,7 +85,15 @@ const loadLayout = (p: Layout, keepScenario = false) => edit(() => {
   state.failed.clear(); state.viewPhase = null; state.phase = 1; state.tutorial = null;
   if (!keepScenario) state.scenario = null;
   replaceLayout(p);
+  frameHall(false);
 });
+// Point the camera at the placed devices (viz.ts's frameFor), or at the whole floor when the hall is empty. Called when a
+// different hall is loaded and by "Reset view", never on an edit, so the view does not move under the user's hands.
+// The e2e build keeps the whole floor in view unless the page is opened with ?frame: its tests click cells all over the grid
+const AUTO_FRAME = import.meta.env.MODE !== 'e2e' || new URLSearchParams(location.search).has('frame');
+function frameHall(resetAngles: boolean){
+  controls?.frame(frameFor(AUTO_FRAME ? [...state.items.values()] : [], GRID), resetAngles);
+}
 // Not recorded in undo history: loading at startup, and undo/redo themselves
 function showLayout(p: Layout){ replaceLayout(p); state.powered = false; state.rowAnchor = null; changed(); }
 function undo(){ if (drag) return; const p = undoStack.undo(snapshot()); if (p) showLayout(p); }
@@ -601,6 +610,46 @@ function switchLang(id: string){
   refresh();
 }
 
+// ---------- hover label ----------
+// The name and one-line spec of the device under the mouse, so a CDU can be told from an RPP without clicking each one.
+// Plain DOM in the stage, updated only when the device under the pointer changes; touch has the stage bar instead
+let tip: HTMLElement | null = null, tipKey: string | null = null;
+function hideTip(){ tipKey = null; if (tip) tip.hidden = true; }
+function showTip(e: PointerEvent){
+  if (!tip) return;
+  const key = view.pickItem(e), it = key ? state.items.get(key) : undefined;
+  if (!key || !it){ hideTip(); return; }
+  if (key !== tipKey){
+    const t = CAT[it.type], name = document.createElement('b'), spec = document.createElement('span');
+    name.textContent = catName(t); spec.textContent = ' · ' + catSpec(t);
+    tip.replaceChildren(name, spec);
+    tipKey = key; tip.hidden = false;
+  }
+  // Below and to the right of the pointer, flipped to the left near the stage's right edge
+  const r = stage.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  tip.style.transform = `translate(${x + 14 + tip.offsetWidth > r.width ? Math.max(0, x - 10 - tip.offsetWidth) : x + 14}px, ${y + 16}px)`;
+}
+
+// ---------- theme ----------
+// The page follows the system's color scheme until the switch in the header picks the other one; that choice is kept in
+// localStorage and applied by a script in index.html before the first paint. Picking the system's own scheme again
+// removes it, so the page goes back to following the system
+const THEME_KEY = 'datahall.theme';
+const systemDark = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+const isDark = () => (document.documentElement.dataset.theme ?? (systemDark() ? 'dark' : 'light')) === 'dark';
+function toggleTheme(){
+  const next = isDark() ? 'light' : 'dark';
+  if (next === (systemDark() ? 'dark' : 'light')){
+    delete document.documentElement.dataset.theme;
+    try { localStorage.removeItem(THEME_KEY); } catch (e) {}
+  } else {
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+  }
+  state.ui.dark = isDark();
+  if (view){ view.retheme(); refresh(); } else notify();
+}
+
 // ---------- boot ----------
 // Before anything writes the current layout into the hash
 const openedFromShareLink = hasShareLink(location.hash);
@@ -641,6 +690,7 @@ const actions: Actions = {
   toggleAssignMode,
   restoreAll,
   setLang: switchLang,
+  toggleTheme,
   startTutorial,
   tutorialNext: () => { stepTutorial(hallModel(), true); refresh(); },
   exitTutorial: () => { state.tutorial = null; notify(); },
@@ -649,7 +699,7 @@ const actions: Actions = {
   dismissTutorialOffer: () => { markTutorialSeen(); notify(); },
   undo,
   redo,
-  resetView: () => controls?.resetView(),
+  resetView: () => frameHall(true),
   copyShareLink: () => { void copyShareLink(); },
   importUsdFile: file => { void importUsdFile(file); },
   exportUsd: () => { void exportUsd(); },
@@ -663,7 +713,9 @@ const scene = import('./scene.ts'), sceneControls = import('./controls.ts');
 
 // First visit (no share link, nothing saved, tutorial never started or dismissed): offer the tutorial.
 // Read before the panel mounts, so the offer is not missing from its first render
-state.ui.tutorialOffer = !openedFromShareLink && restoreLayout(CAT, GRID) === null && !tutorialSeen();
+const firstVisit = !openedFromShareLink && restoreLayout(CAT, GRID) === null;
+state.ui.tutorialOffer = firstVisit && !tutorialSeen();
+state.ui.dark = isDark();
 restoreEnergy();
 restoreMode();
 restorePinned();
@@ -684,14 +736,22 @@ void (async () => {
   labelStage();
   controls = (await sceneControls).initControls(el, view.camera, {
     onTap: tap,
-    onHover: e => { hoverCell = view.pickCell(e); updateGhost(); },
-    onLeave: () => { hoverCell = null; updateGhost(); },
+    onHover: e => { hoverCell = view.pickCell(e); updateGhost(); showTip(e); },
+    onLeave: () => { hoverCell = null; updateGhost(); hideTip(); },
     drag: dragItem,
   });
+  tip = document.createElement('div');
+  Object.assign(tip, {id: 'hoverTip', hidden: true, ariaHidden: 'true'});
+  stage.append(tip);
+  // A press starts a drag, an orbit or a tap; the label would only be in the way
+  el.addEventListener('pointerdown', hideTip);
   initKeyboard(el);
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
-  mq.addEventListener?.('change', () => { view.retheme(); refresh(); });
-  if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || PRESETS.gb200);
+  mq.addEventListener?.('change', () => { state.ui.dark = isDark(); view.retheme(); refresh(); });
+  // A first visit lands on the first scenario's starting hall, a bare row of racks that cannot power on: the reasons
+  // on screen are what the app is about. It is only the starting layout, the scenario itself is not running
+  if (!loadFromLink(false)) showLayout(restoreLayout(CAT, GRID) || startLayout('powerOn', CAT, GRID));
+  frameHall(true);
   // Hook for browser automation: dev server and the e2e build (vite build --mode e2e), never in production
   if (import.meta.env.DEV || import.meta.env.MODE === 'e2e') (window as unknown as {__datahall: object}).__datahall = {state, cellToScreen: view.cellToScreen, visibleGhosts: view.visibleGhosts, renderOnce: view.renderOnce, meters: view.meters, flowDots: view.flowDots};
   view.startLoop();

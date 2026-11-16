@@ -12,14 +12,21 @@ declare global {
   }
 }
 
-// Open the app with a clean localStorage and wait until the panel and 3D view are ready.
+// The GB200 preset as a saved hall (8 racks in row 3, facilities in row 5, 2 MW): what most tests start from
+const SAVED_GB200 = {u: 2, list: [
+  ...[4, 5, 6, 7, 8, 9, 10, 11].map(x => ['gb200', x, 3]),
+  ['cdu', 4, 5], ['cdu', 5, 5], ['ib', 6, 5], ['ib', 7, 5], ['rpp', 8, 5], ['rpp', 9, 5], ['crah', 10, 5], ['crah', 11, 5]]};
+
+// Open the app and wait until the panel and 3D view are ready. By default the browser holds a saved GB200 hall, like a
+// returning visitor's; `fresh` opens it with a clean localStorage instead, which is a first visit (a bare row of racks
+// and the tutorial offer). A path with a #layout= hash loads that hall either way.
 // Collects page errors and console errors so each test can assert there were none.
-export async function openApp(page: Page, path = '/?lang=en'): Promise<string[]>{
+export async function openApp(page: Page, path = '/?lang=en', {fresh = false} = {}): Promise<string[]>{
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error' && !/favicon\.ico/.test(m.text()) && !/Failed to load resource.*404/.test(m.text())) errors.push(m.text()); });
   await page.goto('/?lang=en');
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(saved => { localStorage.clear(); if (saved) localStorage.setItem('dchall.v1', saved); }, fresh ? null : JSON.stringify(SAVED_GB200));
   // A real navigation, so a path that only adds a hash still reloads the page
   await page.goto('about:blank');
   await page.goto(path);
